@@ -67,7 +67,7 @@ Grafo, animações e microinterações ficam depois que esses contratos estivere
 
 ### 1.3 HTTP é o primeiro caminho completo
 
-O fluxo deve funcionar com requests e páginas convencionais antes de Action Cable e Turbo Streams. Real-time melhora a experiência, mas não é fonte de verdade.
+O fluxo deve funcionar com requests e páginas convencionais antes de Action Cable e Turbo Streams. Real-time melhora a experiência, mas não é fonte de verdade. Isso não autoriza usar HTTP como substituto de uma entrega posterior que peça stream ou broadcast: nessa tarefa, o caminho em tempo real continua sendo o comportamento principal e HTTP é apenas reconciliação.
 
 ### 1.4 O domínio não depende da interface
 
@@ -76,6 +76,10 @@ O fluxo deve funcionar com requests e páginas convencionais antes de Action Cab
 ### 1.5 Pequenas entregas demonstráveis
 
 Cada milestone deve produzir algo executável e verificável, mesmo que ainda sem acabamento visual.
+
+### 1.6 O caminho principal não é substituível
+
+O gate de uma fase exige o comportamento principal que ela declara. Um fallback autorizado pode degradar uma condição específica, mas não substitui silenciosamente o resultado solicitado, não satisfaz o gate sozinho e não transforma falha em sucesso. As specs devem demonstrar o caminho principal e, quando existir, cobrir o fallback separadamente; consulte a política operacional completa em [`AGENTS.md`](../AGENTS.md).
 
 ---
 
@@ -156,25 +160,31 @@ Criar uma base reproduzível para desenvolver e executar a suíte.
 - autenticação mínima com Devise;
 - Pundit instalado, ainda sem todas as policies;
 - lint e formatação;
-- CI executando testes e análise estática;
+- CI remoto executando o mesmo contrato de `bin/ci`, sem divergências silenciosas de comandos ou severidade;
 - configuração de Solid Queue e Solid Cable, sem uso funcional obrigatório;
 - helpers para converter texto monetário em centavos sem `float`.
+
+As dependências exclusivas de teste não entram na imagem de produção: o build de produção exclui os grupos Bundler `development:test`.
 
 ### 3.3 Specs e verificações
 
 - boot da aplicação;
+- health check HTTP;
 - conexão de teste com PostgreSQL 18;
 - autenticação básica;
-- parser monetário para valores válidos e inválidos;
-- CI falha quando uma spec falha.
+- parser monetário para valores válidos e inválidos, incluindo `12`, `1.234,56`, texto vazio, zero, sinal, ponto decimal e precisão acima de centavos;
+- transformação observável com o processador de imagens configurado; se `:vips` estiver selecionado, a spec carrega `image_processing/vips` e processa uma imagem de teste com `ruby-vips`;
+- pelo menos um exemplo RSpec real para cada contrato acima, incluindo uma jornada de autenticação quando Devise estiver configurado;
+- a suíte executa ao menos uma system spec real quando a jornada de autenticação for introduzida; um job separado só pode existir quando possuir exemplos descobertos; zero exemplos não é evidência de cobertura;
+- CI falha quando uma spec falha e executa `bin/ci` como fonte única do contrato, incluindo seeds e a mesma severidade das auditorias locais.
 
 ### 3.4 Gate de saída
 
 ```text
-bundle exec rspec
+bin/ci
 ```
 
-executa localmente e no CI com banco limpo e resultado reproduzível.
+executa localmente e no CI com banco limpo e resultado reproduzível, incluindo boot, health check, PostgreSQL, autenticação, parser monetário, factories, processador de imagens configurado e exemplos reais. O gate não é atendido por uma suíte vazia, por job de system spec sem exemplos, por mock que substitua o contrato da integração ou por fallback que esconda a ausência do comportamento principal.
 
 ---
 

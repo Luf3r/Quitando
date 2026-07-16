@@ -17,8 +17,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    command: >
-      bash -c "bundle install && bin/rails db:prepare && bin/rails server -b 0.0.0.0"
+    entrypoint: ["/rails/bin/docker-dev-entrypoint"]
+    command: ["bin/rails", "server", "-b", "0.0.0.0"]
     depends_on:
       db:
         condition: service_healthy

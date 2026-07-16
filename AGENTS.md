@@ -55,6 +55,7 @@ Não resolva divergências silenciosamente. Corrija os documentos afetados junto
 - nunca pule specs para uma regra financeira;
 - nunca implemente item fora do MVP por conveniência;
 - nunca altere uma decisão aceita reescrevendo um ADR antigo: crie um ADR que o substitua.
+- nunca substitua silenciosamente o comportamento principal solicitado por fallback, `no-op`, mock, stub, valor padrão ou recuperação genérica para obter testes verdes ou concluir a tarefa.
 
 ---
 
@@ -181,6 +182,16 @@ Antes da primeira alteração de comportamento, registre de forma concisa no pla
 - contratos afetados — domínio, banco, serviço, HTTP, autorização, UI, real-time ou deploy;
 - classificação do impacto documental.
 
+Classifique também cada comportamento previsto:
+
+- **comportamento principal:** resultado solicitado e necessário para concluir a tarefa;
+- **fallback autorizado:** comportamento secundário previsto pelo contrato para uma condição específica de degradação;
+- **recuperação de erro:** resposta para uma falha; não é sucesso nem fallback por si só;
+- **implementação parcial:** parte funcional do comportamento principal, ainda insuficiente para concluir a tarefa;
+- **fora do escopo:** comportamento conscientemente não implementado nesta tarefa.
+
+Todo fallback autorizado deve declarar a condição que o ativa, a razão de existir, o comportamento principal que continua obrigatório, como o sistema distingue degradação de sucesso, os sinais operacionais que permitem detectá-lo (métrica, log ou mensagem) e as specs separadas do caminho principal e do fallback. Sem essa autorização, a operação deve falhar explicitamente em vez de simular sucesso degradado.
+
 Esse registro orienta o trabalho; ele não cria uma nova fonte normativa. Se o resultado esperado não puder ser extraído da documentação, não o deduza da implementação existente nem de convenções de outros produtos.
 
 ### 7.2 SDD — especificação antes da implementação
@@ -192,6 +203,10 @@ Mantenha separadas as três camadas:
 3. **implementação** é a menor solução que satisfaz ambos.
 
 A implementação existente não prevalece sobre uma regra normativa apenas por já estar em produção ou passar na suíte. Uma spec também não cria silenciosamente regra de produto: quando ela expõe lacuna ou conflito documental, resolva a fonte normativa antes de consolidar o comportamento.
+
+A especificação deve separar `caminho principal`, `caminho de erro` e cada `fallback autorizado`. Ela descreve o efeito observável principal, condições de sucesso, efeitos colaterais obrigatórios, falhas que permanecem visíveis, condições exatas de ativação de fallback, como usuário ou operador detecta a degradação e o que não conta como entrega concluída. Fallback não pode ser inferido durante a implementação porque o caminho principal é difícil. Se surgir uma necessidade legítima, interrompa o trabalho, registre a causa, proponha e sincronize a mudança de contrato na fonte normativa; somente então escreva as specs e implemente-o.
+
+O comportamento principal solicitado faz parte do contrato da tarefa. Entregar somente um fallback não implementa o comportamento principal, não satisfaz a tarefa nem o gate e não pode ser relatado como concluído. Por exemplo, HTTP pode reconciliar o estado quando um stream falha, mas não substitui uma tarefa que solicita Action Cable; devolver a imagem original após `LoadError` não prova processamento com `ruby-vips`.
 
 Construa em pequenas fatias verticais. Cada fatia deve entregar um contrato verificável de ponta a ponta no nível exigido pela fase, sem antecipar funcionalidades posteriores. Para o `DebtSimplifier`, por exemplo, implemente um contrato por vez — validação da soma, caso simples, múltiplos saldos, determinismo e propriedades — em vez de escrever todo o algoritmo antes das specs.
 
@@ -213,6 +228,18 @@ Regras contra falso verde:
 - não considere erro inesperado como `Red` válido;
 - uma execução com zero exemplos não satisfaz gate que exige comportamento coberto;
 - preserve no relato final os comandos e um resumo objetivo das evidências de `Red` e `Green`.
+
+Regras adicionais para evitar fallback silencioso:
+
+- **Red:** a spec inicial deve falhar porque o comportamento principal ainda não existe, não por configuração quebrada, dependência ausente sem relação com o contrato, fixture inválida, método incidental inexistente ou expectativa voltada ao fallback;
+- **Green:** prove diretamente o efeito principal solicitado — por exemplo, o broadcast após commit, transformação observável de imagem, estado persistido, autorização e negação no backend, invariantes do algoritmo ou uma integração exercitada no nível real exigido;
+- uma spec de fallback não substitui a spec do caminho principal, nem `200`, página renderizada, objeto não nulo ou ausência de exceção são prova suficiente de um efeito específico;
+- não introduza fallback sem autorização explícita; não use `rescue StandardError`, `LoadError`, timeout, erro de configuração, integração ou persistência para convertê-los em sucesso;
+- não esconda a falha com valor padrão, objeto nulo, resposta vazia, mock, stub, `no-op`, retorno estático ou feature flag desativada fora do escopo explícito da spec;
+- não enfraqueça a expectativa para aceitar o fallback, nem remova uma asserção específica em favor de “não lança erro”;
+- **Refactor:** não pode ampliar `rescue`, tornar dependência obrigatória opcional, trocar implementação real por `no-op`, reduzir precisão de expectativa, mover o principal para código não exercitado ou fazer o fallback virar padrão.
+
+Depois do refactor, execute e relate separadamente as specs do caminho principal, dos erros e dos fallbacks autorizados, além do conjunto relacionado e da suíte completa.
 
 ### 7.4 Sequência de execução
 
@@ -389,6 +416,9 @@ Interrompa a implementação e registre o bloqueio quando:
 - a mudança contradiz ADR aceito sem uma nova decisão explícita;
 - a tarefa exige antecipar fase, item pós-MVP ou decisão adiada sem alteração aprovada de escopo;
 - o comportamento esperado não pode ser expresso de forma testável com as informações disponíveis.
+- o caminho principal não funciona e a única forma de obter verde é um fallback não autorizado;
+- uma dependência obrigatória está ausente ou incompatível, a integração real teria de ser substituída por simulação em produção, ou seria necessário transformar erro em sucesso;
+- a spec teria de ser enfraquecida, o fallback se tornaria o único caminho funcional, ou o comportamento principal não pudesse ser provado.
 
 Não use o código atual para resolver silenciosamente esses casos. Continue apenas após a decisão ser documentada na fonte adequada.
 
@@ -434,6 +464,20 @@ Uma tarefa só está pronta quando:
 - testes não executados e respectivas razões são informados;
 - nenhum item fora do MVP foi introduzido implicitamente.
 
+Para todo contrato com comportamento principal, inclua e preencha esta matriz de evidência; a tarefa não está pronta se algum campo aplicável não puder ser preenchido:
+
+```text
+Contrato solicitado:
+Comportamento principal:
+Spec que prova o caminho principal:
+Fallbacks autorizados:
+Specs dos fallbacks:
+Erros que permanecem visíveis:
+Evidência de que o fallback não é o caminho padrão:
+```
+
+Além disso, o comportamento principal deve estar implementado e provado por uma spec que falhou antes; cada fallback deve ser autorizado, ter condição limitada e spec própria; erros inesperados devem permanecer visíveis; a suíte verde não pode resultar de expectativas enfraquecidas, mocks, `no-ops`, valores padrão ou execuções com zero exemplos. Não marque tarefa, fase ou gate como concluído enquanto só o fallback funcionar.
+
 ---
 
 ## 14. Relato final do agente
@@ -449,5 +493,7 @@ Ao terminar, informe de forma objetiva:
 - qual foi a classificação do impacto documental e quais fontes foram sincronizadas;
 - decisões ou suposições adotadas;
 - riscos, limitações ou trabalho restante.
+
+Separe o relato em **Implementado** (somente o que foi demonstrado), **Fallbacks** (condição, limitação e specs), **Não implementado**, **Bloqueios** e **Evidências**. Não use frases como “implementei com fallback”, “há suporte através de uma alternativa”, “o fluxo continua funcionando”, “a suíte está verde” ou “solução resiliente” sem dizer se o comportamento principal funciona, quando o fallback ativa, suas limitações e qual spec prova cada caminho. Quando apenas o fallback funcionar, declare literalmente que o comportamento principal solicitado não foi implementado e que a tarefa permanece incompleta.
 
 Não esconda falhas, testes não executados ou incertezas.

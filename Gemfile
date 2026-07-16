@@ -15,8 +15,15 @@ gem "turbo-rails"
 # Hotwire's modest JavaScript framework [https://stimulus.hotwired.dev]
 gem "stimulus-rails"
 
-# Transform images for Active Storage variants
-gem "image_processing", "~> 1.2"
+# Transform images for Active Storage variants with the configured Vips processor.
+gem "image_processing", "~> 2.0"
+gem "ruby-vips", "~> 2.0"
+
+# Authenticate users in the MVP.
+gem "devise"
+
+# Authorize application actions; policies are introduced with the HTTP phase.
+gem "pundit"
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"
@@ -59,6 +66,8 @@ group :development do
 end
 
 group :test do
+  # Ruby 4 removed CGI from the standard library; Capybara still requires it.
+  gem "cgi"
   gem "factory_bot_rails"
   gem "rspec-rails"
 

@@ -208,6 +208,9 @@ Essa escolha reduz fricção em grupos colaborativos, mas torna o produto inadeq
 ### 5.1 Dinheiro
 
 - valores usam inteiros na menor unidade da moeda;
+- na Fase 0, o parser aceita somente texto positivo no formato `pt-BR`: inteiro sem separador (`12`), inteiro com grupos de milhar completos (`1.234`) e, opcionalmente, vírgula seguida de exatamente dois dígitos (`1.234,56`);
+- texto vazio, zero, sinal, ponto decimal, grupos de milhar incompletos, mais de duas casas ou caracteres não numéricos são inválidos;
+- o parser converte texto diretamente para centavos e rejeita entradas que não sejam texto; não aceita nem usa `float`;
 - despesas, shares e pagamentos têm valor maior que zero;
 - a soma das shares é exatamente o valor da despesa;
 - a moeda do fato é a moeda do grupo;

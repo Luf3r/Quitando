@@ -1,9 +1,10 @@
-ENV["RAILS_ENV"] ||= "test"
+ENV["RAILS_ENV"] = "test"
 
 require_relative "../config/environment"
 abort("The Rails environment is running in production mode!") if Rails.env.production?
 
 require "rspec/rails"
+require "factory_bot_rails"
 require_relative "spec_helper"
 
 begin
@@ -13,6 +14,7 @@ rescue ActiveRecord::PendingMigrationError => error
 end
 
 RSpec.configure do |config|
+  config.include FactoryBot::Syntax::Methods
   config.fixture_paths = [ Rails.root.join("spec/fixtures") ]
   config.use_transactional_fixtures = true
   config.infer_spec_type_from_file_location!

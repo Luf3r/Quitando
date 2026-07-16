@@ -5,7 +5,7 @@
 # docker build -t quitando .
 # docker run -d -p 80:80 -e RAILS_MASTER_KEY=<value from config/master.key> -e DB_HOST=<postgres-host> -e QUITANDO_DATABASE_PASSWORD=<postgres-password> --name quitando quitando
 
-# For a containerized dev environment, see Dev Containers: https://guides.rubyonrails.org/getting_started_with_devcontainer.html
+# For local development, use Docker Compose and Dockerfile.dev.
 
 # Make sure RUBY_VERSION matches the Ruby version in .ruby-version
 ARG RUBY_VERSION=4.0.6
@@ -24,7 +24,7 @@ RUN apt-get update -qq && \
 ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
-    BUNDLE_WITHOUT="development" \
+    BUNDLE_WITHOUT="development:test" \
     LD_PRELOAD="/usr/local/lib/libjemalloc.so"
 
 # Throw-away build stage to reduce size of final image

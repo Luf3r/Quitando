@@ -1,0 +1,11 @@
+#!/bin/bash -e
+
+# The bind-mounted bundle volume starts empty on a fresh Docker Compose setup.
+# Keep regular services and one-off `docker compose run` commands equivalent.
+bundle check || bundle install
+
+if { [ "$1" = "bin/rails" ] || [ "$1" = "./bin/rails" ]; } && [ "$2" = "server" ]; then
+  bin/rails db:prepare
+fi
+
+exec "$@"

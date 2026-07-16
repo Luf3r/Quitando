@@ -14,3 +14,5 @@ Fluxo esperado para qualquer tarefa:
 8. relate mudanças, comandos executados, resultados e riscos.
 
 Não trate este arquivo como uma segunda especificação. Novas regras pertencem a `AGENTS.md` ou aos documentos normativos.
+
+Não substitua silenciosamente o comportamento solicitado por fallback, `no-op`, mock, valor padrão ou recuperação genérica. Se o caminho principal não puder ser implementado e comprovado, pare, relate o bloqueio e mantenha a tarefa incompleta. Consulte `AGENTS.md` para a política completa.

@@ -56,6 +56,9 @@ development:
 # Do not set this db to the same as development or production.
 test:
   <<: *default
+  # Docker Compose exposes both URLs. Prefer the test URL even when a
+  # development DATABASE_URL is also present in the container environment.
+  url: <%= ENV["TEST_DATABASE_URL"] || ENV["DATABASE_URL"] %>
   database: quitando_test
 
 # As with config/credentials.yml, you never want to store sensitive information,

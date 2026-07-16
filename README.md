@@ -6,9 +6,9 @@ O Quitando ajuda grupos que já confiam uns nos outros a encerrar despesas compa
 
 ## Status
 
-O projeto está em construção, na **Fase 0 — Fundação do projeto**. Já estão disponíveis o bootstrap Rails, a infraestrutura RSpec, o comando `bin/ci`, as checagens de lint e segurança, a configuração Docker com PostgreSQL 18, Active Storage e a base de localização em `pt-BR`.
+O projeto está em construção, na **Fase 0 — Fundação do projeto**. Já estão disponíveis o bootstrap Rails, RSpec com exemplos reais, `bin/ci`, checagens de lint e segurança, Docker com PostgreSQL 18, Active Storage/Vips, Devise, Pundit, FactoryBot, parser monetário em centavos e locale `pt-BR`.
 
-As specs funcionais, autenticação, autorização e regras financeiras ainda serão implementadas conforme os gates do roadmap. A fundação existente não deve ser apresentada como MVP funcional.
+Há uma jornada mínima de cadastro e os smoke tests da fundação, mas grupos, despesas, ledger, policies de domínio e demais regras financeiras ainda serão implementados conforme o roadmap. A fundação existente não deve ser apresentada como MVP funcional.
 
 ## Como funciona
 
@@ -52,15 +52,47 @@ Ficam fora do MVP, entre outros: participantes sem conta, links públicos, multi
 
 ## Stack
 
-- Ruby 4.0.6 e Rails 8.1
+- Ruby 4.0.6 e Rails 8.1.3
 - PostgreSQL 18
 - Hotwire (Turbo e Stimulus)
 - Solid Queue, Solid Cable e Solid Cache
 - Kamal para deploy
 
-## Desenvolvimento local
+## Desenvolvimento com Docker
 
-Pré-requisitos: Ruby na versão indicada em [`.ruby-version`](./.ruby-version), PostgreSQL 18 em execução e dependências de compilação do `pg` instaladas.
+Docker Compose é o caminho recomendado para desenvolvimento. Ele usa o [Dockerfile.dev](./Dockerfile.dev), sobe Rails e PostgreSQL 18 em containers separados e não exige Ruby nem PostgreSQL instalados na máquina host.
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+O container prepara o banco antes de iniciar o servidor. Verifique o boot em `http://localhost:3000/up`; a raiz oferece apenas a jornada mínima de cadastro da Fase 0, não os fluxos do MVP. O código-fonte é montado no container, portanto alterações locais são recarregadas sem reconstruir a imagem. Mudanças no `Gemfile` ou no lockfile são conferidas pelo entrypoint.
+
+Com o ambiente em execução:
+
+```bash
+docker compose exec web bin/ci
+docker compose exec web bin/rails console
+docker compose logs -f web
+docker compose down
+```
+
+Para rodar uma verificação sem iniciar o servidor, o mesmo entrypoint prepara as gems:
+
+```bash
+docker compose run --rm web bin/ci
+```
+
+`DATABASE_URL` aponta para desenvolvimento e `TEST_DATABASE_URL` para teste. A configuração de teste prioriza explicitamente `TEST_DATABASE_URL`, inclusive em comandos Rails executados com `RAILS_ENV=test`; não substitua essa variável por uma URL de desenvolvimento. Os dados do PostgreSQL 18 ficam em `/var/lib/postgresql/18/docker`, dentro do volume montado em `/var/lib/postgresql`; as gems usam outro volume Docker. `docker compose down` preserva os volumes; use `down -v` somente quando os dados locais puderem ser descartados.
+
+Não reutilize diretamente um volume criado pelo PostgreSQL 17 com a imagem 18. Se os dados locais forem descartáveis, recrie o volume; se precisarem ser preservados, faça migração com `pg_upgrade` ou exportação e restauração antes de trocar a versão. Consulte a [orientação de `PGDATA` da imagem oficial](https://github.com/docker-library/docs/blob/master/postgres/README.md#pgdata).
+
+Não versione o arquivo `.env`: ele é ignorado pelo Git e pode conter apenas credenciais locais.
+
+## Desenvolvimento nativo
+
+Como alternativa ao Docker, instale Ruby na versão indicada em [`.ruby-version`](./.ruby-version), PostgreSQL 18 e as dependências de compilação do `pg`.
 
 ```bash
 bin/setup --skip-server
@@ -69,26 +101,9 @@ bin/dev
 
 O banco de desenvolvimento padrão é `quitando_development`. A configuração está em [`config/database.yml`](./config/database.yml); ajuste as credenciais locais ou use `DATABASE_URL` quando necessário.
 
-Para preparar o banco separadamente:
+## Deploy
 
-```bash
-bin/rails db:prepare
-```
-
-## Desenvolvimento com Docker
-
-O [Dockerfile](./Dockerfile) existente é destinado à imagem de produção. Para o desenvolvimento local, use o `compose.yaml`, que sobe Rails e PostgreSQL 18 em containers separados.
-
-```bash
-cp .env.example .env
-docker compose up --build
-```
-
-Depois, acesse `http://localhost:3000`. O comando prepara o banco antes de iniciar o servidor. `DATABASE_URL` e `TEST_DATABASE_URL` mantêm desenvolvimento e teste isolados. Os dados do PostgreSQL 18 ficam em `/var/lib/postgresql/18/docker`, dentro do volume montado em `/var/lib/postgresql`; as gems usam outro volume Docker. O código-fonte é montado no container para que alterações locais sejam refletidas sem nova imagem.
-
-Não reutilize diretamente um volume criado pelo PostgreSQL 17 com a imagem 18. Se os dados locais forem descartáveis, recrie o volume; se precisarem ser preservados, faça migração com `pg_upgrade` ou exportação e restauração antes de trocar a versão. Consulte a [orientação de `PGDATA` da imagem oficial](https://github.com/docker-library/docs/blob/master/postgres/README.md#pgdata).
-
-Não versione o arquivo `.env`: ele é ignorado pelo Git e pode conter apenas credenciais locais. Para produção, injete `RAILS_MASTER_KEY`, `QUITANDO_DATABASE_PASSWORD` e as demais credenciais pelo mecanismo de segredos do ambiente de deploy; não copie `config/master.key` para imagens ou arquivos de exemplo.
+O [Dockerfile](./Dockerfile) é destinado à imagem de produção e ao Kamal. Injete `RAILS_MASTER_KEY`, `QUITANDO_DATABASE_PASSWORD` e as demais credenciais pelo mecanismo de segredos do ambiente de deploy; não copie `config/master.key` para imagens ou arquivos de exemplo.
 
 O deploy com Kamal usa o GitHub Container Registry e exige `QUITANDO_DEPLOY_HOST`, `QUITANDO_DATABASE_HOST`, `KAMAL_REGISTRY_PASSWORD` e `QUITANDO_DATABASE_PASSWORD` no ambiente que executa o comando. `KAMAL_REGISTRY_USERNAME` é opcional e usa `Luf3r` por padrão.
 
@@ -100,7 +115,9 @@ O comando de integração contínua disponível hoje é:
 bin/ci
 ```
 
-Ele prepara o ambiente e executa lint, auditorias de dependências e segurança, eager load com Zeitwerk, RSpec e seeds de teste. As specs funcionais previstas para a Fase 0 ainda serão adicionadas conforme o roadmap.
+Ele prepara o ambiente e executa lint, auditorias de dependências e segurança, eager load com Zeitwerk, RSpec e seeds de teste. A suíte já cobre boot, health check, parser monetário, factory, cadastro e processamento Vips; os contratos financeiros pertencem às fases seguintes.
+
+No Docker, execute `docker compose exec web bin/ci` com o ambiente ativo ou `docker compose run --rm web bin/ci` para uma execução avulsa. O GitHub Actions executa o mesmo comando.
 
 ## Documentação
 
@@ -111,5 +128,6 @@ Ele prepara o ambiente e executa lint, auditorias de dependências e segurança,
 - [Roadmap de implementação e estratégia de specs](./docs/05-quitando-roadmap-implementacao.md)
 - [Decisões consolidadas](./docs/07-quitando-decisoes-consolidadas.md)
 - [Índice completo da documentação](./docs/00-index.md)
+- [Licença Apache 2.0](./LICENSE)
 
 Para contribuir ou alterar o código, leia primeiro as [instruções operacionais](./AGENTS.md). Elas definem a ordem de leitura, os invariantes financeiros e as verificações exigidas em cada fase.

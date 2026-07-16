@@ -1,7 +1,7 @@
 # Quitando — Relatório de Verificação Documental
 
 **Data da revisão:** 15 de julho de 2026
-**Escopo:** consistência cruzada entre produto, domínio, UX, casos de uso e decisões consolidadas.
+**Escopo:** consistência cruzada entre produto, domínio, UX, casos de uso e decisões consolidadas, na data da revisão.
 
 Este relatório não substitui testes automatizados nem valida a implementação. A fundação Rails já existe, mas as funcionalidades do MVP ainda serão construídas conforme o roadmap. O relatório registra o resultado de uma revisão independente da documentação e as limitações que permanecem deliberadamente fora do MVP.
 
@@ -20,7 +20,7 @@ Este relatório não substitui testes automatizados nem valida a implementação
 
 ## 1. Resultado
 
-Após as revisões cruzadas e a auditoria estrutural final, **não foi encontrada incongruência bloqueadora restante entre os documentos**.
+Após as revisões cruzadas e a auditoria estrutural final, **não foi encontrada incongruência bloqueadora restante entre os documentos avaliados naquela revisão**. Este é um registro histórico, não uma certificação contínua do repositório, da configuração Docker ou da execução do CI.
 
 A documentação agora descreve de forma compatível:
 
@@ -207,7 +207,7 @@ Ficou explícito que o MVP é destinado a grupos de confiança pré-existente. Q
 
 ### Estrutura e integridade documental
 
-- a árvore documental normativa contém 25 arquivos Markdown: quatro arquivos de orientação na raiz, oito documentos numerados e treze ADRs; `README.md` e `LICENSE.md` ficam fora dessa contagem;
+- a árvore documental normativa contém 25 arquivos Markdown: quatro arquivos de orientação na raiz, oito documentos numerados e treze ADRs; `README.md` e `LICENSE` ficam fora dessa contagem;
 - os 13 ADRs estão numerados sequencialmente, possuem status e data e aparecem no índice `00`;
 - links relativos e âncoras internas foram validados;
 - títulos de subseções longas foram numerados para produzir âncoras únicas e previsíveis;
@@ -284,7 +284,7 @@ A escolha permanece coerente para Rails 8.x:
 - Solid Queue é o backend padrão de Active Job a partir do Rails 8;
 - Solid Cable é um adapter oficial baseado em Active Record e testado com PostgreSQL;
 - Devise mantém matriz de testes para Rails 8 e sua versão atual documenta suporte a Rails 7 em diante;
-- as versões exatas devem ser fixadas no `Gemfile.lock` no início da implementação.
+- as versões exatas estão fixadas no `Gemfile.lock`; mudanças futuras devem preservá-lo sincronizado com a configuração executável.
 
 Referências oficiais:
 
@@ -309,6 +309,6 @@ Os maiores riscos restantes não são contradições documentais, mas hipóteses
 - usuários podem rejeitar o plano quando o destinatário difere da dívida percebida;
 - a premissa de grupos de confiança pode ser estreita demais se registros em nome de terceiros gerarem desconforto.
 
-A implementação deve começar pelo ledger e pelos contratos de teste, antes do grafo e das microinterações. Isso permitirá validar as regras mais arriscadas com baixo custo de retrabalho. Os cenários de destinatário contraintuitivo e despesa registrada por terceiro já fazem parte dos gates de UX e não exigem alterar o ledger.
+A implementação deve seguir o roadmap: concluir a fundação e o `DebtSimplifier` antes de schema e ledger, sempre com contratos de teste, e deixar grafo e microinterações para depois. Isso permitirá validar as regras mais arriscadas com baixo custo de retrabalho. Os cenários de destinatário contraintuitivo e despesa registrada por terceiro já fazem parte dos gates de UX e não exigem alterar o ledger.
 
 A ordem detalhada, os arquivos de spec e os critérios de saída foram consolidados no [Roadmap de Implementação e Estratégia de Specs](./05-quitando-roadmap-implementacao.md).

@@ -249,7 +249,7 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 - **Fase atual:** Fase 0 — Fundação do projeto
 - **Status atual:** em andamento
 - **Próxima fase:** Fase 1 — `DebtSimplifier` em Ruby puro
-- **Gate da fase atual:** repositório executa setup, banco, RSpec, lint e CI local de forma reproduzível.
+- **Gate da fase atual:** repositório executa `bin/ci` localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação.
 
 **Implementado e verificado até agora:**
 
@@ -258,13 +258,14 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 - infraestrutura RSpec carregando o ambiente Rails;
 - `bin/ci` com lint, auditorias de dependências e segurança, eager load, RSpec e seeds;
 - configuração de desenvolvimento Docker, Active Storage e locale padrão `pt-BR`.
+- FactoryBot integrado ao RSpec, factory inicial de `User`, Devise e Pundit configurados;
+- parser monetário `pt-BR` para centavos sem `float`;
+- specs reais de boot, health check, autenticação, parser, factory e processamento Vips;
+- imagem de produção sem gems dos grupos `development` e `test`.
 
 **Pendente para concluir o gate:**
 
-- configurar FactoryBot e adicionar Devise e Pundit;
-- implementar o parser monetário sem `float`;
-- criar as specs funcionais previstas para a Fase 0, incluindo autenticação e parser;
-- demonstrar a suíte com exemplos reais no CI remoto.
+- demonstrar `bin/ci` remoto com exemplos reais; um job separado de system specs só poderá existir quando tiver exemplos descobertos;
 
 Atualize esta seção sempre que uma entrega verificável, pendência, fase ou gate mudar. O estado detalhado e os critérios de saída ficam no [roadmap de implementação](./docs/05-quitando-roadmap-implementacao.md).
 
