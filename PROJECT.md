@@ -247,11 +247,26 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 ## 11. Milestone atual
 
 - **Fase atual:** Fase 0 — Fundação do projeto
-- **Status inicial:** não iniciada
+- **Status atual:** em andamento
 - **Próxima fase:** Fase 1 — `DebtSimplifier` em Ruby puro
 - **Gate da fase atual:** repositório executa setup, banco, RSpec, lint e CI local de forma reproduzível.
 
-Atualize esta seção quando uma fase começar ou terminar. O estado detalhado e os critérios de saída ficam no [roadmap de implementação](./docs/05-quitando-roadmap-implementacao.md).
+**Implementado e verificado até agora:**
+
+- aplicação Rails com Ruby e dependências fixadas;
+- PostgreSQL 18 padronizado no Docker local e no CI;
+- infraestrutura RSpec carregando o ambiente Rails;
+- `bin/ci` com lint, auditorias de dependências e segurança, eager load, RSpec e seeds;
+- configuração de desenvolvimento Docker, Active Storage e locale padrão `pt-BR`.
+
+**Pendente para concluir o gate:**
+
+- configurar FactoryBot e adicionar Devise e Pundit;
+- implementar o parser monetário sem `float`;
+- criar as specs funcionais previstas para a Fase 0, incluindo autenticação e parser;
+- demonstrar a suíte com exemplos reais no CI remoto.
+
+Atualize esta seção sempre que uma entrega verificável, pendência, fase ou gate mudar. O estado detalhado e os critérios de saída ficam no [roadmap de implementação](./docs/05-quitando-roadmap-implementacao.md).
 
 ---
 
@@ -284,7 +299,7 @@ Detalhes, specs e gates estão em [`docs/05-quitando-roadmap-implementacao.md`](
 ## 13. Stack planejada
 
 - Rails 8.x;
-- PostgreSQL;
+- PostgreSQL 18;
 - RSpec;
 - Devise;
 - Pundit;
@@ -294,7 +309,7 @@ Detalhes, specs e gates estão em [`docs/05-quitando-roadmap-implementacao.md`](
 - ViewComponent + Tailwind CSS;
 - Kamal.
 
-Versões exatas devem ser fixadas no início da implementação e registradas no lockfile.
+Versões exatas devem ser fixadas no início da implementação, na configuração executável e no lockfile quando aplicável.
 
 ---
 

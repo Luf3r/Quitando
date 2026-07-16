@@ -70,6 +70,7 @@ Os ADRs ficam em [`adr/`](./adr/) e são curtos, focados e históricos.
 10. [ADR-0010 — Uma moeda por grupo no MVP](./adr/0010-one-currency-per-group-in-mvp.md)
 11. [ADR-0011 — Pagamentos somente a partir do plano atual](./adr/0011-payments-must-follow-current-plan.md)
 12. [ADR-0012 — `User` como participante financeiro no MVP](./adr/0012-user-is-the-financial-participant-in-mvp.md)
+13. [ADR-0013 — Internacionalização como responsabilidade de apresentação](./adr/0013-internationalization-is-presentation-only.md)
 
 ---
 

@@ -6,7 +6,9 @@ O Quitando ajuda grupos que já confiam uns nos outros a encerrar despesas compa
 
 ## Status
 
-O projeto está em construção, na **Fase 0 — Fundação do projeto**. A visão e os contratos do MVP já estão documentados; as funcionalidades financeiras ainda serão implementadas por fases e não devem ser consideradas disponíveis neste momento.
+O projeto está em construção, na **Fase 0 — Fundação do projeto**. Já estão disponíveis o bootstrap Rails, a infraestrutura RSpec, o comando `bin/ci`, as checagens de lint e segurança, a configuração Docker com PostgreSQL 18, Active Storage e a base de localização em `pt-BR`.
+
+As specs funcionais, autenticação, autorização e regras financeiras ainda serão implementadas conforme os gates do roadmap. A fundação existente não deve ser apresentada como MVP funcional.
 
 ## Como funciona
 
@@ -51,21 +53,21 @@ Ficam fora do MVP, entre outros: participantes sem conta, links públicos, multi
 ## Stack
 
 - Ruby 4.0.6 e Rails 8.1
-- PostgreSQL
+- PostgreSQL 18
 - Hotwire (Turbo e Stimulus)
 - Solid Queue, Solid Cable e Solid Cache
 - Kamal para deploy
 
 ## Desenvolvimento local
 
-Pré-requisitos: Ruby na versão indicada em [`.ruby-version`](./.ruby-version), PostgreSQL em execução e dependências de compilação do `pg` instaladas.
+Pré-requisitos: Ruby na versão indicada em [`.ruby-version`](./.ruby-version), PostgreSQL 18 em execução e dependências de compilação do `pg` instaladas.
 
 ```bash
 bin/setup --skip-server
 bin/dev
 ```
 
-O banco de desenvolvimento padrão é `quitado_development`. A configuração está em [`config/database.yml`](./config/database.yml); ajuste as credenciais locais ou use `DATABASE_URL` quando necessário.
+O banco de desenvolvimento padrão é `quitando_development`. A configuração está em [`config/database.yml`](./config/database.yml); ajuste as credenciais locais ou use `DATABASE_URL` quando necessário.
 
 Para preparar o banco separadamente:
 
@@ -75,16 +77,20 @@ bin/rails db:prepare
 
 ## Desenvolvimento com Docker
 
-O [Dockerfile](./Dockerfile) existente é destinado à imagem de produção. Para o desenvolvimento local, use o `compose.yaml`, que sobe Rails e PostgreSQL em containers separados.
+O [Dockerfile](./Dockerfile) existente é destinado à imagem de produção. Para o desenvolvimento local, use o `compose.yaml`, que sobe Rails e PostgreSQL 18 em containers separados.
 
 ```bash
 cp .env.example .env
 docker compose up --build
 ```
 
-Depois, acesse `http://localhost:3000`. O comando prepara o banco antes de iniciar o servidor. Os dados do PostgreSQL e as gems ficam em volumes Docker; o código-fonte é montado no container para que alterações locais sejam refletidas sem nova imagem.
+Depois, acesse `http://localhost:3000`. O comando prepara o banco antes de iniciar o servidor. `DATABASE_URL` e `TEST_DATABASE_URL` mantêm desenvolvimento e teste isolados. Os dados do PostgreSQL 18 ficam em `/var/lib/postgresql/18/docker`, dentro do volume montado em `/var/lib/postgresql`; as gems usam outro volume Docker. O código-fonte é montado no container para que alterações locais sejam refletidas sem nova imagem.
 
-Não versione o arquivo `.env`: ele é ignorado pelo Git e pode conter apenas credenciais locais. Para produção, injete `RAILS_MASTER_KEY` e credenciais de banco pelo mecanismo de segredos do ambiente de deploy; não copie `config/master.key` para imagens ou arquivos de exemplo.
+Não reutilize diretamente um volume criado pelo PostgreSQL 17 com a imagem 18. Se os dados locais forem descartáveis, recrie o volume; se precisarem ser preservados, faça migração com `pg_upgrade` ou exportação e restauração antes de trocar a versão. Consulte a [orientação de `PGDATA` da imagem oficial](https://github.com/docker-library/docs/blob/master/postgres/README.md#pgdata).
+
+Não versione o arquivo `.env`: ele é ignorado pelo Git e pode conter apenas credenciais locais. Para produção, injete `RAILS_MASTER_KEY`, `QUITANDO_DATABASE_PASSWORD` e as demais credenciais pelo mecanismo de segredos do ambiente de deploy; não copie `config/master.key` para imagens ou arquivos de exemplo.
+
+O deploy com Kamal usa o GitHub Container Registry e exige `QUITANDO_DEPLOY_HOST`, `QUITANDO_DATABASE_HOST`, `KAMAL_REGISTRY_PASSWORD` e `QUITANDO_DATABASE_PASSWORD` no ambiente que executa o comando. `KAMAL_REGISTRY_USERNAME` é opcional e usa `Luf3r` por padrão.
 
 ## Verificação
 
@@ -94,7 +100,7 @@ O comando de integração contínua disponível hoje é:
 bin/ci
 ```
 
-Ele prepara o ambiente e executa lint, auditorias de dependências e segurança, testes Rails e seeds de teste. A estratégia de specs do produto prevê RSpec como parte da fundação do projeto; consulte o roadmap para o gate vigente.
+Ele prepara o ambiente e executa lint, auditorias de dependências e segurança, eager load com Zeitwerk, RSpec e seeds de teste. As specs funcionais previstas para a Fase 0 ainda serão adicionadas conforme o roadmap.
 
 ## Documentação
 

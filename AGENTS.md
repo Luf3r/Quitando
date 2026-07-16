@@ -20,6 +20,8 @@ Antes de implementar:
 - inspecione o código e as specs existentes;
 - identifique a fase e o gate do roadmap;
 - liste contratos afetados;
+- registre o contrato da tarefa definido na seção 7.1;
+- classifique o impacto documental conforme a seção 12.1;
 - não presuma que uma regra comum de outros apps se aplica aqui.
 - não invente uma regra financeira para preencher ambiguidade; registre a incerteza e não altere o comportamento normativo sem decisão explícita.
 - consulte o ADR relacionado antes de mudar uma decisão arquitetural aceita.
@@ -166,18 +168,68 @@ saldo_projetado = saldo_oficial
 
 ## 7. Fluxo obrigatório de desenvolvimento
 
+### 7.1 Contrato da tarefa
+
+Antes da primeira alteração de comportamento, registre de forma concisa no plano de trabalho ou no relato da tarefa:
+
+- fase atual e gate relacionado;
+- fontes normativas consultadas;
+- comportamento observável esperado;
+- invariantes que devem permanecer verdadeiras;
+- entradas válidas, inválidas, fronteiras e falhas esperadas;
+- itens explicitamente fora do escopo;
+- contratos afetados — domínio, banco, serviço, HTTP, autorização, UI, real-time ou deploy;
+- classificação do impacto documental.
+
+Esse registro orienta o trabalho; ele não cria uma nova fonte normativa. Se o resultado esperado não puder ser extraído da documentação, não o deduza da implementação existente nem de convenções de outros produtos.
+
+### 7.2 SDD — especificação antes da implementação
+
+Mantenha separadas as três camadas:
+
+1. **documentação normativa** define o contrato e o motivo;
+2. **spec executável** demonstra o comportamento observável;
+3. **implementação** é a menor solução que satisfaz ambos.
+
+A implementação existente não prevalece sobre uma regra normativa apenas por já estar em produção ou passar na suíte. Uma spec também não cria silenciosamente regra de produto: quando ela expõe lacuna ou conflito documental, resolva a fonte normativa antes de consolidar o comportamento.
+
+Construa em pequenas fatias verticais. Cada fatia deve entregar um contrato verificável de ponta a ponta no nível exigido pela fase, sem antecipar funcionalidades posteriores. Para o `DebtSimplifier`, por exemplo, implemente um contrato por vez — validação da soma, caso simples, múltiplos saldos, determinismo e propriedades — em vez de escrever todo o algoritmo antes das specs.
+
+### 7.3 TDD verificável — Red, Green, Refactor
+
+Para cada mudança de comportamento:
+
+1. **Red:** escreva a menor spec que expressa o contrato, execute-a e confirme que falha pelo motivo esperado, não por boot, configuração ou fixture inválida.
+2. **Green:** implemente apenas o necessário para essa spec passar e execute novamente a spec focada.
+3. **Refactor:** melhore a estrutura sem alterar o contrato e rode a spec focada e o conjunto relacionado.
+
+Regras contra falso verde:
+
+- correções de bug começam com uma reprodução automatizada que falha;
+- mudança de comportamento sem evidência de `Red` só é aceitável para scaffolding mecânico isolado, documentação pura ou refatoração comprovadamente sem mudança de comportamento;
+- uma spec já existente e falhando pode fornecer o `Red`, desde que a falha esperada seja confirmada;
+- não enfraqueça, remova ou torne genérica uma expectativa apenas para obter `Green`;
+- não mocke o comportamento que está sendo testado nem substitua o objeto principal por uma simulação;
+- não considere erro inesperado como `Red` válido;
+- uma execução com zero exemplos não satisfaz gate que exige comportamento coberto;
+- preserve no relato final os comandos e um resumo objetivo das evidências de `Red` e `Green`.
+
+### 7.4 Sequência de execução
+
 Para cada tarefa:
 
 1. Localize a fase do roadmap e seu gate.
-2. Extraia as regras e exemplos normativos relevantes.
-3. Escreva ou ajuste a spec que falha pelo motivo correto.
-4. Implemente a menor mudança que satisfaz o contrato.
-5. Refatore sem alterar comportamento.
-6. Rode specs focadas.
-7. Rode a suíte e verificações aplicáveis da fase.
-8. Revise constraints, autorização, concorrência e mensagens de erro.
-9. Atualize documentação quando uma decisão mudar.
-10. Relate arquivos alterados, testes executados e riscos restantes.
+2. Extraia regras e exemplos normativos e registre o contrato da tarefa.
+3. Classifique o impacto documental.
+4. Execute o ciclo `Red -> Green -> Refactor` por pequena fatia.
+5. Rode a spec focada.
+6. Rode o conjunto relacionado.
+7. Rode a suíte completa e as verificações aplicáveis da fase.
+8. Rode lint, checagens de segurança e `bin/ci`, quando disponíveis e viáveis.
+9. Valide build, configuração e execução Docker quando a infraestrutura for afetada.
+10. Revise constraints, autorização, transações, concorrência, idempotência, acessibilidade e mensagens de erro conforme o contrato afetado.
+11. Atualize todas as fontes documentais impactadas.
+12. Relate contrato, evidências, arquivos alterados, testes e riscos restantes.
 
 Não faça uma grande implementação antes das specs correspondentes, exceto scaffolding mecânico claramente isolado.
 
@@ -198,19 +250,25 @@ Contratos especialmente importantes:
 
 - conservação e sinais do ledger;
 - soma das shares;
+- valores zero, negativos, limites máximos e arredondamento residual;
 - imutabilidade da entrada do algoritmo;
 - determinismo;
+- estabilidade sob permutações quando a ordem não faz parte do contrato;
+- regra de desempate quando a ordem faz parte do contrato;
 - `m - 1` transferências no máximo;
 - projeção sem duplicar reports;
 - idempotência com payload igual e diferente;
 - reports concorrentes;
 - confirmação única;
+- atomicidade e rollback integral em falhas parciais;
 - correção concorrente com report;
 - broadcasts depois do commit;
 - acesso entre grupos;
 - reload HTTP equivalente ao estado atualizado por stream;
 - explicação de destinatário contraintuitivo;
 - distinção visual entre creator e pagador.
+
+Para regras financeiras, combine exemplos legíveis, casos de fronteira e testes de propriedades. Verifique conservação, soma zero, sinais, limites, determinismo, imutabilidade, arredondamento, atomicidade, concorrência e idempotência sempre que forem aplicáveis.
 
 Não persiga cobertura percentual isolada. Cubra invariantes, transições, falhas e fronteiras.
 
@@ -293,6 +351,49 @@ Nunca afirme que testes passaram sem executá-los.
 
 ## 12. Mudanças de escopo ou domínio
 
+### 12.1 Matriz de impacto documental
+
+Classifique cada tarefa antes de implementar:
+
+- **nenhum:** não altera contrato, decisão, fase ou capacidade descrita; registre a justificativa no relato final;
+- **clarificação:** melhora a explicação sem mudar comportamento; sincronize todos os documentos que poderiam continuar ambíguos;
+- **comportamento:** muda entrada, saída, validação, falha, autorização ou UI observável; atualize a fonte normativa, as specs e os exemplos afetados;
+- **arquitetura:** muda uma decisão técnica aceita; crie novo ADR que substitua o anterior quando necessário e sincronize domínio, decisões consolidadas e índice;
+- **escopo, fase ou gate:** muda o que será entregue ou a ordem de construção; atualize produto, roadmap e `PROJECT.md` de forma coerente.
+
+Regras de manutenção:
+
+- ADRs são históricos e append-only; nunca reescreva uma decisão aceita como se ela nunca tivesse existido;
+- `PROJECT.md` só avança a fase ou marca um gate como concluído depois que todos os critérios forem demonstrados;
+- o README descreve capacidades realmente disponíveis e não apresenta objetivo futuro como funcionalidade pronta;
+- documentação normativa, decisões consolidadas, roadmap, UX e exemplos devem usar os mesmos termos para o mesmo conceito;
+- se a classificação for **nenhum**, ainda assim informe no relato final que o impacto foi avaliado.
+
+Ao iniciar e concluir uma tarefa, reconcilie a documentação de estado com o repositório real:
+
+- mantenha a seção de milestone do `PROJECT.md` com fase atual, status, próxima fase, gate, entregas já verificadas e pendências reais;
+- atualize a fase para **em andamento** quando o trabalho nela começar, mas só a marque como concluída depois de demonstrar todo o gate;
+- mantenha a seção de status do README coerente com as funcionalidades realmente utilizáveis e com as limitações atuais;
+- substitua afirmações obsoletas como “a implementação ainda não existe” quando já houver fundação ou código, sem promover scaffolding a funcionalidade pronta;
+- registre uma capacidade como implementada somente depois que código, specs e verificações aplicáveis existirem;
+- quando a tarefa concluir ou alterar um item do roadmap, sincronize o estado compacto em `PROJECT.md` e qualquer relatório ou documento que ainda descreva a situação anterior;
+- não transforme o roadmap normativo em changelog: preserve seus contratos e gates e registre o progresso nos campos de estado destinados a isso.
+
+### 12.2 Critérios de parada
+
+Interrompa a implementação e registre o bloqueio quando:
+
+- fontes normativas aplicáveis entram em conflito;
+- uma regra financeira necessária não está definida;
+- seria preciso inventar fórmula, sinal, arredondamento, transição ou permissão;
+- a mudança contradiz ADR aceito sem uma nova decisão explícita;
+- a tarefa exige antecipar fase, item pós-MVP ou decisão adiada sem alteração aprovada de escopo;
+- o comportamento esperado não pode ser expresso de forma testável com as informações disponíveis.
+
+Não use o código atual para resolver silenciosamente esses casos. Continue apenas após a decisão ser documentada na fonte adequada.
+
+### 12.3 Alterações que exigem sincronização normativa
+
 Pare e atualize a documentação antes ou junto do código quando a mudança:
 
 - adiciona novo estado;
@@ -316,15 +417,21 @@ Não implemente decisões adiadas “por conveniência”.
 
 Uma tarefa só está pronta quando:
 
+- o contrato da tarefa foi registrado e atendido;
+- mudanças de comportamento possuem evidência de `Red`, `Green` e refatoração quando aplicável;
 - comportamento e falhas estão cobertos por specs adequadas;
+- nenhuma execução com zero exemplos foi usada para satisfazer um gate comportamental;
 - constraints de banco foram consideradas;
 - autorização foi aplicada no backend;
 - transação, versão e idempotência foram avaliadas quando relevantes;
 - não há uso de `float` em dinheiro;
 - o fluxo HTTP continua correto;
 - acessibilidade foi considerada quando há UI;
+- o impacto documental foi classificado;
 - documentação afetada foi atualizada;
-- testes executados e resultados são informados;
+- fase atual, capacidades implementadas e pendências documentadas correspondem ao estado real do repositório;
+- spec focada, conjunto relacionado e `bin/ci` foram executados quando disponíveis e viáveis;
+- testes não executados e respectivas razões são informados;
 - nenhum item fora do MVP foi introduzido implicitamente.
 
 ---
@@ -334,9 +441,12 @@ Uma tarefa só está pronta quando:
 Ao terminar, informe de forma objetiva:
 
 - o que mudou;
+- qual contrato da tarefa foi atendido e a qual fase/gate ele pertence;
 - quais arquivos foram alterados;
-- quais specs e comandos foram executados;
+- qual foi a evidência de `Red` e de `Green` para mudanças de comportamento;
+- quais specs e comandos foram executados, separando execução focada, relacionada, suíte e `bin/ci`;
 - resultado dos testes;
+- qual foi a classificação do impacto documental e quais fontes foram sincronizadas;
 - decisões ou suposições adotadas;
 - riscos, limitações ou trabalho restante.
 

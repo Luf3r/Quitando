@@ -3,7 +3,7 @@
 **Data da revisão:** 15 de julho de 2026
 **Escopo:** consistência cruzada entre produto, domínio, UX, casos de uso e decisões consolidadas.
 
-Este relatório não substitui testes automatizados nem valida a implementação, que ainda não existe. Ele registra o resultado de uma revisão independente da documentação e as limitações que permanecem deliberadamente fora do MVP.
+Este relatório não substitui testes automatizados nem valida a implementação. A fundação Rails já existe, mas as funcionalidades do MVP ainda serão construídas conforme o roadmap. O relatório registra o resultado de uma revisão independente da documentação e as limitações que permanecem deliberadamente fora do MVP.
 
 ## Navegação rápida
 
@@ -207,8 +207,8 @@ Ficou explícito que o MVP é destinado a grupos de confiança pré-existente. Q
 
 ### Estrutura e integridade documental
 
-- a árvore final contém 25 arquivos Markdown: quatro arquivos de orientação na raiz, oito documentos numerados e treze arquivos no diretório de ADRs, incluindo o README;
-- os 12 ADRs estão numerados sequencialmente, possuem status e data e aparecem no índice `00`;
+- a árvore documental normativa contém 25 arquivos Markdown: quatro arquivos de orientação na raiz, oito documentos numerados e treze ADRs; `README.md` e `LICENSE.md` ficam fora dessa contagem;
+- os 13 ADRs estão numerados sequencialmente, possuem status e data e aparecem no índice `00`;
 - links relativos e âncoras internas foram validados;
 - títulos de subseções longas foram numerados para produzir âncoras únicas e previsíveis;
 - blocos de código Markdown estão balanceados;

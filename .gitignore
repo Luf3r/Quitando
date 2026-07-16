@@ -31,5 +31,8 @@
 
 /public/assets
 
+# Ignore RSpec's persisted example statuses.
+/spec/examples.txt
+
 # Ignore key files for decrypting credentials and more.
 /config/*.key

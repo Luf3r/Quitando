@@ -360,7 +360,7 @@ O ledger oficial é a fonte de verdade para saldos confirmados. Pagamentos pende
 | Real-time | Action Cable + Turbo Streams |
 | Adapter de real-time | Solid Cable |
 | Jobs | Active Job + Solid Queue |
-| Banco | PostgreSQL |
+| Banco | PostgreSQL 18 |
 | Autenticação | Devise |
 | Autorização | Pundit |
 | UI | ViewComponent + Tailwind CSS |

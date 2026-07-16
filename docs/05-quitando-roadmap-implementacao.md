@@ -150,7 +150,7 @@ Criar uma base reproduzível para desenvolver e executar a suíte.
 
 ### 3.2 Implementar
 
-- aplicação Rails 8.x com PostgreSQL;
+- aplicação Rails 8.x com PostgreSQL 18;
 - RSpec;
 - FactoryBot ou factories equivalentes;
 - autenticação mínima com Devise;
@@ -163,7 +163,7 @@ Criar uma base reproduzível para desenvolver e executar a suíte.
 ### 3.3 Specs e verificações
 
 - boot da aplicação;
-- conexão de teste com PostgreSQL;
+- conexão de teste com PostgreSQL 18;
 - autenticação básica;
 - parser monetário para valores válidos e inválidos;
 - CI falha quando uma spec falha.

@@ -1,13 +1,13 @@
 # Name of your application. Used to uniquely configure containers.
-service: quitado
+service: quitando
 
 # Name of the container image (use your-user/app-name on external registries).
-image: quitado
+image: luf3r/quitando
 
 # Deploy to these servers.
 servers:
   web:
-    - 192.168.0.1
+    - <%= ENV.fetch("QUITANDO_DEPLOY_HOST") %>
   # job:
   #   hosts:
   #     - 192.168.0.1
@@ -27,20 +27,22 @@ servers:
 # Where you keep your container images.
 registry:
   # Alternatives: hub.docker.com / registry.digitalocean.com / ghcr.io / ...
-  server: localhost:5555
+  server: ghcr.io
 
   # Needed for authenticated registries.
-  # username: your-user
+  username: <%= ENV.fetch("KAMAL_REGISTRY_USERNAME", "Luf3r") %>
 
   # Always use an access token rather than real password when possible.
-  # password:
-  #   - KAMAL_REGISTRY_PASSWORD
+  password:
+    - KAMAL_REGISTRY_PASSWORD
 
 # Inject ENV variables into containers (secrets come from .kamal/secrets).
 env:
   secret:
     - RAILS_MASTER_KEY
+    - QUITANDO_DATABASE_PASSWORD
   clear:
+    DB_HOST: <%= ENV.fetch("QUITANDO_DATABASE_HOST") %>
     # Run the Solid Queue Supervisor inside the web server's Puma process to do jobs.
     # When you start using multiple servers, you should split out job processing to a dedicated machine.
     SOLID_QUEUE_IN_PUMA: true
@@ -52,7 +54,7 @@ env:
     # WEB_CONCURRENCY: 2
 
     # Match this to any external database server to configure Active Record correctly
-    # Use quitado-db for a db accessory server on same machine via local kamal docker network.
+    # Use quitando-db for a db accessory server on same machine via local kamal docker network.
     # DB_HOST: 192.168.0.2
 
     # Log everything from Rails
@@ -71,6 +73,10 @@ aliases:
 # hitting 404 on in-flight requests. Combines all files from new and old
 # version inside the asset_path.
 asset_path: /rails/public/assets
+
+# Persist Active Storage files between application releases.
+volumes:
+  - "quitando_storage:/rails/storage"
 
 # Configure the image builder.
 builder:
