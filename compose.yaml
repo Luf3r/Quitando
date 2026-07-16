@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-quitado}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-quitado}
+      POSTGRES_DB: ${POSTGRES_DB:-quitado_development}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-quitado} -d ${POSTGRES_DB:-quitado_development}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: >
+      bash -c "bundle install && bin/rails db:prepare && bin/rails server -b 0.0.0.0"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      BUNDLE_PATH: /usr/local/bundle
+      DATABASE_URL: "${DATABASE_URL:-postgres://quitado:quitado@db:5432/quitado_development}"
+      RAILS_ENV: ${RAILS_ENV:-development}
+      RAILS_MAX_THREADS: ${RAILS_MAX_THREADS:-5}
+    ports:
+      - "${RAILS_PORT:-3000}:3000"
+    volumes:
+      - .:/rails
+      - bundle:/usr/local/bundle
+
+volumes:
+  bundle:
+  postgres_data:

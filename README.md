@@ -73,6 +73,19 @@ Para preparar o banco separadamente:
 bin/rails db:prepare
 ```
 
+## Desenvolvimento com Docker
+
+O [Dockerfile](./Dockerfile) existente é destinado à imagem de produção. Para o desenvolvimento local, use o `compose.yaml`, que sobe Rails e PostgreSQL em containers separados.
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+Depois, acesse `http://localhost:3000`. O comando prepara o banco antes de iniciar o servidor. Os dados do PostgreSQL e as gems ficam em volumes Docker; o código-fonte é montado no container para que alterações locais sejam refletidas sem nova imagem.
+
+Não versione o arquivo `.env`: ele é ignorado pelo Git e pode conter apenas credenciais locais. Para produção, injete `RAILS_MASTER_KEY` e credenciais de banco pelo mecanismo de segredos do ambiente de deploy; não copie `config/master.key` para imagens ou arquivos de exemplo.
+
 ## Verificação
 
 O comando de integração contínua disponível hoje é:
