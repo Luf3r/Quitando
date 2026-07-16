@@ -246,10 +246,10 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 
 ## 11. Milestone atual
 
-- **Fase atual:** Fase 0 — Fundação do projeto
-- **Status atual:** em andamento
-- **Próxima fase:** Fase 1 — `DebtSimplifier` em Ruby puro
-- **Gate da fase atual:** repositório executa `bin/ci` localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação.
+- **Fase atual:** Fase 1 — `DebtSimplifier` em Ruby puro
+- **Status atual:** Fase 0 concluída; Fase 1 pronta para iniciar
+- **Próxima fase:** Fase 2 — Schema e entidades financeiras mínimas
+- **Gate concluído da Fase 0:** repositório executa `bin/ci` localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação.
 
 **Implementado e verificado até agora:**
 
@@ -262,10 +262,13 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 - parser monetário `pt-BR` para centavos sem `float`;
 - specs reais de boot, health check, autenticação, parser, factory e processamento Vips;
 - imagem de produção sem gems dos grupos `development` e `test`.
+- GitHub Actions `CI` executando `bin/ci` no commit `f18479c` com conclusão `success` em 16 de julho de 2026.
 
-**Pendente para concluir o gate:**
+**Pendente antes de avançar no produto:**
 
-- demonstrar `bin/ci` remoto com exemplos reais; um job separado de system specs só poderá existir quando tiver exemplos descobertos;
+- iniciar a Fase 1 com contrato e evidência Red/Green explícitos para o `DebtSimplifier`;
+- definir limite superior, overflow e mensagem do parser monetário quando ele alimentar colunas `bigint` nas fases de despesas e constraints;
+- avaliar uma spec de Active Storage variant real quando attachments entrarem no domínio, além da prova atual de processamento com `ruby-vips`.
 
 Atualize esta seção sempre que uma entrega verificável, pendência, fase ou gate mudar. O estado detalhado e os critérios de saída ficam no [roadmap de implementação](./docs/05-quitando-roadmap-implementacao.md).
 
