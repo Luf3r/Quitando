@@ -6,9 +6,11 @@ O Quitando ajuda grupos que já confiam uns nos outros a encerrar despesas compa
 
 ## Status
 
-O projeto está em construção. A **Fase 0 — Fundação do projeto** está concluída, com `bin/ci` verde localmente e no GitHub Actions; a próxima etapa é a **Fase 1 — `DebtSimplifier` em Ruby puro**. Já estão disponíveis o bootstrap Rails, RSpec com exemplos reais, `bin/ci`, checagens de lint e segurança, Docker com PostgreSQL 18, Active Storage/Vips, Devise, Pundit, FactoryBot, parser monetário em centavos e locale `pt-BR`.
+O projeto está em construção. A **Fase 0 — Fundação do projeto** está concluída, com `bin/ci` verde localmente e no GitHub Actions; a **Fase 1 — `DebtSimplifier` em Ruby puro** é a fase atual e ainda não possui implementação. Já estão disponíveis o bootstrap Rails, RSpec com exemplos reais, `bin/ci`, checagens de lint e segurança, Docker com PostgreSQL 18, Active Storage/Vips, Devise, Pundit, FactoryBot, parser monetário em centavos e locale `pt-BR`.
 
 Há uma jornada mínima de cadastro e os smoke tests da fundação, mas grupos, despesas, ledger, policies de domínio e demais regras financeiras ainda serão implementados conforme o roadmap. A fundação existente não deve ser apresentada como MVP funcional.
+
+O trabalho é acompanhado no [GitHub Project — Quitando](https://github.com/users/Luf3r/projects/2). O épico da Fase 1 é a issue [#6](https://github.com/Luf3r/Quitando/issues/6), e a próxima fatia executável é a [#20](https://github.com/Luf3r/Quitando/issues/20). Status e campos do quadro devem refletir apenas trabalho realmente demonstrado; contratos e gates continuam definidos pela documentação do repositório.
 
 ## Como funciona
 
@@ -128,6 +130,7 @@ No Docker, execute `docker compose exec web bin/ci` com o ambiente ativo ou `doc
 - [Roadmap de implementação e estratégia de specs](./docs/05-quitando-roadmap-implementacao.md)
 - [Decisões consolidadas](./docs/07-quitando-decisoes-consolidadas.md)
 - [Índice completo da documentação](./docs/00-index.md)
+- [Kanban de execução no GitHub Project](https://github.com/users/Luf3r/projects/2)
 - [Licença Apache 2.0](./LICENSE)
 
 Para contribuir ou alterar o código, leia primeiro as [instruções operacionais](./AGENTS.md). Elas definem a ordem de leitura, os invariantes financeiros e as verificações exigidas em cada fase.

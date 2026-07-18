@@ -4,6 +4,8 @@ Este arquivo é a porta de entrada compacta para desenvolvedores e agentes de c�
 
 Para regras operacionais de desenvolvimento, leia [`AGENTS.md`](./AGENTS.md). Para decisões detalhadas, siga a ordem indicada em [`docs/00-index.md`](./docs/00-index.md).
 
+A execução do roadmap é acompanhada no [GitHub Project — Quitando](https://github.com/users/Luf3r/projects/2). O quadro registra tarefas, dependências e progresso, mas não substitui as fontes normativas do repositório.
+
 ---
 
 ## 1. Missão do produto
@@ -247,8 +249,9 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 ## 11. Milestone atual
 
 - **Fase atual:** Fase 1 — `DebtSimplifier` em Ruby puro
-- **Status atual:** Fase 0 concluída; Fase 1 pronta para iniciar
+- **Status atual:** Fase 0 concluída; Fase 1 em andamento no planejamento executável, ainda sem implementação do `DebtSimplifier`
 - **Próxima fase:** Fase 2 — Schema e entidades financeiras mínimas
+- **Trabalho executável atual:** issue [#20 — API, saída e erros tipados](https://github.com/Luf3r/Quitando/issues/20) em `Ready`; épico [#6](https://github.com/Luf3r/Quitando/issues/6) em `In progress`
 - **Gate concluído da Fase 0:** repositório executa `bin/ci` localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação.
 
 **Implementado e verificado até agora:**
@@ -266,11 +269,12 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 
 **Pendente antes de avançar no produto:**
 
-- iniciar a Fase 1 com contrato e evidência Red/Green explícitos para o `DebtSimplifier`;
+- executar a issue #20 e avançar as subissues #21–#28 conforme suas dependências explícitas no GitHub Project;
+- implementar e provar todos os contratos da Fase 1 antes de concluir o épico #6 ou o gate;
 - definir limite superior, overflow e mensagem do parser monetário quando ele alimentar colunas `bigint` nas fases de despesas e constraints;
 - avaliar uma spec de Active Storage variant real quando attachments entrarem no domínio, além da prova atual de processamento com `ruby-vips`.
 
-Atualize esta seção sempre que uma entrega verificável, pendência, fase ou gate mudar. O estado detalhado e os critérios de saída ficam no [roadmap de implementação](./docs/05-quitando-roadmap-implementacao.md).
+Atualize esta seção e o [GitHub Project](https://github.com/users/Luf3r/projects/2) sempre que a tarefa ativa, uma entrega verificável, pendência, fase ou gate mudar. O estado detalhado e os critérios de saída ficam no [roadmap de implementação](./docs/05-quitando-roadmap-implementacao.md).
 
 ---
 

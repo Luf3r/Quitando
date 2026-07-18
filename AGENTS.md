@@ -14,11 +14,13 @@ Leia, nesta ordem:
 4. a fase atual em [`docs/05-quitando-roadmap-implementacao.md`](./docs/05-quitando-roadmap-implementacao.md);
 5. as seções relevantes de [`docs/03-quitando-domain-architecture.md`](./docs/03-quitando-domain-architecture.md);
 6. UX, produto ou casos de uso quando a tarefa afetar esses assuntos.
+7. a issue ou subissue correspondente no [GitHub Project — Quitando](https://github.com/users/Luf3r/projects/2), incluindo dependências, campos e status.
 
 Antes de implementar:
 
 - inspecione o código e as specs existentes;
 - identifique a fase e o gate do roadmap;
+- confirme que a tarefa executável está em `Ready`, não possui dependência aberta e tem contrato compatível com as fontes normativas;
 - liste contratos afetados;
 - registre o contrato da tarefa definido na seção 7.1;
 - classifique o impacto documental conforme a seção 12.1;
@@ -241,6 +243,14 @@ Regras adicionais para evitar fallback silencioso:
 
 Depois do refactor, execute e relate separadamente as specs do caminho principal, dos erros e dos fallbacks autorizados, além do conjunto relacionado e da suíte completa.
 
+Tarefas exclusivamente de verificação, testes de propriedade, isolamento arquitetural ou hardening não devem fabricar um `Red` quando o comportamento atual já satisfaz o contrato. Nesses casos:
+
+- registre um `Red` real somente se a nova verificação encontrar um defeito real;
+- caso contrário, demonstre a eficácia da spec com um controle negativo mínimo e deliberadamente defeituoso;
+- mantenha mutantes, fixtures de violação e funções incorretas somente em `spec/` ou crie-os temporariamente na própria spec;
+- não replique o algoritmo completo em uma segunda implementação de teste;
+- nunca inclua controles negativos ou mutantes no código de produção.
+
 ### 7.4 Sequência de execução
 
 Para cada tarefa:
@@ -248,17 +258,57 @@ Para cada tarefa:
 1. Localize a fase do roadmap e seu gate.
 2. Extraia regras e exemplos normativos e registre o contrato da tarefa.
 3. Classifique o impacto documental.
-4. Execute o ciclo `Red -> Green -> Refactor` por pequena fatia.
-5. Rode a spec focada.
-6. Rode o conjunto relacionado.
-7. Rode a suíte completa e as verificações aplicáveis da fase.
-8. Rode lint, checagens de segurança e `bin/ci`, quando disponíveis e viáveis.
-9. Valide build, configuração e execução Docker quando a infraestrutura for afetada.
-10. Revise constraints, autorização, transações, concorrência, idempotência, acessibilidade e mensagens de erro conforme o contrato afetado.
-11. Atualize todas as fontes documentais impactadas.
-12. Relate contrato, evidências, arquivos alterados, testes e riscos restantes.
+4. Confirme `Ready`, dependências e contrato no GitHub Project; mova a tarefa para `In progress` ao iniciar a execução.
+5. Execute o ciclo `Red -> Green -> Refactor` por pequena fatia.
+6. Rode a spec focada.
+7. Rode o conjunto relacionado.
+8. Rode a suíte completa e as verificações aplicáveis da fase.
+9. Rode lint, checagens de segurança e `bin/ci`, quando disponíveis e viáveis.
+10. Valide build, configuração e execução Docker quando a infraestrutura for afetada.
+11. Revise constraints, autorização, transações, concorrência, idempotência, acessibilidade e mensagens de erro conforme o contrato afetado.
+12. Atualize todas as fontes documentais impactadas.
+13. Atualize a subissue, a issue-pai e os campos do GitHub Project conforme a seção 7.5.
+14. Relate contrato, evidências, arquivos alterados, testes e riscos restantes.
 
 Não faça uma grande implementação antes das specs correspondentes, exceto scaffolding mecânico claramente isolado.
+
+### 7.5 GitHub Project e Kanban
+
+O [GitHub Project — Quitando](https://github.com/users/Luf3r/projects/2) é o quadro operacional obrigatório para execução do roadmap. Ele organiza o trabalho, mas não cria regras de domínio, produto, arquitetura ou gate e nunca prevalece sobre as fontes normativas da seção 2.
+
+Estrutura vigente:
+
+- issues de fase permanecem como épicos;
+- somente a fase atual deve ser decomposta em pequenas subissues executáveis;
+- cada subissue deve ter contrato principal, dependências explícitas, critérios verificáveis e definição objetiva de pronto;
+- fases futuras permanecem no `Backlog` até a preparação da fase correspondente;
+- o campo `Dependency` e as relações nativas de bloqueio devem permanecer coerentes entre si.
+
+Use os status assim:
+
+- `Backlog`: trabalho futuro ainda não preparado;
+- `Ready`: fontes identificadas, contrato claro, dependências concluídas, tamanho adequado e evidência planejada;
+- `In progress`: tarefa em execução; mantenha no máximo uma ou duas tarefas simultâneas;
+- `Review`: implementação concluída, mas diff, specs, caminho principal, `bin/ci` ou documentação ainda aguardam confirmação;
+- `Blocked`: falta decisão normativa, dependência, integração real ou evidência verificável válida;
+- `Done`: contrato principal demonstrado, verificações concluídas, documentação reconciliada e issue-pai atualizada.
+
+Ao iniciar uma tarefa:
+
+- confirme `Phase`, `Priority`, `Size`, `Type`, `Dependency`, milestone, labels e issue-pai;
+- mova apenas a subissue escolhida de `Ready` para `In progress`;
+- mova a próxima tarefa para `Ready` somente depois que todas as dependências dela estiverem concluídas;
+- não mova o épico para `Done` antes de demonstrar o gate completo da fase.
+
+Ao concluir, bloquear ou alterar o escopo:
+
+- atualize o status e os campos da subissue;
+- registre na issue as evidências Red/Green ou o controle negativo aplicável, comandos executados, resultado e riscos;
+- atualize checklist e progresso da issue-pai;
+- reconcilie fase, capacidade e pendências em `PROJECT.md` e no README quando o estado público mudar;
+- mantenha o Project consistente com o repositório real, sem promover implementação parcial ou fallback a entrega concluída.
+
+Se o GitHub Project estiver inacessível ou a credencial não permitir a atualização, não simule sucesso: relate a divergência e o item que permanece pendente de sincronização.
 
 ---
 
@@ -399,6 +449,7 @@ Regras de manutenção:
 Ao iniciar e concluir uma tarefa, reconcilie a documentação de estado com o repositório real:
 
 - mantenha a seção de milestone do `PROJECT.md` com fase atual, status, próxima fase, gate, entregas já verificadas e pendências reais;
+- mantenha o GitHub Project com a mesma fase, tarefa ativa, dependências, bloqueios e conclusão demonstrada;
 - atualize a fase para **em andamento** quando o trabalho nela começar, mas só a marque como concluída depois de demonstrar todo o gate;
 - mantenha a seção de status do README coerente com as funcionalidades realmente utilizáveis e com as limitações atuais;
 - substitua afirmações obsoletas como “a implementação ainda não existe” quando já houver fundação ou código, sem promover scaffolding a funcionalidade pronta;
@@ -460,6 +511,7 @@ Uma tarefa só está pronta quando:
 - o impacto documental foi classificado;
 - documentação afetada foi atualizada;
 - fase atual, capacidades implementadas e pendências documentadas correspondem ao estado real do repositório;
+- subissue, issue-pai e campos do GitHub Project correspondem ao trabalho realmente demonstrado;
 - spec focada, conjunto relacionado e `bin/ci` foram executados quando disponíveis e viáveis;
 - testes não executados e respectivas razões são informados;
 - nenhum item fora do MVP foi introduzido implicitamente.
@@ -490,6 +542,7 @@ Ao terminar, informe de forma objetiva:
 - qual foi a evidência de `Red` e de `Green` para mudanças de comportamento;
 - quais specs e comandos foram executados, separando execução focada, relacionada, suíte e `bin/ci`;
 - resultado dos testes;
+- quais issues e campos do GitHub Project foram atualizados e para quais status;
 - qual foi a classificação do impacto documental e quais fontes foram sincronizadas;
 - decisões ou suposições adotadas;
 - riscos, limitações ou trabalho restante.

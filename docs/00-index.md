@@ -85,6 +85,8 @@ Na raiz do repositório:
 
 `CLAUDE.md` e `CODEX.md` não devem duplicar regras. Mudanças compartilhadas pertencem a `AGENTS.md`; decisões de produto e domínio permanecem nos documentos normativos.
 
+O [GitHub Project — Quitando](https://github.com/users/Luf3r/projects/2) acompanha execução, dependências e progresso. Ele é uma ferramenta operacional subordinada às fontes normativas: uma issue, campo ou status do quadro não altera fórmula, escopo, arquitetura ou gate por si só. As regras obrigatórias para mantê-lo atualizado estão na seção 7.5 de [`../AGENTS.md`](../AGENTS.md).
+
 ---
 
 ## 6. Manutenção
@@ -92,4 +94,5 @@ Na raiz do repositório:
 - Preserve a numeração `00` a `07`; novos documentos temáticos usam o próximo número apenas quando houver uma responsabilidade realmente nova.
 - ADRs são append-only: uma mudança material cria um novo ADR e marca o anterior como superseded.
 - Atualize links, `PROJECT.md`, `AGENTS.md` e este índice ao mover ou renomear arquivos.
+- Reconcilie o GitHub Project com `PROJECT.md` e README ao iniciar, concluir, bloquear ou replanejar trabalho.
 - Evite versões “short” paralelas dos documentos; use os resumos da raiz como camada compacta.
