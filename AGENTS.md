@@ -528,7 +528,7 @@ Erros que permanecem visíveis:
 Evidência de que o fallback não é o caminho padrão:
 ```
 
-Além disso, o comportamento principal deve estar implementado e provado por uma spec que falhou antes; cada fallback deve ser autorizado, ter condição limitada e spec própria; erros inesperados devem permanecer visíveis; a suíte verde não pode resultar de expectativas enfraquecidas, mocks, `no-ops`, valores padrão ou execuções com zero exemplos. Não marque tarefa, fase ou gate como concluído enquanto só o fallback funcionar.
+Além disso, para mudanças que introduzem comportamento, o comportamento principal deve estar implementado e provado por uma spec que falhou antes pelo motivo esperado. Para tarefas exclusivamente de verificação, testes de propriedade, isolamento arquitetural ou hardening, a eficácia da spec pode ser demonstrada por um `Red` real ou por controle negativo conforme a seção 7.3, sem fabricar falha no código correto. Cada fallback deve ser autorizado, ter condição limitada e spec própria; erros inesperados devem permanecer visíveis; a suíte verde não pode resultar de expectativas enfraquecidas, mocks, `no-ops`, valores padrão ou execuções com zero exemplos. Não marque tarefa, fase ou gate como concluído enquanto só o fallback funcionar.
 
 ---
 
