@@ -414,6 +414,6 @@ Expected: `users.id uuid`, default `uuidv7()`, versão `7`.
 
 Mover pré-requisito e `#20–#28` para `Done`, fechar as issues como concluídas, atualizar checklist e evidências de `#6`, mover `#6` para `Done`, `#7` para `Ready`, e registrar “Fase 1 concluída; Fase 2 pronta e não iniciada” em `PROJECT.md` e README sem apresentar o MVP como funcional.
 
-- [ ] **Step 6: Preparar fechamento da branch**
+- [x] **Step 6: Preparar fechamento da branch**
 
 Executar `superpowers:verification-before-completion` e depois `superpowers:finishing-a-development-branch`, preservando a worktree até a escolha explícita do usuário.
