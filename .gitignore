@@ -34,6 +34,9 @@
 # Keep local feature worktrees out of the repository checkout.
 /.worktrees/
 
+# Keep agent execution plans local to the workspace.
+/docs/superpowers/
+
 # Ignore RSpec's persisted example statuses.
 /spec/examples.txt
 
