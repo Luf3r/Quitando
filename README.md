@@ -6,11 +6,11 @@ O Quitando ajuda grupos que já confiam uns nos outros a encerrar despesas compa
 
 ## Status
 
-O projeto está em construção. A **Fase 0 — Fundação do projeto** está concluída, com `bin/ci` verde localmente e no GitHub Actions; a **Fase 1 — `DebtSimplifier` em Ruby puro** é a fase atual e ainda não possui implementação. Já estão disponíveis o bootstrap Rails, RSpec com exemplos reais, `bin/ci`, checagens de lint e segurança, Docker com PostgreSQL 18, Active Storage/Vips, Devise, Pundit, FactoryBot, parser monetário em centavos e locale `pt-BR`.
+O projeto está em construção. As **Fases 0 e 1** estão concluídas: o `DebtSimplifier` Ruby puro valida UUIDs v7, simplifica saldos de forma determinística e é coberto por exemplos, propriedades e isolamento do framework. A **Fase 2 — Schema e entidades financeiras mínimas** está pronta e não iniciada. Também estão disponíveis o bootstrap Rails, RSpec com exemplos reais, `bin/ci`, checagens de lint e segurança, Docker com PostgreSQL 18, Active Storage/Vips, Devise, Pundit, FactoryBot, parser monetário em centavos e locale `pt-BR`.
 
 Há uma jornada mínima de cadastro e os smoke tests da fundação, mas grupos, despesas, ledger, policies de domínio e demais regras financeiras ainda serão implementados conforme o roadmap. A fundação existente não deve ser apresentada como MVP funcional.
 
-O trabalho é acompanhado no [GitHub Project — Quitando](https://github.com/users/Luf3r/projects/2). O épico da Fase 1 é a issue [#6](https://github.com/Luf3r/Quitando/issues/6), e a próxima fatia executável é a [#20](https://github.com/Luf3r/Quitando/issues/20). Status e campos do quadro devem refletir apenas trabalho realmente demonstrado; contratos e gates continuam definidos pela documentação do repositório.
+O trabalho é acompanhado no [GitHub Project — Quitando](https://github.com/users/Luf3r/projects/2). O épico da Fase 1 é a issue [#6](https://github.com/Luf3r/Quitando/issues/6), concluída com o pré-requisito UUID v7 [#30](https://github.com/Luf3r/Quitando/issues/30); a próxima fase executável é a [#7](https://github.com/Luf3r/Quitando/issues/7). Status e campos do quadro devem refletir apenas trabalho realmente demonstrado; contratos e gates continuam definidos pela documentação do repositório.
 
 ## Como funciona
 
@@ -89,6 +89,15 @@ docker compose run --rm web bin/ci
 `DATABASE_URL` aponta para desenvolvimento e `TEST_DATABASE_URL` para teste. A configuração de teste prioriza explicitamente `TEST_DATABASE_URL`, inclusive em comandos Rails executados com `RAILS_ENV=test`; não substitua essa variável por uma URL de desenvolvimento. Os dados do PostgreSQL 18 ficam em `/var/lib/postgresql/18/docker`, dentro do volume montado em `/var/lib/postgresql`; as gems usam outro volume Docker. `docker compose down` preserva os volumes; use `down -v` somente quando os dados locais puderem ser descartados.
 
 Não reutilize diretamente um volume criado pelo PostgreSQL 17 com a imagem 18. Se os dados locais forem descartáveis, recrie o volume; se precisarem ser preservados, faça migração com `pg_upgrade` ou exportação e restauração antes de trocar a versão. Consulte a [orientação de `PGDATA` da imagem oficial](https://github.com/docker-library/docs/blob/master/postgres/README.md#pgdata).
+
+O projeto também alterou a PK inicial de `users` para UUID v7. Bancos locais existentes desta fundação são descartáveis e devem ser recriados uma vez antes de usar essa versão:
+
+```bash
+docker compose run --rm web bin/rails db:drop db:create db:migrate
+docker compose run --rm -e RAILS_ENV=test web bin/rails db:drop db:create db:migrate
+```
+
+Não execute esses comandos em dados a preservar: esta alteração não oferece conversão de `bigint` para UUID.
 
 Não versione o arquivo `.env`: ele é ignorado pelo Git e pode conter apenas credenciais locais.
 

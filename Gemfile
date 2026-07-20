@@ -69,6 +69,7 @@ group :test do
   # Ruby 4 removed CGI from the standard library; Capybara still requires it.
   gem "cgi"
   gem "factory_bot_rails"
+  gem "pbt", "0.7.0"
   gem "rspec-rails"
 
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
