@@ -206,6 +206,8 @@ Entrada:
 { user_id => balance_cents }
 ```
 
+O contrato público é `Hash<String, Integer>`: `user_id` é uma UUID v7 canônica, minúscula e com variante RFC válida; `balance_cents` é inteiro. A validação ocorre na ordem estrutura, identificadores, saldos e soma zero.
+
 Saída:
 
 ```ruby
@@ -233,7 +235,7 @@ Casos obrigatórios:
 - valor total é conservado;
 - entrada não é modificada;
 - a mesma entrada gera a mesma saída;
-- empates seguem a regra estável;
+- empates seguem UUID crescente em ordem lexicográfica;
 - quantidade de transferências é no máximo `m - 1`.
 
 ### 4.4 Testes de propriedade
@@ -274,6 +276,8 @@ Criar o modelo persistente necessário ao ledger.
 - `from_user_id <> to_user_id`;
 - `idempotency_key` única;
 - foreign keys obrigatórias;
+- chaves primárias e foreign keys em `uuid`;
+- default explícito `uuidv7()` em toda chave primária, sem depender do default UUID v4 do adapter Rails;
 - dinheiro em `bigint`;
 - estados válidos no banco quando viável.
 

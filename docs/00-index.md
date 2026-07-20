@@ -71,6 +71,7 @@ Os ADRs ficam em [`adr/`](./adr/) e são curtos, focados e históricos.
 11. [ADR-0011 — Pagamentos somente a partir do plano atual](./adr/0011-payments-must-follow-current-plan.md)
 12. [ADR-0012 — `User` como participante financeiro no MVP](./adr/0012-user-is-the-financial-participant-in-mvp.md)
 13. [ADR-0013 — Internacionalização como responsabilidade de apresentação](./adr/0013-internationalization-is-presentation-only.md)
+14. [ADR-0014 — Identificadores UUID v7 gerados pelo PostgreSQL](./adr/0014-postgresql-uuid-v7-identifiers.md)
 
 ---
 

@@ -70,7 +70,9 @@ O destinatário do plano pode ser diferente da pessoa associada à dívida perce
 O modo padrão usa uma simplificação gulosa determinística:
 
 - recebe saldos cuja soma é zero;
+- recebe participantes identificados por strings UUID v7 canônicas;
 - casa o maior devedor com o maior credor;
+- desempata magnitudes iguais por UUID crescente em ordem lexicográfica;
 - gera no máximo `m - 1` transferências, com `m` igual à quantidade de saldos não zero;
 - com filas de prioridade, opera em `O(m log m)`;
 - não promete o menor número matematicamente possível em todos os casos.
@@ -248,10 +250,10 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 
 ## 11. Milestone atual
 
-- **Fase atual:** Fase 1 — `DebtSimplifier` em Ruby puro
-- **Status atual:** Fase 0 concluída; Fase 1 em andamento no planejamento executável, ainda sem implementação do `DebtSimplifier`
+- **Fase atual:** Fase 2 — Schema e entidades financeiras mínimas
+- **Status atual:** Fases 0 e 1 concluídas; a Fase 2 está pronta e não iniciada
 - **Próxima fase:** Fase 2 — Schema e entidades financeiras mínimas
-- **Trabalho executável atual:** issue [#20 — API, saída e erros tipados](https://github.com/Luf3r/Quitando/issues/20) em `Ready`; épico [#6](https://github.com/Luf3r/Quitando/issues/6) em `In progress`
+- **Trabalho executável atual:** issue [#7 — Schema e entidades financeiras mínimas](https://github.com/Luf3r/Quitando/issues/7) em `Ready`; pré-requisito [#30 — UUID v7](https://github.com/Luf3r/Quitando/issues/30) e épico [#6](https://github.com/Luf3r/Quitando/issues/6) concluídos
 - **Gate concluído da Fase 0:** repositório executa `bin/ci` localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação.
 
 **Implementado e verificado até agora:**
@@ -262,6 +264,9 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 - `bin/ci` com lint, auditorias de dependências e segurança, eager load, RSpec e seeds;
 - configuração de desenvolvimento Docker, Active Storage e locale padrão `pt-BR`.
 - FactoryBot integrado ao RSpec, factory inicial de `User`, Devise e Pundit configurados;
+- PK inicial de `User` em UUID v7 gerado pelo PostgreSQL 18, com generators Rails preparados para PKs UUID;
+- `DebtSimplifier` Ruby puro, determinístico e guloso, com UUID v7 canônica, erros tipados e transferências em `O(m log m)`;
+- exemplos, property tests com seed/shrinking e subprocesso de isolamento cobrindo o gate da Fase 1;
 - parser monetário `pt-BR` para centavos sem `float`;
 - specs reais de boot, health check, autenticação, parser, factory e processamento Vips;
 - imagem de produção sem gems dos grupos `development` e `test`.
@@ -269,8 +274,7 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 
 **Pendente antes de avançar no produto:**
 
-- executar a issue #20 e avançar as subissues #21–#28 conforme suas dependências explícitas no GitHub Project;
-- implementar e provar todos os contratos da Fase 1 antes de concluir o épico #6 ou o gate;
+- iniciar a Fase 2 pela issue #7 e provar as constraints do schema diretamente no banco;
 - definir limite superior, overflow e mensagem do parser monetário quando ele alimentar colunas `bigint` nas fases de despesas e constraints;
 - avaliar uma spec de Active Storage variant real quando attachments entrarem no domínio, além da prova atual de processamento com `ruby-vips`.
 

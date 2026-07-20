@@ -55,6 +55,13 @@ Este arquivo resume decisões que precisam permanecer consistentes entre produto
 - Broadcasts ocorrem depois do commit e nunca substituem a leitura por HTTP.
 - Edições históricas não apagam fatos silenciosamente; correções preservam ator, motivo e relação com o registro substituído.
 
+### Arquitetura
+
+- Chaves primárias e foreign keys usam o tipo PostgreSQL `uuid`.
+- PostgreSQL 18 gera todas as PKs com default explícito `uuidv7()`; o default UUID v4 implícito do adapter Rails não satisfaz o contrato.
+- Ruby representa identificadores persistentes como strings UUID v7 canônicas e minúsculas.
+- Empates do `DebtSimplifier` usam ordem lexicográfica crescente dos UUIDs.
+
 ---
 
 ## 2. Decisões conscientemente adiadas

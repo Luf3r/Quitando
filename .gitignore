@@ -31,6 +31,9 @@
 
 /public/assets
 
+# Keep local feature worktrees out of the repository checkout.
+/.worktrees/
+
 # Ignore RSpec's persisted example statuses.
 /spec/examples.txt
 

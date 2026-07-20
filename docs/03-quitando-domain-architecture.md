@@ -257,12 +257,13 @@ No MVP:
 ### 5.5 Simplificador
 
 - entrada possui soma zero;
+- identificadores são strings UUID v7 canônicas, minúsculas e com variante RFC válida;
 - saldos zero são ignorados;
 - cada transferência tem valor positivo;
 - origem e destino são diferentes;
 - aplicar todas as transferências zera todos os saldos;
 - entrada não é modificada;
-- empates seguem ordem determinística;
+- empates de mesma magnitude seguem UUID crescente em ordem lexicográfica;
 - quantidade de transferências não excede `m - 1`.
 
 ### 5.6 Despesa válida
@@ -276,6 +277,8 @@ No MVP:
 ---
 
 ## 6. Entidades e campos sugeridos
+
+Todas as chaves primárias das entidades usam o tipo PostgreSQL `uuid` com default explícito `uuidv7()`. Todas as foreign keys usam `uuid`. Ruby representa esses identificadores como strings canônicas minúsculas. A configuração global dos generators Rails usa `primary_key_type: :uuid`, mas cada migration continua responsável por declarar `default: -> { "uuidv7()" }`; o default UUID v4 implícito não satisfaz o contrato.
 
 ### 6.1 `groups`
 
@@ -508,6 +511,14 @@ Entrada:
 { user_id => balance_cents }
 ```
 
+Tipos públicos:
+
+```ruby
+Hash<String, Integer>
+```
+
+Cada `user_id` é UUID v7 canônica, minúscula e com variante RFC válida. A validação ocorre na ordem: estrutura, IDs, saldos e soma zero.
+
 Saída:
 
 ```ruby
@@ -520,6 +531,7 @@ Responsabilidades:
 
 - validar soma zero;
 - produzir saída determinística;
+- desempatar saldos de mesma magnitude pela ordem lexicográfica crescente do UUID;
 - não consultar banco;
 - não persistir pagamentos;
 - opcionalmente produzir trace para auditoria.

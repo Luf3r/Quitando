@@ -148,7 +148,7 @@ O resultado:
 - é rápido e previsível;
 - não garante o mínimo absoluto em todos os casos.
 
-Empates são resolvidos de forma determinística pelo `user_id` recebido ou por uma ordem estável fornecida explicitamente ao serviço, para que a mesma entrada produza a mesma saída.
+Os `user_id` recebidos são strings UUID v7 canônicas, minúsculas e com variante RFC válida. Empates são resolvidos pela ordem lexicográfica crescente desses identificadores, para que a mesma entrada lógica produza a mesma saída independentemente da ordem do mapa.
 
 ### 4.2 Modo exato — fase posterior
 
@@ -326,6 +326,8 @@ class DebtSimplifier
   end
 end
 ```
+
+O mapa de entrada usa `Hash<String, Integer>`: as chaves são UUIDs v7 canônicas e os valores são centavos. A validação ocorre na ordem estrutura, identificadores, saldos e soma zero.
 
 O plano acionável usa saldos projetados, evitando sugerir novamente um pagamento que já está aguardando confirmação.
 
