@@ -90,6 +90,15 @@ docker compose run --rm web bin/ci
 
 Não reutilize diretamente um volume criado pelo PostgreSQL 17 com a imagem 18. Se os dados locais forem descartáveis, recrie o volume; se precisarem ser preservados, faça migração com `pg_upgrade` ou exportação e restauração antes de trocar a versão. Consulte a [orientação de `PGDATA` da imagem oficial](https://github.com/docker-library/docs/blob/master/postgres/README.md#pgdata).
 
+O projeto também alterou a PK inicial de `users` para UUID v7. Bancos locais existentes desta fundação são descartáveis e devem ser recriados uma vez antes de usar essa versão:
+
+```bash
+docker compose run --rm web bin/rails db:drop db:create db:migrate
+docker compose run --rm -e RAILS_ENV=test web bin/rails db:drop db:create db:migrate
+```
+
+Não execute esses comandos em dados a preservar: esta alteração não oferece conversão de `bigint` para UUID.
+
 Não versione o arquivo `.env`: ele é ignorado pelo Git e pode conter apenas credenciais locais.
 
 ## Desenvolvimento nativo

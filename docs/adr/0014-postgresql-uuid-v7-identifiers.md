@@ -38,6 +38,7 @@ com caracteres hexadecimais minúsculos.
 - o `DebtSimplifier` pode validar e ordenar IDs sem carregar Rails ou ActiveRecord;
 - migrations e FKs da Fase 2 precisam preservar o tipo `uuid`;
 - a ordenação cronológica aproximada do UUID v7 não transforma o identificador em fonte normativa de tempo; timestamps continuam explícitos.
+- como a migration inicial foi alterada, bancos locais existentes e descartáveis devem ser recriados com `db:drop db:create db:migrate` antes de executar a aplicação ou as specs; não há conversão de dados `bigint` para UUID.
 
 ## Alternativas consideradas
 

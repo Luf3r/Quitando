@@ -73,6 +73,8 @@ class DebtSimplifier
   class UnbalancedBalances < ArgumentError; end
 
   def initialize(balances)
+    raise InvalidBalances unless balances.is_a?(Hash)
+
     @balances = balances.dup
   end
 

@@ -68,6 +68,17 @@ RSpec.describe DebtSimplifier do
       end
     end
 
+    it "rejeita uma estrutura não duplicável sem vazar seu erro incidental" do
+      invalid_balances = Class.new do
+        def dup
+          raise "não deve duplicar uma estrutura inválida"
+        end
+      end.new
+
+      expect { described_class.new(invalid_balances).call }
+        .to raise_error(described_class::InvalidBalances)
+    end
+
     it "rejeita identificadores antes de validar seus saldos" do
       invalid_user_ids = [
         1,
