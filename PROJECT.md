@@ -251,10 +251,10 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 ## 11. Milestone atual
 
 - **Fase atual:** Fase 2 — Schema e entidades financeiras mínimas
-- **Status atual:** implementação e hardening em revisão no [PR #38](https://github.com/Luf3r/Quitando/pull/38); a evidência adicional está verificada localmente, mas ainda requer checks remotos e integração
+- **Status atual:** implementação e hardening em revisão no [PR #38](https://github.com/Luf3r/Quitando/pull/38); evidências locais, revisão global e checks remotos `ci`/`production-image` aprovados, com integração ainda pendente de confirmação explícita
 - **Próxima fase após a integração:** Fase 3 — Criação de despesas e arredondamento
 - **Trabalho executável atual:** revisão e integração da [Fase 2 — issue #7](https://github.com/Luf3r/Quitando/issues/7); a [Fase 3 — issue #8](https://github.com/Luf3r/Quitando/issues/8) permanece no Backlog
-- **Gate integrado da Fase 0:** `bin/ci` executa localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação. O hardening adicional da branch do PR #38 ainda precisa dos checks remotos atuais.
+- **Gate integrado da Fase 0:** `bin/ci` executa localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação. O hardening adicional da PR #38 também foi aprovado nos checks remotos atuais.
 
 **Integrado e verificado até agora:**
 
@@ -271,7 +271,7 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 - specs reais de boot, health check, autenticação, parser, factory e processamento Vips;
 - imagem de produção sem gems dos grupos `development` e `test`.
 
-**Disponível e verificado localmente na branch do PR #38, ainda sem integração:**
+**Disponível e verificado local e remotamente na branch do PR #38, ainda sem integração:**
 
 - `Group`, `Membership`, `Expense`, `ExpenseShare` e `Payment` persistidos com PK UUID v7, FKs UUID, dinheiro em `bigint`, índices e checks estruturais;
 - specs estruturais de models, enums e factories, além da matriz de catálogo, inserções válidas e violações diretas contra PostgreSQL real;
@@ -280,8 +280,8 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 
 **Pendente antes de avançar no produto:**
 
-- publicar o hardening local no PR #38, executar os jobs remotos `ci` e `production-image`, revisar a evidência completa e integrar somente após confirmação explícita;
-- reconciliar issues e campos do GitHub Project após a verificação completa; somente então preparar a Fase 3 para `Ready`;
+- integrar a PR #38 somente após confirmação explícita; até lá, #5, #7 e #32–#37 permanecem em `Review`;
+- após a integração, fechar as issues concluídas, atualizar o checklist do épico e somente então preparar a Fase 3 (#8) para `Ready`;
 - definir limite superior, overflow e mensagem do parser monetário quando ele alimentar colunas `bigint` nas fases de despesas e constraints;
 - avaliar uma spec de Active Storage variant real quando attachments entrarem no domínio, além da prova atual de processamento com `ruby-vips`.
 

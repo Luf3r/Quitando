@@ -135,7 +135,8 @@ Na branch do PR #38, `bin/ci` também executa o verificador de migrations da Fas
 - [specs de models](./spec/models) para associações e seus metadados, enums e persistência das factories;
 - [`spec/factories/factory_lint_spec.rb`](./spec/factories/factory_lint_spec.rb), que valida todas as factories e traits;
 - [`spec/database/phase_2_schema_contract_spec.rb`](./spec/database/phase_2_schema_contract_spec.rb), que inspeciona o catálogo e provoca violações diretamente no PostgreSQL real;
-- [`spec/infrastructure/phase_2_migration_verifier_spec.rb`](./spec/infrastructure/phase_2_migration_verifier_spec.rb), que cobre a segurança das entradas do verificador operacional.
+- [`spec/infrastructure/phase_2_migration_verifier_spec.rb`](./spec/infrastructure/phase_2_migration_verifier_spec.rb), que cobre entradas e ownership do banco temporário;
+- [`spec/infrastructure/production_image_verifier_spec.rb`](./spec/infrastructure/production_image_verifier_spec.rb), que prova o ownership e o cleanup da tag em caminhos de falha.
 
 O round-trip das migrations pode ser executado isoladamente com [`bin/verify-phase-2-migrations`](./bin/verify-phase-2-migrations):
 
@@ -151,7 +152,7 @@ A imagem real de produção possui uma verificação complementar, executada for
 bin/verify-production-image
 ```
 
-O comando constrói o `Dockerfile`, executa `bundle check`, exige `BUNDLE_WITHOUT=development:test`, confirma a ausência física das gems proibidas e remove a tag temporária criada. No workflow desta branch, o job `ci` executa o contrato canônico `bin/ci`, enquanto o job independente `production-image` executa esse verificador Docker. Sucesso em um job não substitui a evidência do outro; os checks remotos dessa configuração ainda são necessários antes da integração do PR #38.
+O comando constrói o `Dockerfile`, executa `bundle check`, exige `BUNDLE_WITHOUT=development:test`, confirma a ausência física das gems proibidas e remove a tag temporária criada. No workflow desta branch, o job `ci` executa o contrato canônico `bin/ci`, enquanto o job independente `production-image` executa esse verificador Docker. Sucesso em um job não substitui a evidência do outro; ambos foram aprovados na PR #38, cuja integração continua condicionada a confirmação explícita.
 
 No Docker, execute `docker compose exec web bin/ci` com o ambiente ativo ou `docker compose run --rm web bin/ci` para uma execução avulsa. O job `ci` do GitHub Actions executa o mesmo comando.
 
