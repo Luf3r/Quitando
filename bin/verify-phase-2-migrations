@@ -1,0 +1,111 @@
+#!/usr/bin/env ruby
+
+require "bundler/setup"
+require "English"
+require "pg"
+require "securerandom"
+require "uri"
+
+TEMPORARY_DATABASE_PREFIX = "quitando_phase_2_migrations".freeze
+PHASE_TWO_MIGRATION_VERSIONS = %w[20260721160000 20260721161000 20260721165000].freeze
+
+class CommandFailure < StandardError; end
+
+def database_uri(raw_url)
+  uri = URI.parse(raw_url)
+
+  unless %w[postgres postgresql].include?(uri.scheme) && uri.path&.match?(%r{\A/[^/]+\z})
+    raise ArgumentError, "TEST_DATABASE_URL must be a PostgreSQL URL with a database name"
+  end
+
+  uri
+rescue URI::InvalidURIError => error
+  raise ArgumentError, "TEST_DATABASE_URL is invalid: #{error.message}"
+end
+
+def replace_database_name(uri, database_name)
+  uri.dup.tap { |copy| copy.path = "/#{database_name}" }.to_s
+end
+
+def validate_temporary_database_name!(database_name)
+  pattern = /\A#{TEMPORARY_DATABASE_PREFIX}_#{Process.pid}_[0-9a-f]+\z/
+  return database_name if database_name.match?(pattern)
+
+  raise ArgumentError, "refusing unsafe temporary database name: #{database_name.inspect}"
+end
+
+def execute_database_statement(connection_url, database_name, statement)
+  validate_temporary_database_name!(database_name)
+
+  PG.connect(connection_url) do |connection|
+    connection.exec("#{statement} #{connection.escape_identifier(database_name)}")
+  end
+end
+
+def run!(*command, environment:)
+  version = "VERSION=#{environment.fetch("VERSION")} " if environment.key?("VERSION")
+  puts "==> #{version}#{command.join(' ')}"
+  return if system(environment, *command)
+
+  status = $CHILD_STATUS&.exitstatus
+  raise CommandFailure, "command failed#{" with exit #{status}" if status}: #{command.join(' ')}"
+end
+
+source_uri = database_uri(ENV.fetch("TEST_DATABASE_URL"))
+temporary_database_name = validate_temporary_database_name!(
+  "#{TEMPORARY_DATABASE_PREFIX}_#{Process.pid}_#{SecureRandom.hex(8)}"
+)
+temporary_database_url = replace_database_name(source_uri, temporary_database_name)
+maintenance_database_url = replace_database_name(source_uri, "postgres")
+child_environment = {
+  "DATABASE_URL" => temporary_database_url,
+  "TEST_DATABASE_URL" => temporary_database_url,
+  "RAILS_ENV" => "test"
+}.freeze
+creation_attempted = false
+primary_error = nil
+
+puts "==> Temporary database: #{temporary_database_name}"
+
+begin
+  creation_attempted = true
+  execute_database_statement(maintenance_database_url, temporary_database_name, "CREATE DATABASE")
+
+  run!("bin/rails", "db:migrate", environment: child_environment)
+
+  PHASE_TWO_MIGRATION_VERSIONS.reverse_each do |version|
+    run!("bin/rails", "db:migrate:down", environment: child_environment.merge("VERSION" => version))
+  end
+
+  PHASE_TWO_MIGRATION_VERSIONS.each do |version|
+    run!("bin/rails", "db:migrate:up", environment: child_environment.merge("VERSION" => version))
+  end
+
+  run!(
+    "bundle", "exec", "rspec", "spec/database/phase_2_schema_contract_spec.rb",
+    environment: child_environment.merge("CI" => "true")
+  )
+rescue StandardError => error
+  primary_error = error
+ensure
+  active_primary_error = primary_error || $ERROR_INFO
+
+  if creation_attempted
+    begin
+      execute_database_statement(
+        maintenance_database_url,
+        temporary_database_name,
+        "DROP DATABASE IF EXISTS"
+      )
+      puts "==> Removed temporary database: #{temporary_database_name}"
+    rescue StandardError => cleanup_error
+      if active_primary_error
+        warn "cleanup also failed: #{cleanup_error.message}"
+      else
+        raise
+      end
+    end
+  end
+end
+
+raise primary_error if primary_error
