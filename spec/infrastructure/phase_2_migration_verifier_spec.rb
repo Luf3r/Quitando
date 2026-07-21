@@ -1,14 +1,15 @@
 require "open3"
 require "rbconfig"
+require "tmpdir"
 
 RSpec.describe "Phase 2 migration verifier safety" do
-  SCRIPT_PATH = File.expand_path("../../bin/verify-phase-2-migrations", __dir__)
+  MIGRATION_SCRIPT_PATH = File.expand_path("../../bin/verify-phase-2-migrations", __dir__)
 
   def run_verifier(test_database_url)
     Open3.capture3(
       { "TEST_DATABASE_URL" => test_database_url },
       RbConfig.ruby,
-      SCRIPT_PATH
+      MIGRATION_SCRIPT_PATH
     )
   end
 
@@ -32,5 +33,48 @@ RSpec.describe "Phase 2 migration verifier safety" do
     expect(stderr).to include("TEST_DATABASE_URL is invalid")
     expect(stdout).not_to include(secret)
     expect(stderr).not_to include(secret)
+  end
+
+  it "does not drop a database when CREATE DATABASE fails" do
+    Dir.mktmpdir("phase-2-migration-pg-fake") do |fake_library_directory|
+      log_path = File.join(fake_library_directory, "statements.log")
+      File.write(
+        File.join(fake_library_directory, "pg.rb"),
+        <<~'RUBY'
+          module PG
+            class FakeConnection
+              def escape_identifier(value)
+                %("#{value}")
+              end
+
+              def exec(statement)
+                File.open(ENV.fetch("PG_FAKE_LOG"), "a") { |log| log.puts(statement) }
+                raise "simulated CREATE DATABASE collision" if statement.start_with?("CREATE DATABASE")
+              end
+            end
+
+            def self.connect(_url)
+              yield FakeConnection.new
+            end
+          end
+        RUBY
+      )
+
+      _stdout, stderr, status = Open3.capture3(
+        {
+          "PG_FAKE_LOG" => log_path,
+          "RUBYLIB" => fake_library_directory,
+          "TEST_DATABASE_URL" => "postgresql://user:password@localhost/quitando_test"
+        },
+        RbConfig.ruby,
+        MIGRATION_SCRIPT_PATH
+      )
+
+      expect(status).not_to be_success
+      expect(stderr).to include("simulated CREATE DATABASE collision")
+      expect(File.readlines(log_path, chomp: true)).to match(
+        [ a_string_starting_with("CREATE DATABASE") ]
+      )
+    end
   end
 end

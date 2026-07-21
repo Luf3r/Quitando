@@ -36,6 +36,11 @@ trap cleanup EXIT
 
 cd "${APP_ROOT}"
 
+if docker image inspect "${IMAGE_TAG}" >/dev/null 2>&1; then
+  echo "Refusing to overwrite production image tag because it already exists: ${IMAGE_TAG}" >&2
+  exit 1
+fi
+
 echo "Building production image ${IMAGE_TAG}"
 docker build --file Dockerfile --tag "${IMAGE_TAG}" .
 image_built=true

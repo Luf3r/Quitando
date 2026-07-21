@@ -69,14 +69,14 @@ child_environment = {
   "TEST_DATABASE_URL" => temporary_database_url,
   "RAILS_ENV" => "test"
 }.freeze
-creation_attempted = false
+database_created = false
 primary_error = nil
 
 puts "==> Temporary database: #{temporary_database_name}"
 
 begin
-  creation_attempted = true
   execute_database_statement(maintenance_database_url, temporary_database_name, "CREATE DATABASE")
+  database_created = true
 
   run!("bin/rails", "db:migrate", environment: child_environment)
 
@@ -97,7 +97,7 @@ rescue StandardError => error
 ensure
   active_primary_error = primary_error || $ERROR_INFO
 
-  if creation_attempted
+  if database_created
     begin
       execute_database_statement(
         maintenance_database_url,
