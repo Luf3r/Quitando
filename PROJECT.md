@@ -250,13 +250,13 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 
 ## 11. Milestone atual
 
-- **Fase atual:** Fase 3 — Criação de despesas e arredondamento
-- **Status atual:** Fases 0, 1 e 2 concluídas; o schema financeiro mínimo e seu gate PostgreSQL foram demonstrados
-- **Próxima fase:** Fase 3 — Criação de despesas e arredondamento
-- **Trabalho executável atual:** issue [#8 — Criação de despesas e arredondamento](https://github.com/Luf3r/Quitando/issues/8), após a integração da Fase 2
-- **Gate concluído da Fase 0:** repositório executa `bin/ci` localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação.
+- **Fase atual:** Fase 2 — Schema e entidades financeiras mínimas
+- **Status atual:** implementação e hardening em revisão no [PR #38](https://github.com/Luf3r/Quitando/pull/38); a evidência adicional está verificada localmente, mas ainda requer checks remotos e integração
+- **Próxima fase após a integração:** Fase 3 — Criação de despesas e arredondamento
+- **Trabalho executável atual:** revisão e integração da [Fase 2 — issue #7](https://github.com/Luf3r/Quitando/issues/7); a [Fase 3 — issue #8](https://github.com/Luf3r/Quitando/issues/8) permanece no Backlog
+- **Gate integrado da Fase 0:** `bin/ci` executa localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação. O hardening adicional da branch do PR #38 ainda precisa dos checks remotos atuais.
 
-**Implementado e verificado até agora:**
+**Integrado e verificado até agora:**
 
 - aplicação Rails com Ruby e dependências fixadas;
 - PostgreSQL 18 padronizado no Docker local e no CI;
@@ -270,11 +270,18 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 - parser monetário `pt-BR` para centavos sem `float`;
 - specs reais de boot, health check, autenticação, parser, factory e processamento Vips;
 - imagem de produção sem gems dos grupos `development` e `test`.
-- GitHub Actions `CI` executando `bin/ci` no commit `f18479c` com conclusão `success` em 16 de julho de 2026.
-- `Group`, `Membership`, `Expense`, `ExpenseShare` e `Payment` persistidos com PK UUID v7, FKs UUID, dinheiro em `bigint`, índices e checks estruturais; catálogo e inserções diretas comprovam o gate PostgreSQL da Fase 2.
+
+**Disponível e verificado localmente na branch do PR #38, ainda sem integração:**
+
+- `Group`, `Membership`, `Expense`, `ExpenseShare` e `Payment` persistidos com PK UUID v7, FKs UUID, dinheiro em `bigint`, índices e checks estruturais;
+- specs estruturais de models, enums e factories, além da matriz de catálogo, inserções válidas e violações diretas contra PostgreSQL real;
+- `bin/verify-phase-2-migrations` realizando migrate, down/up das migrations da Fase 2 e reexecução do contrato PostgreSQL em banco temporário isolado;
+- `bin/verify-production-image` construindo e inspecionando a imagem real, separado de `bin/ci` em um job próprio do workflow.
 
 **Pendente antes de avançar no produto:**
 
+- publicar o hardening local no PR #38, executar os jobs remotos `ci` e `production-image`, revisar a evidência completa e integrar somente após confirmação explícita;
+- reconciliar issues e campos do GitHub Project após a verificação completa; somente então preparar a Fase 3 para `Ready`;
 - definir limite superior, overflow e mensagem do parser monetário quando ele alimentar colunas `bigint` nas fases de despesas e constraints;
 - avaliar uma spec de Active Storage variant real quando attachments entrarem no domínio, além da prova atual de processamento com `ruby-vips`.
 
