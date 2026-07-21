@@ -79,6 +79,8 @@ RSpec.describe "Fase 2: contrato estrutural PostgreSQL" do
   }.freeze
 
   FOREIGN_KEYS = {
+    "users" => [],
+    "groups" => [],
     "memberships" => [
       [ "group_id", "groups", "id" ],
       [ "user_id", "users", "id" ]
@@ -127,15 +129,10 @@ RSpec.describe "Fase 2: contrato estrutural PostgreSQL" do
       expect(table_columns(table_name)).to eq(expected_columns), table_name
       expect(column_default(table_name, "id")).to eq("uuidv7()"), table_name
     end
-
-    expect(table_columns("payments").fetch("idempotency_key")).to eq([ "uuid", false ])
-    MONEY_COLUMNS.each do |model, column_name|
-      expect(table_columns(model.table_name).fetch(column_name.to_s)).to eq([ "bigint", false ])
-    end
   end
 
   it "prova cada FK com coluna de origem e destino exatas", :aggregate_failures do
-    expect(FOREIGN_KEYS.keys).to match_array(%w[memberships expenses expense_shares payments])
+    expect(FOREIGN_KEYS.keys).to match_array(%w[users groups memberships expenses expense_shares payments])
 
     FOREIGN_KEYS.each do |table_name, expected_foreign_keys|
       expect(foreign_keys(table_name)).to eq(expected_foreign_keys), table_name
@@ -185,8 +182,8 @@ RSpec.describe "Fase 2: contrato estrutural PostgreSQL" do
     from_user = create(:user)
     to_user = create(:user)
 
-    zero_version_group = insert_and_fetch(Group, name: "Versão zero", currency_code: "BRL", financial_state_version: 0)
-    expect(zero_version_group.financial_state_version).to eq(0)
+    defaulted_version_group = insert_and_fetch(Group, name: "Versão padrão", currency_code: "BRL")
+    expect(defaulted_version_group.financial_state_version).to eq(0)
 
     [ 1, BIGINT_MAX ].each_with_index do |amount_cents, index|
       expense = insert_and_fetch(
@@ -419,9 +416,11 @@ RSpec.describe "Fase 2: contrato estrutural PostgreSQL" do
     to_user = create(:user)
     attributes = payment_attributes(group:, from_user:, to_user:)
 
-    invalid_payment_audit_cases(attributes, from_user.id, to_user.id).each do |_case_name, invalid_attributes|
-      expect_postgres_error(PG::CheckViolation) do
-        insert_direct(Payment, **invalid_attributes)
+    invalid_payment_audit_cases(attributes, from_user.id, to_user.id).each do |case_name, invalid_attributes|
+      aggregate_failures(case_name) do
+        expect_postgres_error(PG::CheckViolation) do
+          insert_direct(Payment, **invalid_attributes)
+        end
       end
     end
   end
