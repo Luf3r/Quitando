@@ -6,11 +6,11 @@ O Quitando ajuda grupos que já confiam uns nos outros a encerrar despesas compa
 
 ## Status
 
-O projeto está em construção. As **Fases 0 e 1** estão concluídas. A **Fase 2 — Schema e entidades financeiras mínimas** está em andamento: a worktree contém entidades persistentes com UUID v7, FKs UUID, dinheiro em `bigint` e constraints estruturais, mas o gate e a reconciliação operacional ainda não foram concluídos. Também estão disponíveis o bootstrap Rails, RSpec com exemplos reais, `bin/ci`, checagens de lint e segurança, Docker com PostgreSQL 18, Active Storage/Vips, Devise, Pundit, FactoryBot, parser monetário em centavos e locale `pt-BR`.
+O projeto está em construção. As **Fases 0, 1 e 2** estão concluídas: além do `DebtSimplifier` Ruby puro, o PostgreSQL persiste as entidades financeiras mínimas com UUID v7, FKs UUID, dinheiro em `bigint` e constraints estruturais provadas diretamente no banco. A próxima etapa é a **Fase 3 — Criação de despesas e arredondamento**. Também estão disponíveis o bootstrap Rails, RSpec com exemplos reais, `bin/ci`, checagens de lint e segurança, Docker com PostgreSQL 18, Active Storage/Vips, Devise, Pundit, FactoryBot, parser monetário em centavos e locale `pt-BR`.
 
-Há uma jornada mínima de cadastro e os smoke tests da fundação, mas grupos, despesas, ledger, policies de domínio e demais regras financeiras ainda serão implementados conforme o roadmap. A fundação existente não deve ser apresentada como MVP funcional.
+Há uma jornada mínima de cadastro e os smoke tests da fundação. Os fluxos transacionais de grupos, despesas, ledger e políticas de domínio ainda serão implementados conforme o roadmap; o schema da Fase 2 não constitui um MVP funcional.
 
-O trabalho é acompanhado no [GitHub Project — Quitando](https://github.com/users/Luf3r/projects/2). A Fase 1 [#6](https://github.com/Luf3r/Quitando/issues/6) foi demonstrada; a Fase 2 [#7](https://github.com/Luf3r/Quitando/issues/7) está aberta, iniciada pela subissue [#32](https://github.com/Luf3r/Quitando/issues/32). Status e campos do quadro devem refletir apenas trabalho realmente demonstrado; contratos e gates continuam definidos pela documentação do repositório.
+O trabalho é acompanhado no [GitHub Project — Quitando](https://github.com/users/Luf3r/projects/2). As fases [#6](https://github.com/Luf3r/Quitando/issues/6) e [#7](https://github.com/Luf3r/Quitando/issues/7) foram demonstradas; a próxima fase executável é a [#8](https://github.com/Luf3r/Quitando/issues/8). Status e campos do quadro devem refletir apenas trabalho realmente demonstrado; contratos e gates continuam definidos pela documentação do repositório.
 
 ## Como funciona
 

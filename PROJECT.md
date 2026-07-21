@@ -250,10 +250,10 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 
 ## 11. Milestone atual
 
-- **Fase atual:** Fase 2 — Schema e entidades financeiras mínimas
-- **Status atual:** Fases 0 e 1 concluídas; a Fase 2 está em andamento e seu gate estrutural está em verificação
-- **Próxima fase:** Fase 2 — Schema e entidades financeiras mínimas
-- **Trabalho executável atual:** issue [#32 — Persistir Group com UUID v7 e versão financeira](https://github.com/Luf3r/Quitando/issues/32) em `In progress`; as demais subissues aguardam suas dependências no GitHub Project
+- **Fase atual:** Fase 3 — Criação de despesas e arredondamento
+- **Status atual:** Fases 0, 1 e 2 concluídas; o schema financeiro mínimo e seu gate PostgreSQL foram demonstrados
+- **Próxima fase:** Fase 3 — Criação de despesas e arredondamento
+- **Trabalho executável atual:** issue [#8 — Criação de despesas e arredondamento](https://github.com/Luf3r/Quitando/issues/8), após a integração da Fase 2
 - **Gate concluído da Fase 0:** repositório executa `bin/ci` localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação.
 
 **Implementado e verificado até agora:**
@@ -271,13 +271,12 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 - specs reais de boot, health check, autenticação, parser, factory e processamento Vips;
 - imagem de produção sem gems dos grupos `development` e `test`.
 - GitHub Actions `CI` executando `bin/ci` no commit `f18479c` com conclusão `success` em 16 de julho de 2026.
-- `Group`, `Membership`, `Expense`, `ExpenseShare` e `Payment` em implementação na worktree da Fase 2, com PK UUID v7, FKs UUID, dinheiro em `bigint`, índices e checks estruturais ainda sujeitos ao gate final.
+- `Group`, `Membership`, `Expense`, `ExpenseShare` e `Payment` persistidos com PK UUID v7, FKs UUID, dinheiro em `bigint`, índices e checks estruturais; catálogo e inserções diretas comprovam o gate PostgreSQL da Fase 2.
 
 **Pendente antes de avançar no produto:**
 
 - definir limite superior, overflow e mensagem do parser monetário quando ele alimentar colunas `bigint` nas fases de despesas e constraints;
 - avaliar uma spec de Active Storage variant real quando attachments entrarem no domínio, além da prova atual de processamento com `ruby-vips`.
-- concluir as subissues #32–#37, registrar evidências e demonstrar o gate da Fase 2 antes de promover a Fase 3.
 
 Atualize esta seção e o [GitHub Project](https://github.com/users/Luf3r/projects/2) sempre que a tarefa ativa, uma entrega verificável, pendência, fase ou gate mudar. O estado detalhado e os critérios de saída ficam no [roadmap de implementação](./docs/05-quitando-roadmap-implementacao.md).
 
