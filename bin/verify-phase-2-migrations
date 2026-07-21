@@ -12,15 +12,22 @@ PHASE_TWO_MIGRATION_VERSIONS = %w[20260721160000 20260721161000 20260721165000].
 class CommandFailure < StandardError; end
 
 def database_uri(raw_url)
-  uri = URI.parse(raw_url)
+  begin
+    uri = URI.parse(raw_url)
+    query_parameters = URI.decode_www_form(uri.query.to_s)
+  rescue URI::InvalidURIError, ArgumentError
+    raise ArgumentError, "TEST_DATABASE_URL is invalid", cause: nil
+  end
+
+  if query_parameters.any? { |key, _value| key == "dbname" }
+    raise ArgumentError, "TEST_DATABASE_URL must not contain a dbname query parameter"
+  end
 
   unless %w[postgres postgresql].include?(uri.scheme) && uri.path&.match?(%r{\A/[^/]+\z})
     raise ArgumentError, "TEST_DATABASE_URL must be a PostgreSQL URL with a database name"
   end
 
   uri
-rescue URI::InvalidURIError => error
-  raise ArgumentError, "TEST_DATABASE_URL is invalid: #{error.message}"
 end
 
 def replace_database_name(uri, database_name)
