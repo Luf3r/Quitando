@@ -36,3 +36,13 @@ jobs:
 
       - name: Run the canonical CI contract
         run: bin/ci
+
+  production-image:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Verify the production image
+        run: bin/verify-production-image
