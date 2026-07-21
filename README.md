@@ -6,7 +6,7 @@ O Quitando ajuda grupos que já confiam uns nos outros a encerrar despesas compa
 
 ## Status
 
-O projeto está em construção. As **Fases 0 e 1** estão integradas. A implementação da **Fase 2 — Schema e entidades financeiras mínimas** está em revisão no [PR #38](https://github.com/Luf3r/Quitando/pull/38): a branch persiste as entidades financeiras com UUID v7, FKs UUID, dinheiro em `bigint` e constraints estruturais provadas diretamente no PostgreSQL. O hardening dessa evidência foi verificado localmente, mas ainda depende dos checks remotos e da integração do PR; portanto, a Fase 2 ainda não está concluída no branch de integração e a **Fase 3 — Criação de despesas e arredondamento** permanece no Backlog.
+O projeto está em construção. As **Fases 0 e 1** estão integradas. A implementação da **Fase 2 — Schema e entidades financeiras mínimas** está em revisão no [PR #38](https://github.com/Luf3r/Quitando/pull/38): a branch persiste as entidades financeiras com UUID v7, FKs UUID, dinheiro em `bigint` e constraints estruturais provadas diretamente no PostgreSQL. O hardening dessa evidência foi verificado local e remotamente; resta a integração do PR mediante confirmação explícita. Portanto, a Fase 2 ainda não está concluída no branch de integração e a **Fase 3 — Criação de despesas e arredondamento** permanece no Backlog.
 
 A base integrada já oferece o bootstrap Rails, RSpec com exemplos reais, `bin/ci`, checagens de lint e segurança, Docker com PostgreSQL 18, Active Storage/Vips, Devise, Pundit, FactoryBot, parser monetário em centavos e locale `pt-BR`.
 
@@ -152,7 +152,7 @@ A imagem real de produção possui uma verificação complementar, executada for
 bin/verify-production-image
 ```
 
-O comando constrói o `Dockerfile`, executa `bundle check`, exige `BUNDLE_WITHOUT=development:test`, confirma a ausência física das gems proibidas e remove a tag temporária criada. No workflow desta branch, o job `ci` executa o contrato canônico `bin/ci`, enquanto o job independente `production-image` executa esse verificador Docker. Sucesso em um job não substitui a evidência do outro; ambos foram aprovados na PR #38, cuja integração continua condicionada a confirmação explícita.
+O comando constrói o `Dockerfile`, executa `bundle check`, exige `BUNDLE_WITHOUT=development:test`, confirma a ausência física de toda a árvore de dependências exclusiva desses grupos e remove somente a tag temporária criada, sem podar imagens-pai não pertencentes ao processo. No workflow desta branch, o job `ci` executa o contrato canônico `bin/ci`, enquanto o job independente `production-image` executa esse verificador Docker. Sucesso em um job não substitui a evidência do outro; ambos devem passar no head atual da PR #38, cuja integração continua condicionada a confirmação explícita.
 
 No Docker, execute `docker compose exec web bin/ci` com o ambiente ativo ou `docker compose run --rm web bin/ci` para uma execução avulsa. O job `ci` do GitHub Actions executa o mesmo comando.
 

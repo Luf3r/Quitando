@@ -16,7 +16,7 @@ cleanup() {
   if [[ "${image_built}" == true ]]; then
     echo "Removing temporary production image tag ${IMAGE_TAG}"
     set +e
-    docker image rm "${IMAGE_TAG}"
+    docker image rm --no-prune "${IMAGE_TAG}"
     cleanup_status=$?
     set -e
 
@@ -55,17 +55,7 @@ docker run --rm --entrypoint /bin/sh "${IMAGE_TAG}" -eu -c '
   fi
 
   ruby -e '\''
-    forbidden = %w[
-      rspec-rails
-      factory_bot_rails
-      pbt
-      capybara
-      selenium-webdriver
-      rubocop-rails-omakase
-      brakeman
-      bundler-audit
-      web-console
-    ].freeze
+    forbidden = File.readlines("config/production-excluded-gems.txt", chomp: true).reject(&:empty?).freeze
     installed = Gem::Specification.to_a.map(&:name)
     present = forbidden.select { |name| installed.include?(name) }
 

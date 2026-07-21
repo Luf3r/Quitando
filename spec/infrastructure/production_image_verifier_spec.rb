@@ -1,8 +1,24 @@
 require "open3"
 require "tmpdir"
+require "bundler"
 
 RSpec.describe "Production image verifier safety" do
   PRODUCTION_IMAGE_SCRIPT_PATH = File.expand_path("../../bin/verify-production-image", __dir__)
+  EXCLUDED_GEMS_MANIFEST_PATH = File.expand_path("../../config/production-excluded-gems.txt", __dir__)
+
+  it "tracks the complete group-exclusive dependency closure from the lockfile" do
+    definition = Bundler::Definition.build("Gemfile", "Gemfile.lock", nil)
+    runtime_names = definition.specs_for([ :default ]).map(&:name)
+    excluded_names = definition.specs_for(%i[development test]).map(&:name)
+    expected_names = (excluded_names - runtime_names).uniq.sort
+    manifest_names = if File.exist?(EXCLUDED_GEMS_MANIFEST_PATH)
+      File.readlines(EXCLUDED_GEMS_MANIFEST_PATH, chomp: true).reject(&:empty?).sort
+    else
+      []
+    end
+
+    expect(manifest_names).to eq(expected_names)
+  end
 
   def run_verifier(fake_docker_directory, log_path, environment = {})
     Open3.capture3(
@@ -34,6 +50,10 @@ RSpec.describe "Production image verifier safety" do
             exit "${DOCKER_FAKE_RUN_STATUS:-0}"
           fi
 
+          if [[ "$1 $2" == "image rm" ]]; then
+            exit "${DOCKER_FAKE_RM_STATUS:-0}"
+          fi
+
           exit 0
         BASH
       )
@@ -56,7 +76,46 @@ RSpec.describe "Production image verifier safety" do
 
       expect(status.exitstatus).to eq(23)
       expect(commands.grep(/^run /)).to contain_exactly(a_string_including(image_tag))
-      expect(commands.grep(/^image rm /)).to eq([ "image rm #{image_tag}" ])
+      expect(commands.grep(/^image rm /)).to eq([ "image rm --no-prune #{image_tag}" ])
+    end
+  end
+
+  it "removes the exact newly built tag after a successful inspection", :aggregate_failures do
+    with_fake_docker do |directory, log_path|
+      _stdout, _stderr, status = run_verifier(directory, log_path)
+      commands = File.readlines(log_path, chomp: true)
+      build_command = commands.find { |command| command.start_with?("build ") }
+      image_tag = build_command.match(/--tag (\S+)/)[1]
+
+      expect(status).to be_success
+      expect(commands.grep(/^image rm /)).to eq([ "image rm --no-prune #{image_tag}" ])
+    end
+  end
+
+  it "preserves the primary failure when cleanup also fails", :aggregate_failures do
+    with_fake_docker do |directory, log_path|
+      _stdout, stderr, status = run_verifier(
+        directory,
+        log_path,
+        "DOCKER_FAKE_RUN_STATUS" => "23",
+        "DOCKER_FAKE_RM_STATUS" => "29"
+      )
+
+      expect(status.exitstatus).to eq(23)
+      expect(stderr).to include("Failed to remove temporary production image tag")
+    end
+  end
+
+  it "fails when cleanup alone fails" do
+    with_fake_docker do |directory, log_path|
+      _stdout, stderr, status = run_verifier(
+        directory,
+        log_path,
+        "DOCKER_FAKE_RM_STATUS" => "29"
+      )
+
+      expect(status.exitstatus).to eq(29)
+      expect(stderr).to include("Failed to remove temporary production image tag")
     end
   end
 
