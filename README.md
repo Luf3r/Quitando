@@ -6,11 +6,13 @@ O Quitando ajuda grupos que já confiam uns nos outros a encerrar despesas compa
 
 ## Status
 
-O projeto está em construção. As **Fases 0 e 1** estão concluídas: o `DebtSimplifier` Ruby puro valida UUIDs v7, simplifica saldos de forma determinística e é coberto por exemplos, propriedades e isolamento do framework. A **Fase 2 — Schema e entidades financeiras mínimas** está pronta e não iniciada. Também estão disponíveis o bootstrap Rails, RSpec com exemplos reais, `bin/ci`, checagens de lint e segurança, Docker com PostgreSQL 18, Active Storage/Vips, Devise, Pundit, FactoryBot, parser monetário em centavos e locale `pt-BR`.
+O projeto está em construção. As **Fases 0 e 1** estão integradas. A implementação da **Fase 2 — Schema e entidades financeiras mínimas** está em revisão no [PR #38](https://github.com/Luf3r/Quitando/pull/38): a branch persiste as entidades financeiras com UUID v7, FKs UUID, dinheiro em `bigint` e constraints estruturais provadas diretamente no PostgreSQL. O hardening dessa evidência foi verificado local e remotamente; resta a integração do PR mediante confirmação explícita. Portanto, a Fase 2 ainda não está concluída no branch de integração e a **Fase 3 — Criação de despesas e arredondamento** permanece no Backlog.
 
-Há uma jornada mínima de cadastro e os smoke tests da fundação, mas grupos, despesas, ledger, policies de domínio e demais regras financeiras ainda serão implementados conforme o roadmap. A fundação existente não deve ser apresentada como MVP funcional.
+A base integrada já oferece o bootstrap Rails, RSpec com exemplos reais, `bin/ci`, checagens de lint e segurança, Docker com PostgreSQL 18, Active Storage/Vips, Devise, Pundit, FactoryBot, parser monetário em centavos e locale `pt-BR`.
 
-O trabalho é acompanhado no [GitHub Project — Quitando](https://github.com/users/Luf3r/projects/2). O épico da Fase 1 é a issue [#6](https://github.com/Luf3r/Quitando/issues/6), concluída com o pré-requisito UUID v7 [#30](https://github.com/Luf3r/Quitando/issues/30); a próxima fase executável é a [#7](https://github.com/Luf3r/Quitando/issues/7). Status e campos do quadro devem refletir apenas trabalho realmente demonstrado; contratos e gates continuam definidos pela documentação do repositório.
+Há uma jornada mínima de cadastro e os smoke tests da fundação. Os fluxos transacionais de grupos, despesas, ledger e políticas de domínio ainda serão implementados conforme o roadmap; o schema da Fase 2 não constitui um MVP funcional.
+
+O trabalho é acompanhado no [GitHub Project — Quitando](https://github.com/users/Luf3r/projects/2). A [Fase 2](https://github.com/Luf3r/Quitando/issues/7) e seu PR permanecem em revisão; a [Fase 3](https://github.com/Luf3r/Quitando/issues/8) só poderá ser preparada após a integração e continua no Backlog. Status e campos do quadro devem refletir apenas trabalho realmente demonstrado; contratos e gates continuam definidos pela documentação do repositório.
 
 ## Como funciona
 
@@ -126,9 +128,33 @@ O comando de integração contínua disponível hoje é:
 bin/ci
 ```
 
-Ele prepara o ambiente e executa lint, auditorias de dependências e segurança, eager load com Zeitwerk, RSpec e seeds de teste. A suíte já cobre boot, health check, parser monetário, factory, cadastro e processamento Vips; os contratos financeiros pertencem às fases seguintes.
+Ele prepara o ambiente e executa lint, auditorias de dependências e segurança, eager load com Zeitwerk, RSpec e seeds de teste. A suíte já cobre boot, health check, parser monetário, factory, cadastro e processamento Vips; os fluxos financeiros transacionais pertencem às fases seguintes.
 
-No Docker, execute `docker compose exec web bin/ci` com o ambiente ativo ou `docker compose run --rm web bin/ci` para uma execução avulsa. O GitHub Actions executa o mesmo comando.
+Na branch do PR #38, `bin/ci` também executa o verificador de migrations da Fase 2. A evidência estrutural existente combina:
+
+- [specs de models](./spec/models) para associações e seus metadados, enums e persistência das factories;
+- [`spec/factories/factory_lint_spec.rb`](./spec/factories/factory_lint_spec.rb), que valida todas as factories e traits;
+- [`spec/database/phase_2_schema_contract_spec.rb`](./spec/database/phase_2_schema_contract_spec.rb), que inspeciona o catálogo e provoca violações diretamente no PostgreSQL real;
+- [`spec/infrastructure/phase_2_migration_verifier_spec.rb`](./spec/infrastructure/phase_2_migration_verifier_spec.rb), que cobre entradas e ownership do banco temporário;
+- [`spec/infrastructure/production_image_verifier_spec.rb`](./spec/infrastructure/production_image_verifier_spec.rb), que prova o ownership e o cleanup da tag em caminhos de falha.
+
+O round-trip das migrations pode ser executado isoladamente com [`bin/verify-phase-2-migrations`](./bin/verify-phase-2-migrations):
+
+```bash
+bin/verify-phase-2-migrations
+```
+
+Esse comando deriva de `TEST_DATABASE_URL` um banco temporário, migra desde o vazio, desfaz e reaplica as migrations da Fase 2 na ordem prevista, executa o contrato PostgreSQL e remove somente o banco temporário validado. A credencial informada precisa permitir criar e remover esse banco.
+
+A imagem real de produção possui uma verificação complementar, executada fora de `bin/ci` por [`bin/verify-production-image`](./bin/verify-production-image):
+
+```bash
+bin/verify-production-image
+```
+
+O comando constrói o `Dockerfile`, executa `bundle check`, exige `BUNDLE_WITHOUT=development:test`, confirma a ausência física de toda a árvore de dependências exclusiva desses grupos e remove somente a tag temporária criada, sem podar imagens-pai não pertencentes ao processo. No workflow desta branch, o job `ci` executa o contrato canônico `bin/ci`, enquanto o job independente `production-image` executa esse verificador Docker. Sucesso em um job não substitui a evidência do outro; ambos devem passar no head atual da PR #38, cuja integração continua condicionada a confirmação explícita.
+
+No Docker, execute `docker compose exec web bin/ci` com o ambiente ativo ou `docker compose run --rm web bin/ci` para uma execução avulsa. O job `ci` do GitHub Actions executa o mesmo comando.
 
 ## Documentação
 

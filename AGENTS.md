@@ -347,6 +347,23 @@ Contratos especialmente importantes:
 
 Para regras financeiras, combine exemplos legíveis, casos de fronteira e testes de propriedades. Verifique conservação, soma zero, sinais, limites, determinismo, imutabilidade, arredondamento, atomicidade, concorrência e idempotência sempre que forem aplicáveis.
 
+### 8.1 Hardening de specs e verificadores operacionais
+
+- Um gate RSpec deve falhar quando não descobrir exemplos. Em CI, `:focus` não pode reduzir a suíte executada; o uso de foco local pode permanecer disponível fora do CI quando configurado e coberto por spec de subprocesso.
+- Uma etapa explícita para `spec/system` só conta quando descobre e executa ao menos um exemplo. Não trate um job vazio, uma página renderizada ou ausência de exceção como evidência de jornada crítica.
+- Verificadores que criam banco, imagem, arquivo ou outro recurso temporário devem provar o caminho principal na integração real e também os caminhos de propriedade e cleanup. Um recurso só pode ser removido depois de criação bem-sucedida e confirmada pelo próprio processo.
+- O cleanup deve atingir somente o identificador temporário exato e validado. Uma falha principal permanece a falha observável mesmo se a limpeza posterior também falhar; uma falha de cleanup isolada também falha o comando.
+- Fakes de PostgreSQL, Docker ou comandos externos são permitidos somente em specs de orquestração para provar ownership, cleanup e preservação de status de erro. Eles não substituem a execução real exigida do banco, build ou integração principal.
+- Ao endurecer uma verificação que já está correta, use controle negativo restrito a `spec/` em vez de introduzir defeito em produção. Registre separadamente a evidência do caminho real e a eficácia do controle negativo.
+
+### 8.2 Métricas e ferramentas auxiliares
+
+- **Cobertura percentual:** não é gate nem definição de pronto. Não adicione ferramenta de cobertura apenas para perseguir número global; cubra invariantes, transições, falhas e fronteiras. Reavalie um relatório informativo na Fase 4 somente se ele ajudar a localizar lacunas em `GroupBalanceCalculator` e seus contratos, sem meta mínima que possa substituir evidência comportamental.
+- **Shoulda Matchers:** não é dependência atual. Prefira expectativas explícitas para reflections, enums, constraints e erros do PostgreSQL quando esses detalhes fizerem parte do contrato. Reavalie apenas se uma fase futura introduzir validações Rails convencionais repetidas e a proposta demonstrar redução de duplicação sem remover as specs diretas de banco.
+- **`rubocop-rspec`:** não é dependência atual. Reavalie quando padrões repetidos de estilo de RSpec produzirem achados recorrentes em revisão; uma proposta deve definir o conjunto inicial de cops, evitar supressão ampla e provar que não substitui regras semânticas deste arquivo.
+- **Mutantes:** não é gate atual nem deve rodar sobre toda a suíte. Reavalie na Fase 4, depois que `GroupBalanceCalculator` estiver estável, começando por execução focal nos serviços puros financeiros. Só promova a verificação se custo, determinismo, tempo de CI e tratamento dos mutantes sobreviventes estiverem documentados e se ela complementar, em vez de substituir, exemplos e property tests.
+- Qualquer adoção dessas ferramentas requer subissue em `Ready`, contrato observável, custo de CI/dependências avaliado, caminho de execução documentado e evidência de que não enfraquece os gates existentes.
+
 Não persiga cobertura percentual isolada. Cubra invariantes, transições, falhas e fronteiras.
 
 ---

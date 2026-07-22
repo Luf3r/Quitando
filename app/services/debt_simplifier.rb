@@ -79,7 +79,6 @@ class DebtSimplifier
   end
 
   def call
-    validate_structure!
     validate_user_ids!
     validate_balance_values!
     validate_zero_sum!
@@ -90,10 +89,6 @@ class DebtSimplifier
   private
 
   attr_reader :balances
-
-  def validate_structure!
-    raise InvalidBalances unless balances.is_a?(Hash)
-  end
 
   def validate_user_ids!
     valid_user_ids = balances.each_key.all? do |user_id|

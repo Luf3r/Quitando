@@ -27,6 +27,18 @@ ENV RAILS_ENV="production" \
     BUNDLE_WITHOUT="development:test" \
     LD_PRELOAD="/usr/local/lib/libjemalloc.so"
 
+# The upstream Ruby image may ship default gems that are exclusive to the
+# omitted Bundler groups. Remove only those named by the lockfile-backed
+# manifest before deriving the build and final stages.
+COPY config/production-excluded-gems.txt /tmp/production-excluded-gems.txt
+RUN default_gem_dir="$(ruby -e 'print Gem.default_dir')" && \
+    while IFS= read -r gem_name; do \
+      if ruby -e 'name = ARGV.fetch(0); exit(Gem::Specification.find_all_by_name(name).any? { |spec| spec.base_dir == Gem.default_dir } ? 0 : 1)' "${gem_name}"; then \
+        gem uninstall --install-dir "${default_gem_dir}" --all --ignore-dependencies --executables "${gem_name}"; \
+      fi; \
+    done < /tmp/production-excluded-gems.txt && \
+    rm /tmp/production-excluded-gems.txt
+
 # Throw-away build stage to reduce size of final image
 FROM base AS build
 

@@ -24,8 +24,7 @@ RSpec.describe DebtSimplifier, "property tests" do
     end
   end
 
-  def verify_invariants!(balances, transfers)
-    original_balances = balances.dup
+  def verify_invariants!(balances, transfers, original_balances:)
     participant_count = balances.count { |_user_id, balance| !balance.zero? }
     maximum_transfer_count = [ participant_count - 1, 0 ].max
 
@@ -68,7 +67,7 @@ RSpec.describe DebtSimplifier, "property tests" do
         original_balances = balances.dup
         transfers = described_class.new(balances).call
 
-        verify_invariants!(balances, transfers)
+        verify_invariants!(balances, transfers, original_balances:)
         raise "a entrada foi modificada" unless balances == original_balances
         raise "a saída não é determinística" unless described_class.new(balances).call == transfers
 
@@ -89,7 +88,8 @@ RSpec.describe DebtSimplifier, "property tests" do
             USER_IDS.fetch(0) => -amount_cents,
             USER_IDS.fetch(1) => amount_cents
           }
-          verify_invariants!(balances, empty_plan.call(balances))
+          original_balances = balances.dup
+          verify_invariants!(balances, empty_plan.call(balances), original_balances:)
         end
       end
     end.to raise_error(Pbt::PropertyFailure) { |error|
@@ -97,5 +97,25 @@ RSpec.describe DebtSimplifier, "property tests" do
       expect(error.message).to include("counterexample:")
       expect(error.message).to match(/Shrunk \d+ time/)
     }
+  end
+
+  it "detecta quando uma função altera a entrada" do
+    balances = {
+      USER_IDS.fetch(0) => -100,
+      USER_IDS.fetch(1) => 100
+    }
+    original_balances = balances.dup
+    transfers = lambda do |input|
+      input[USER_IDS.fetch(0)] = -200
+      input[USER_IDS.fetch(1)] = 200
+      [ described_class::Transfer.new(
+        from_user_id: USER_IDS.fetch(0),
+        to_user_id: USER_IDS.fetch(1),
+        amount_cents: 200
+      ) ]
+    end.call(balances)
+
+    expect { verify_invariants!(balances, transfers, original_balances:) }
+      .to raise_error("a entrada foi modificada")
   end
 end
