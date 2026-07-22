@@ -6,13 +6,13 @@ O Quitando ajuda grupos que já confiam uns nos outros a encerrar despesas compa
 
 ## Status
 
-O projeto está em construção. As **Fases 0 e 1** estão integradas. A implementação da **Fase 2 — Schema e entidades financeiras mínimas** está em revisão no [PR #38](https://github.com/Luf3r/Quitando/pull/38): a branch persiste as entidades financeiras com UUID v7, FKs UUID, dinheiro em `bigint` e constraints estruturais provadas diretamente no PostgreSQL. O hardening dessa evidência foi verificado local e remotamente; resta a integração do PR mediante confirmação explícita. Portanto, a Fase 2 ainda não está concluída no branch de integração e a **Fase 3 — Criação de despesas e arredondamento** permanece no Backlog.
+O projeto está em construção. As **Fases 0, 1 e 2** estão integradas. A **Fase 2 — Schema e entidades financeiras mínimas** foi concluída pela [PR #38](https://github.com/Luf3r/Quitando/pull/38): as entidades financeiras usam UUID v7, FKs UUID, dinheiro em `bigint` e constraints estruturais provadas diretamente no PostgreSQL. A **Fase 3 — Criação de despesas e arredondamento** está em `Ready`, mas sua implementação ainda não começou.
 
 A base integrada já oferece o bootstrap Rails, RSpec com exemplos reais, `bin/ci`, checagens de lint e segurança, Docker com PostgreSQL 18, Active Storage/Vips, Devise, Pundit, FactoryBot, parser monetário em centavos e locale `pt-BR`.
 
 Há uma jornada mínima de cadastro e os smoke tests da fundação. Os fluxos transacionais de grupos, despesas, ledger e políticas de domínio ainda serão implementados conforme o roadmap; o schema da Fase 2 não constitui um MVP funcional.
 
-O trabalho é acompanhado no [GitHub Project — Quitando](https://github.com/users/Luf3r/projects/2). A [Fase 2](https://github.com/Luf3r/Quitando/issues/7) e seu PR permanecem em revisão; a [Fase 3](https://github.com/Luf3r/Quitando/issues/8) só poderá ser preparada após a integração e continua no Backlog. Status e campos do quadro devem refletir apenas trabalho realmente demonstrado; contratos e gates continuam definidos pela documentação do repositório.
+O trabalho é acompanhado no [GitHub Project — Quitando](https://github.com/users/Luf3r/projects/2). A [Fase 2](https://github.com/Luf3r/Quitando/issues/7) e suas subissues estão em `Done`; a [Fase 3](https://github.com/Luf3r/Quitando/issues/8) está em `Ready`. Status e campos do quadro devem refletir apenas trabalho realmente demonstrado; contratos e gates continuam definidos pela documentação do repositório.
 
 ## Como funciona
 
