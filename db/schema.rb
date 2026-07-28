@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_21_165000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_27_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -62,12 +62,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_165000) do
   create_table "memberships", id: :uuid, default: -> { "uuidv7()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
     t.uuid "group_id", null: false
+    t.integer "position", null: false
     t.string "role", null: false
     t.string "status", null: false
     t.datetime "updated_at", null: false
     t.uuid "user_id", null: false
+    t.index ["group_id", "position"], name: "index_memberships_on_group_id_and_position", unique: true
     t.index ["group_id", "user_id"], name: "index_memberships_on_group_id_and_user_id", unique: true
     t.index ["user_id"], name: "index_memberships_on_user_id"
+    t.check_constraint "\"position\" >= 0", name: "memberships_position_nonnegative"
     t.check_constraint "role::text = ANY (ARRAY['owner'::character varying, 'member'::character varying]::text[])", name: "memberships_role_valid"
     t.check_constraint "status::text = ANY (ARRAY['active'::character varying, 'inactive'::character varying]::text[])", name: "memberships_status_valid"
   end

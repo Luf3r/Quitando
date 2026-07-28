@@ -173,6 +173,8 @@ Em uma divisão igual:
 3. se o pagador estiver incluído, ele recebe prioridade no primeiro centavo residual;
 4. os demais seguem a ordem do membership.
 
+A ordem é a `position` zero-based e exclusiva no grupo; sua administração pelo owner pertence à Fase 10.
+
 A regra precisa ser visível no detalhe da despesa e coberta por testes. O objetivo não é eliminar o arredondamento, mas torná-lo reproduzível e auditável.
 
 ---
@@ -221,6 +223,7 @@ Group
 Membership
   belongs_to :group
   belongs_to :user
+  position # ordem estável zero-based no grupo; owner a administra na Fase 10
   role
   status
 

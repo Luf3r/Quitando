@@ -1,0 +1,173 @@
+#!/usr/bin/env ruby
+
+require "bundler/setup"
+require "pg"
+require "securerandom"
+require "uri"
+require_relative "../lib/financial_migration_command_runner"
+
+TEMPORARY_DATABASE_PREFIX = "quitando_financial_schema_migrations".freeze
+FINANCIAL_MIGRATION_VERSIONS = %w[20260721160000 20260721161000 20260721165000 20260727120000].freeze
+MEMBERSHIP_POSITION_MIGRATION_VERSION = "20260727120000".freeze
+COMMAND_TIMEOUT_SECONDS = Float(ENV.fetch("FINANCIAL_MIGRATION_COMMAND_TIMEOUT_SECONDS", "900"))
+COMMAND_TERMINATION_GRACE_SECONDS = Float(ENV.fetch("FINANCIAL_MIGRATION_TERMINATION_GRACE_SECONDS", "5"))
+DATABASE_TIMEOUT_SECONDS = Integer(ENV.fetch("FINANCIAL_MIGRATION_DATABASE_TIMEOUT_SECONDS", "30"), 10)
+MEMBERSHIP_BACKFILL_FIXTURE = <<~'RUBY'.freeze
+  connection = ApplicationRecord.connection
+  timestamp = "2026-07-27 12:00:00"
+  connection.execute(<<~SQL)
+    INSERT INTO users (id, email, encrypted_password, created_at, updated_at) VALUES
+      ('00000000-0000-4000-8000-000000000001', 'migration-1@example.test', 'x', '#{timestamp}', '#{timestamp}'),
+      ('00000000-0000-4000-8000-000000000002', 'migration-2@example.test', 'x', '#{timestamp}', '#{timestamp}'),
+      ('00000000-0000-4000-8000-000000000003', 'migration-3@example.test', 'x', '#{timestamp}', '#{timestamp}'),
+      ('00000000-0000-4000-8000-000000000004', 'migration-4@example.test', 'x', '#{timestamp}', '#{timestamp}');
+    INSERT INTO groups (id, name, currency_code, created_at, updated_at) VALUES
+      ('10000000-0000-4000-8000-000000000001', 'Backfill A', 'BRL', '#{timestamp}', '#{timestamp}'),
+      ('10000000-0000-4000-8000-000000000002', 'Backfill B', 'BRL', '#{timestamp}', '#{timestamp}');
+    INSERT INTO memberships (id, group_id, user_id, role, status, created_at, updated_at) VALUES
+      ('20000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000001', 'member', 'active', '#{timestamp}', '#{timestamp}'),
+      ('20000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000002', 'member', 'active', '#{timestamp}', '#{timestamp}'),
+      ('20000000-0000-4000-8000-000000000003', '10000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000003', 'member', 'active', '#{timestamp}'::timestamp + interval '1 second', '#{timestamp}'),
+      ('20000000-0000-4000-8000-000000000004', '10000000-0000-4000-8000-000000000002', '00000000-0000-4000-8000-000000000004', 'member', 'active', '#{timestamp}', '#{timestamp}');
+  SQL
+RUBY
+MEMBERSHIP_BACKFILL_ASSERTION = <<~'RUBY'.freeze
+  expected = [
+    [ "10000000-0000-4000-8000-000000000001", "20000000-0000-4000-8000-000000000001", 0 ],
+    [ "10000000-0000-4000-8000-000000000001", "20000000-0000-4000-8000-000000000002", 1 ],
+    [ "10000000-0000-4000-8000-000000000001", "20000000-0000-4000-8000-000000000003", 2 ],
+    [ "10000000-0000-4000-8000-000000000002", "20000000-0000-4000-8000-000000000004", 0 ]
+  ]
+  actual = Membership.where(id: expected.map { |row| row.fetch(1) }).order(:group_id, :position).pluck(:group_id, :id, :position)
+  abort "membership position backfill mismatch: #{actual.inspect}" unless actual == expected
+RUBY
+
+class CommandFailure < StandardError; end
+
+unless COMMAND_TIMEOUT_SECONDS.positive? && COMMAND_TERMINATION_GRACE_SECONDS.positive? && DATABASE_TIMEOUT_SECONDS.positive?
+  raise ArgumentError, "financial migration verifier timeouts must be positive"
+end
+
+COMMAND_RUNNER = FinancialMigrationCommandRunner.new(
+  timeout_seconds: COMMAND_TIMEOUT_SECONDS,
+  termination_grace_seconds: COMMAND_TERMINATION_GRACE_SECONDS
+).freeze
+
+def database_uri(raw_url)
+  begin
+    uri = URI.parse(raw_url)
+    query_parameters = URI.decode_www_form(uri.query.to_s)
+  rescue URI::InvalidURIError, ArgumentError
+    raise ArgumentError, "TEST_DATABASE_URL is invalid", cause: nil
+  end
+
+  if query_parameters.any? { |key, _value| key == "dbname" }
+    raise ArgumentError, "TEST_DATABASE_URL must not contain a dbname query parameter"
+  end
+
+  unless %w[postgres postgresql].include?(uri.scheme) && uri.path&.match?(%r{\A/[^/]+\z})
+    raise ArgumentError, "TEST_DATABASE_URL must be a PostgreSQL URL with a database name"
+  end
+
+  uri
+end
+
+def replace_database_name(uri, database_name)
+  uri.dup.tap { |copy| copy.path = "/#{database_name}" }.to_s
+end
+
+def validate_temporary_database_name!(database_name)
+  pattern = /\A#{TEMPORARY_DATABASE_PREFIX}_#{Process.pid}_[0-9a-f]+\z/
+  return database_name if database_name.match?(pattern)
+
+  raise ArgumentError, "refusing unsafe temporary database name: #{database_name.inspect}"
+end
+
+def execute_database_statement(connection_url, database_name, statement)
+  validate_temporary_database_name!(database_name)
+
+  PG.connect(connection_url, connect_timeout: DATABASE_TIMEOUT_SECONDS) do |connection|
+    connection.exec("SET statement_timeout = '#{DATABASE_TIMEOUT_SECONDS}s'")
+    connection.exec("#{statement} #{connection.escape_identifier(database_name)}")
+  end
+end
+
+def run!(*command, environment:)
+  version = "VERSION=#{environment.fetch("VERSION")} " if environment.key?("VERSION")
+  puts "==> #{version}#{command.join(' ')}"
+  status = COMMAND_RUNNER.call(*command, environment:)
+  return if status.success?
+
+  raise CommandFailure, "command failed with exit #{status.exitstatus}: #{command.join(' ')}"
+rescue FinancialMigrationCommandRunner::CommandTimedOut => error
+  raise CommandFailure, "#{error.message}: #{command.join(' ')}", cause: nil
+end
+
+source_uri = database_uri(ENV.fetch("TEST_DATABASE_URL"))
+temporary_database_name = validate_temporary_database_name!(
+  "#{TEMPORARY_DATABASE_PREFIX}_#{Process.pid}_#{SecureRandom.hex(8)}"
+)
+temporary_database_url = replace_database_name(source_uri, temporary_database_name)
+maintenance_database_url = replace_database_name(source_uri, "postgres")
+child_environment = {
+  "DATABASE_URL" => temporary_database_url,
+  "TEST_DATABASE_URL" => temporary_database_url,
+  "RAILS_ENV" => "test"
+}.freeze
+database_created = false
+primary_error = nil
+
+puts "==> Temporary database: #{temporary_database_name}"
+
+begin
+  execute_database_statement(maintenance_database_url, temporary_database_name, "CREATE DATABASE")
+  database_created = true
+
+  run!("bin/rails", "db:migrate", environment: child_environment)
+  run!(
+    "bin/rails", "db:migrate:down",
+    environment: child_environment.merge("VERSION" => MEMBERSHIP_POSITION_MIGRATION_VERSION)
+  )
+  run!("bin/rails", "runner", MEMBERSHIP_BACKFILL_FIXTURE, environment: child_environment)
+  run!(
+    "bin/rails", "db:migrate:up",
+    environment: child_environment.merge("VERSION" => MEMBERSHIP_POSITION_MIGRATION_VERSION)
+  )
+  run!("bin/rails", "runner", MEMBERSHIP_BACKFILL_ASSERTION, environment: child_environment)
+
+  FINANCIAL_MIGRATION_VERSIONS.reverse_each do |version|
+    run!("bin/rails", "db:migrate:down", environment: child_environment.merge("VERSION" => version))
+  end
+
+  FINANCIAL_MIGRATION_VERSIONS.each do |version|
+    run!("bin/rails", "db:migrate:up", environment: child_environment.merge("VERSION" => version))
+  end
+
+  run!(
+    "bundle", "exec", "rspec", "spec/database/financial_schema_contract_spec.rb",
+    environment: child_environment.merge("CI" => "true")
+  )
+rescue StandardError => error
+  primary_error = error
+ensure
+  active_primary_error = primary_error || $ERROR_INFO
+
+  if database_created
+    begin
+      execute_database_statement(
+        maintenance_database_url,
+        temporary_database_name,
+        "DROP DATABASE IF EXISTS"
+      )
+      puts "==> Removed temporary database: #{temporary_database_name}"
+    rescue StandardError => cleanup_error
+      if active_primary_error
+        warn "cleanup also failed: #{cleanup_error.message}"
+      else
+        raise
+      end
+    end
+  end
+end
+
+raise primary_error if primary_error

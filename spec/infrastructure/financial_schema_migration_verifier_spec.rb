@@ -2,8 +2,8 @@ require "open3"
 require "rbconfig"
 require "tmpdir"
 
-RSpec.describe "Phase 2 migration verifier safety" do
-  MIGRATION_SCRIPT_PATH = File.expand_path("../../bin/verify-phase-2-migrations", __dir__)
+RSpec.describe "Financial schema migration verifier safety" do
+  MIGRATION_SCRIPT_PATH = File.expand_path("../../bin/verify-financial-schema-migrations", __dir__)
 
   def run_verifier(test_database_url)
     Open3.capture3(
@@ -14,8 +14,9 @@ RSpec.describe "Phase 2 migration verifier safety" do
   end
 
   def with_fake_migration_dependencies(environment = {})
-    Dir.mktmpdir("phase-2-migration-fakes") do |fake_directory|
+    Dir.mktmpdir("financial-migration-fakes") do |fake_directory|
       log_path = File.join(fake_directory, "statements.log")
+      process_log_path = File.join(fake_directory, "process.log")
       fake_system_path = File.join(fake_directory, "fake_system.rb")
 
       File.write(
@@ -28,7 +29,11 @@ RSpec.describe "Phase 2 migration verifier safety" do
               end
 
               def exec(statement)
-                File.open(ENV.fetch("PG_FAKE_LOG"), "a") { |log| log.puts(statement) }
+                if statement.start_with?("SET statement_timeout")
+                  File.open(ENV.fetch("PROCESS_FAKE_LOG"), "a") { |log| log.puts("STATEMENT #{statement}") }
+                else
+                  File.open(ENV.fetch("PG_FAKE_LOG"), "a") { |log| log.puts(statement) }
+                end
 
                 if statement.start_with?("CREATE DATABASE") && ENV["PG_FAKE_CREATE_FAILURE"] == "true"
                   raise "simulated CREATE DATABASE collision"
@@ -40,7 +45,9 @@ RSpec.describe "Phase 2 migration verifier safety" do
               end
             end
 
-            def self.connect(_url)
+            def self.connect(_url, **options)
+              details = options.sort.map { |key, value| "#{key}=#{value}" }.join(" ")
+              File.open(ENV.fetch("PROCESS_FAKE_LOG"), "a") { |log| log.puts("CONNECT #{details}") }
               yield FakeConnection.new
             end
           end
@@ -49,9 +56,38 @@ RSpec.describe "Phase 2 migration verifier safety" do
       File.write(
         fake_system_path,
         <<~'RUBY'
-          module Kernel
-            def system(*)
-              ENV["SYSTEM_FAKE_FAILURE"] != "true"
+          module Process
+            FakeStatus = Struct.new(:successful, :code) do
+              def success? = successful
+              def exitstatus = code
+            end
+
+            @fake_pid = 4_000
+            @wait_attempts = Hash.new(0)
+
+            class << self
+              def spawn(_environment, *arguments)
+                options = arguments.last.is_a?(Hash) ? arguments.pop : {}
+                command = arguments.join(" ")
+                File.open(ENV.fetch("PROCESS_FAKE_LOG"), "a") do |log|
+                  log.puts("SPAWN pgroup=#{options[:pgroup].inspect} #{command}")
+                end
+                @fake_pid += 1
+                @fake_pid
+              end
+
+              def wait2(pid)
+                @wait_attempts[pid] += 1
+                sleep 1 if ENV["SYSTEM_FAKE_TIMEOUT"] == "true" && @wait_attempts[pid] == 1
+
+                successful = ENV["SYSTEM_FAKE_FAILURE"] != "true"
+                [ pid, FakeStatus.new(successful, successful ? 0 : 17) ]
+              end
+
+              def kill(signal, pid)
+                File.open(ENV.fetch("PROCESS_FAKE_LOG"), "a") { |log| log.puts("KILL #{signal} #{pid}") }
+                1
+              end
             end
           end
         RUBY
@@ -60,6 +96,7 @@ RSpec.describe "Phase 2 migration verifier safety" do
       stdout, stderr, status = Open3.capture3(
         {
           "PG_FAKE_LOG" => log_path,
+          "PROCESS_FAKE_LOG" => process_log_path,
           "RUBYLIB" => fake_directory,
           "RUBYOPT" => "-r#{fake_system_path}",
           "TEST_DATABASE_URL" => "postgresql://user:password@localhost/quitando_test"
@@ -68,8 +105,9 @@ RSpec.describe "Phase 2 migration verifier safety" do
         MIGRATION_SCRIPT_PATH
       )
       statements = File.exist?(log_path) ? File.readlines(log_path, chomp: true) : []
+      orchestration = File.exist?(process_log_path) ? File.readlines(process_log_path, chomp: true) : []
 
-      yield stdout, stderr, status, statements
+      yield stdout, stderr, status, statements, orchestration
     end
   end
 
@@ -104,7 +142,7 @@ RSpec.describe "Phase 2 migration verifier safety" do
   end
 
   it "removes exactly the database it created after a successful primary path", :aggregate_failures do
-    with_fake_migration_dependencies do |stdout, _stderr, status, statements|
+    with_fake_migration_dependencies do |stdout, _stderr, status, statements, orchestration|
       created_name = statements.fetch(0).match(/CREATE DATABASE "([^"]+)"/)[1]
 
       expect(status).to be_success
@@ -115,6 +153,12 @@ RSpec.describe "Phase 2 migration verifier safety" do
         ]
       )
       expect(stdout).to include("Removed temporary database: #{created_name}")
+      expect(orchestration.grep(/^CONNECT /)).to eq([ "CONNECT connect_timeout=30", "CONNECT connect_timeout=30" ])
+      expect(orchestration.grep(/^STATEMENT /)).to eq(
+        [ "STATEMENT SET statement_timeout = '30s'", "STATEMENT SET statement_timeout = '30s'" ]
+      )
+      expect(orchestration.grep(/^SPAWN /)).not_to be_empty
+      expect(orchestration.grep(/^SPAWN /)).to all(start_with("SPAWN pgroup=true "))
     end
   end
 
@@ -124,6 +168,19 @@ RSpec.describe "Phase 2 migration verifier safety" do
       expect(statements.map { |statement| statement.split.first }).to eq(%w[CREATE DROP])
       expect(stderr).to include("command failed")
       expect(stderr).not_to include("cleanup also failed")
+    end
+  end
+
+  it "terminates a timed-out command, cleans up and preserves the timeout failure", :aggregate_failures do
+    with_fake_migration_dependencies(
+      "SYSTEM_FAKE_TIMEOUT" => "true",
+      "FINANCIAL_MIGRATION_COMMAND_TIMEOUT_SECONDS" => "0.01"
+    ) do |_stdout, stderr, status, statements, orchestration|
+      expect(status).not_to be_success
+      expect(statements.map { |statement| statement.split.first }).to eq(%w[CREATE DROP])
+      expect(stderr).to include("command timed out")
+      expect(orchestration.grep(/^SPAWN /)).to all(start_with("SPAWN pgroup=true "))
+      expect(orchestration.grep(/^KILL /)).to eq([ "KILL TERM -4001" ])
     end
   end
 

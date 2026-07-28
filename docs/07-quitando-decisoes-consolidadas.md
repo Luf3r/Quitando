@@ -38,7 +38,9 @@ Este arquivo resume decisões que precisam permanecer consistentes entre produto
 - Um pagamento no MVP só pode ser reportado a partir de uma sugestão atual e por valor positivo não superior ao sugerido.
 - Campos financeiros de uma despesa são corrigidos por anulação e substituição, não por sobrescrita.
 - Qualquer membro ativo pode registrar despesa indicando outro pagador ativo; creator e pagador são auditados separadamente e o pagador recebe destaque contextual no aplicativo.
+- Quando creator e pagador diferem, a criação persistida publica `quitando.expense.created_by_third_party` após commit; o payload é mínimo e não cria notificação persistida. Falha de consumidor síncrono depois do commit é reportada operacionalmente sem reverter nem apresentar como falha a despesa já persistida; não há retry ou garantia de entrega nesta fase.
 - Membership inativo é reativado no mesmo registro, preservando histórico.
+- `Membership#position` é a ordem estável zero-based e exclusiva no grupo usada para apresentação e residual; sua gestão pelo owner pertence à Fase 10.
 - Toda alteração que possa mudar saldo, projeção ou plano incrementa `financial_state_version`.
 
 ### Estados
