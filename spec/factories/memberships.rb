@@ -4,5 +4,6 @@ FactoryBot.define do
     user
     role { :member }
     status { :active }
+    sequence(:position)
   end
 end

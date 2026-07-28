@@ -3,7 +3,7 @@
 CI.run do
   step "Setup", "bin/setup --skip-server"
 
-  step "Database: Phase 2 migration round-trip", "bin/verify-phase-2-migrations"
+  step "Database: financial schema migration round-trip", "bin/verify-financial-schema-migrations"
 
   step "Style: Ruby", "bin/rubocop"
 

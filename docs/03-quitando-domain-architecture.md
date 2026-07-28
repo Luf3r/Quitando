@@ -222,6 +222,7 @@ Essa escolha reduz fricção em grupos colaborativos, mas torna o produto inadeq
 - creator e pagador são registrados separadamente quando pessoas diferentes;
 - origem e destino de pagamento são diferentes;
 - membership com histórico não é excluído fisicamente;
+- `position` é zero-based, não negativa e única no grupo; preserva a ordem estável usada no arredondamento e será criada ou reordenada pelo owner na Fase 10;
 - usuário inativo não recebe novas despesas nem inicia pagamentos;
 - membership só pode ser inativado quando saldo oficial e projetado são zero e não há pagamento pendente envolvendo o usuário;
 - membership inativo pode ser reativado pelo owner, reutilizando o mesmo registro;
@@ -302,6 +303,7 @@ group_id
 user_id
 role          # owner, member
 status        # active, inactive
+position      # integer zero-based, ordem estável no grupo
 created_at
 updated_at
 ```
@@ -309,9 +311,11 @@ updated_at
 Constraints:
 
 - `unique(group_id, user_id)`;
+- `unique(group_id, position)`;
+- `position >= 0` e `NOT NULL`;
 - ao menos um owner ativo por grupo não arquivado.
 
-A segunda regra é uma invariável transacional protegida pelo lock do grupo; não deve ser descrita como um `CHECK` simples entre linhas.
+A regra de owner ativo é uma invariável transacional protegida pelo lock do grupo; não deve ser descrita como um `CHECK` simples entre linhas.
 
 ### 6.3 `group_invitations`
 
@@ -567,6 +571,8 @@ Responsabilidades:
 - incrementar `financial_state_version` atomicamente em mudanças financeiras;
 - manter reports existentes e recalcular a projeção quando a despesa muda;
 - emitir broadcast depois do commit.
+
+Na criação de uma despesa por terceiro, o comando publica somente depois do commit o evento `quitando.expense.created_by_third_party`, com `expense_id`, `group_id`, `recipient_user_id` e `created_by_user_id`. O evento não é persistente, não possui consumidor de UI nesta fase e não é publicado para creator igual ao pagador nem após rollback. Se um consumidor síncrono falhar depois do commit, a falha é reportada operacionalmente e não transforma a despesa já persistida em aparente falha do comando; esta recuperação não oferece retry nem garantia de entrega.
 
 ### 8.8 `GroupInvitationCreator`, `GroupInvitationAccepter` e `MembershipReactivator`
 

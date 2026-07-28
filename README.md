@@ -6,13 +6,13 @@ O Quitando ajuda grupos que já confiam uns nos outros a encerrar despesas compa
 
 ## Status
 
-O projeto está em construção. As **Fases 0, 1 e 2** estão integradas. A **Fase 2 — Schema e entidades financeiras mínimas** foi concluída pela [PR #38](https://github.com/Luf3r/Quitando/pull/38): as entidades financeiras usam UUID v7, FKs UUID, dinheiro em `bigint` e constraints estruturais provadas diretamente no PostgreSQL. A **Fase 3 — Criação de despesas e arredondamento** está em `Ready`, mas sua implementação ainda não começou.
+O projeto está em construção. As **Fases 0 a 3** estão implementadas e verificadas. A **Fase 3 — Criação de despesas e arredondamento** acrescenta criação append-only de despesas por serviço, divisão igual ou exata sem perda monetária, ordem estável por membership, lock por grupo, incremento atômico de `financial_state_version` e evento pós-commit para despesas registradas por terceiro.
 
 A base integrada já oferece o bootstrap Rails, RSpec com exemplos reais, `bin/ci`, checagens de lint e segurança, Docker com PostgreSQL 18, Active Storage/Vips, Devise, Pundit, FactoryBot, parser monetário em centavos e locale `pt-BR`.
 
-Há uma jornada mínima de cadastro e os smoke tests da fundação. Os fluxos transacionais de grupos, despesas, ledger e políticas de domínio ainda serão implementados conforme o roadmap; o schema da Fase 2 não constitui um MVP funcional.
+Há uma jornada mínima de cadastro e os smoke tests da fundação. A criação transacional de despesas já existe no nível de serviço, mas ainda não há fluxo HTTP/UI para operá-la; ledger, políticas e demais jornadas do MVP serão implementados nas fases seguintes. Portanto, a Fase 3 isolada ainda não constitui um MVP funcional.
 
-O trabalho é acompanhado no [GitHub Project — Quitando](https://github.com/users/Luf3r/projects/2). A [Fase 2](https://github.com/Luf3r/Quitando/issues/7) e suas subissues estão em `Done`; a [Fase 3](https://github.com/Luf3r/Quitando/issues/8) está em `Ready`. Status e campos do quadro devem refletir apenas trabalho realmente demonstrado; contratos e gates continuam definidos pela documentação do repositório.
+O trabalho é acompanhado no [GitHub Project — Quitando](https://github.com/users/Luf3r/projects/2). A [Fase 3](https://github.com/Luf3r/Quitando/issues/8) e suas subissues estão em `Done`; a preparação da Fase 4 deve respeitar seu contrato e suas dependências próprias. Status e campos do quadro devem refletir apenas trabalho realmente demonstrado; contratos e gates continuam definidos pela documentação do repositório.
 
 ## Como funciona
 
@@ -128,23 +128,26 @@ O comando de integração contínua disponível hoje é:
 bin/ci
 ```
 
-Ele prepara o ambiente e executa lint, auditorias de dependências e segurança, eager load com Zeitwerk, RSpec e seeds de teste. A suíte já cobre boot, health check, parser monetário, factory, cadastro e processamento Vips; os fluxos financeiros transacionais pertencem às fases seguintes.
+Ele prepara o ambiente e executa lint, auditorias de dependências e segurança, eager load com Zeitwerk, RSpec e seeds de teste. A suíte cobre boot, health check, parser monetário, factories, cadastro, processamento Vips e a criação financeira transacional da Fase 3.
 
-Na branch do PR #38, `bin/ci` também executa o verificador de migrations da Fase 2. A evidência estrutural existente combina:
+`bin/ci` também executa o verificador de migrations financeiras. A evidência estrutural e comportamental combina:
 
 - [specs de models](./spec/models) para associações e seus metadados, enums e persistência das factories;
 - [`spec/factories/factory_lint_spec.rb`](./spec/factories/factory_lint_spec.rb), que valida todas as factories e traits;
-- [`spec/database/phase_2_schema_contract_spec.rb`](./spec/database/phase_2_schema_contract_spec.rb), que inspeciona o catálogo e provoca violações diretamente no PostgreSQL real;
-- [`spec/infrastructure/phase_2_migration_verifier_spec.rb`](./spec/infrastructure/phase_2_migration_verifier_spec.rb), que cobre entradas e ownership do banco temporário;
+- [`spec/database/financial_schema_contract_spec.rb`](./spec/database/financial_schema_contract_spec.rb), que inspeciona o catálogo e provoca violações diretamente no PostgreSQL real;
+- [`spec/infrastructure/financial_schema_migration_verifier_spec.rb`](./spec/infrastructure/financial_schema_migration_verifier_spec.rb), que cobre entradas e ownership do banco temporário;
+- [`spec/infrastructure/financial_migration_command_runner_spec.rb`](./spec/infrastructure/financial_migration_command_runner_spec.rb), que provoca timeout em um processo com filho real e prova o término de todo o grupo sem órfão;
+- [`spec/services/expense_creator_spec.rb`](./spec/services/expense_creator_spec.rb), que prova criação igual/exata, limites, validações, atomicidade, versionamento e evento pós-commit;
+- [`spec/services/expense_creator_concurrency_spec.rb`](./spec/services/expense_creator_concurrency_spec.rb), que força contenção do grupo entre duas sessões PostgreSQL distintas;
 - [`spec/infrastructure/production_image_verifier_spec.rb`](./spec/infrastructure/production_image_verifier_spec.rb), que prova o ownership e o cleanup da tag em caminhos de falha.
 
-O round-trip das migrations pode ser executado isoladamente com [`bin/verify-phase-2-migrations`](./bin/verify-phase-2-migrations):
+O round-trip das migrations financeiras pode ser executado isoladamente com [`bin/verify-financial-schema-migrations`](./bin/verify-financial-schema-migrations):
 
 ```bash
-bin/verify-phase-2-migrations
+bin/verify-financial-schema-migrations
 ```
 
-Esse comando deriva de `TEST_DATABASE_URL` um banco temporário, migra desde o vazio, desfaz e reaplica as migrations da Fase 2 na ordem prevista, executa o contrato PostgreSQL e remove somente o banco temporário validado. A credencial informada precisa permitir criar e remover esse banco.
+Esse comando deriva de `TEST_DATABASE_URL` um banco temporário, migra desde o vazio, prova o backfill determinístico de `memberships.position` sobre dados existentes, desfaz e reaplica todas as migrations financeiras na ordem prevista, executa o contrato PostgreSQL e remove somente o banco temporário validado. Conexões, statements e subprocessos possuem limites de tempo; um subprocesso travado é encerrado e a falha principal é preservada antes do cleanup. A credencial informada precisa permitir criar e remover esse banco.
 
 A imagem real de produção possui uma verificação complementar, executada fora de `bin/ci` por [`bin/verify-production-image`](./bin/verify-production-image):
 
@@ -152,7 +155,7 @@ A imagem real de produção possui uma verificação complementar, executada for
 bin/verify-production-image
 ```
 
-O comando constrói o `Dockerfile`, executa `bundle check`, exige `BUNDLE_WITHOUT=development:test`, confirma a ausência física de toda a árvore de dependências exclusiva desses grupos e remove somente a tag temporária criada, sem podar imagens-pai não pertencentes ao processo. No workflow desta branch, o job `ci` executa o contrato canônico `bin/ci`, enquanto o job independente `production-image` executa esse verificador Docker. Sucesso em um job não substitui a evidência do outro; ambos devem passar no head atual da PR #38, cuja integração continua condicionada a confirmação explícita.
+O comando constrói o `Dockerfile`, executa `bundle check`, exige `BUNDLE_WITHOUT=development:test`, confirma a ausência física de toda a árvore de dependências exclusiva desses grupos e remove somente a tag temporária criada, sem podar imagens-pai não pertencentes ao processo. No workflow, o job `ci` executa o contrato canônico `bin/ci`, enquanto o job independente `production-image` executa esse verificador Docker. Sucesso em um job não substitui a evidência do outro.
 
 No Docker, execute `docker compose exec web bin/ci` com o ambiente ativo ou `docker compose run --rm web bin/ci` para uma execução avulsa. O job `ci` do GitHub Actions executa o mesmo comando.
 

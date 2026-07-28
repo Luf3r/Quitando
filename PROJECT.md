@@ -250,10 +250,10 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 
 ## 11. Milestone atual
 
-- **Última fase concluída:** Fase 2 — Schema e entidades financeiras mínimas
-- **Status atual:** gate da Fase 2 integrado pela [PR #38](https://github.com/Luf3r/Quitando/pull/38), com revisão global e checks `ci`/`production-image` aprovados no head integrado
-- **Próxima fase:** Fase 3 — Criação de despesas e arredondamento
-- **Trabalho executável atual:** a [Fase 3 — issue #8](https://github.com/Luf3r/Quitando/issues/8) está em `Ready`; sua implementação ainda não começou
+- **Última fase concluída:** Fase 3 — Criação de despesas e arredondamento
+- **Status atual:** gate demonstrado com `bin/ci`, round-trip financeiro com backfill populado e specs de criação atômica, evento pós-commit e concorrência entre sessões PostgreSQL distintas
+- **Próxima fase:** Fase 4 — Ledger e saldo oficial
+- **Trabalho executável atual:** a [Fase 3 — issue #8](https://github.com/Luf3r/Quitando/issues/8) está `Done`; a preparação da Fase 4 ainda deve respeitar sua dependência e contrato próprios
 - **Gate integrado da Fase 0:** `bin/ci` executa localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação. O hardening adicional da PR #38 também foi aprovado nos checks remotos atuais.
 
 **Integrado e verificado até agora:**
@@ -275,13 +275,21 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 
 - `Group`, `Membership`, `Expense`, `ExpenseShare` e `Payment` persistidos com PK UUID v7, FKs UUID, dinheiro em `bigint`, índices e checks estruturais;
 - specs estruturais de models, enums e factories, além da matriz de catálogo, inserções válidas e violações diretas contra PostgreSQL real;
-- `bin/verify-phase-2-migrations` realizando migrate, down/up das migrations da Fase 2 e reexecução do contrato PostgreSQL em banco temporário isolado;
+- `bin/verify-financial-schema-migrations` realizando migrate, backfill populado, down/up das migrations financeiras e reexecução do contrato PostgreSQL em banco temporário isolado, com limites para conexões, statements e grupos de subprocessos provados também contra processo e filho reais;
 - `bin/verify-production-image` construindo e inspecionando a imagem real, separado de `bin/ci` em um job próprio do workflow.
+
+**Implementado e verificado na Fase 3:**
+
+- `Membership#position` zero-based, não negativa e única por grupo, com backfill determinístico por `created_at, id`;
+- `MoneyParser` limitado ao máximo de `bigint` antes de construir inteiros arbitrariamente grandes;
+- `EqualSplitCalculator` puro, determinístico e imutável, com residual priorizado para o pagador e depois pela ordem das memberships;
+- `ExpenseCreator` criando despesa e shares iguais ou exatas em uma transação, revalidando grupo e memberships sob lock e incrementando `financial_state_version` uma vez;
+- evento `quitando.expense.created_by_third_party` após o commit externo, com falhas de consumidores reportadas sem transformar persistência já commitada em falso insucesso;
+- concorrência provada com duas sessões PostgreSQL distintas, contenção observada e duas criações integrais elevando a versão em dois.
 
 **Pendente antes de avançar no produto:**
 
-- iniciar a Fase 3 somente após registrar o contrato da tarefa executável e mover o item escolhido de `Ready` para `In progress`;
-- definir limite superior, overflow e mensagem do parser monetário quando ele alimentar colunas `bigint` nas fases de despesas e constraints;
+- preparar a tarefa executável e o contrato da Fase 4 — Ledger e saldo oficial;
 - avaliar uma spec de Active Storage variant real quando attachments entrarem no domínio, além da prova atual de processamento com `ruby-vips`.
 
 Atualize esta seção e o [GitHub Project](https://github.com/users/Luf3r/projects/2) sempre que a tarefa ativa, uma entrega verificável, pendência, fase ou gate mudar. O estado detalhado e os critérios de saída ficam no [roadmap de implementação](./docs/05-quitando-roadmap-implementacao.md).

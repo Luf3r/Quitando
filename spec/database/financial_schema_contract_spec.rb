@@ -1,6 +1,6 @@
 require "rails_helper"
 
-RSpec.describe "Fase 2: contrato estrutural PostgreSQL" do
+RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
   BIGINT_MAX = 9_223_372_036_854_775_807
 
   TABLE_COLUMNS = {
@@ -29,6 +29,7 @@ RSpec.describe "Fase 2: contrato estrutural PostgreSQL" do
       "user_id" => [ "uuid", false ],
       "role" => [ "character varying", false ],
       "status" => [ "character varying", false ],
+      "position" => [ "integer", false ],
       "created_at" => [ "timestamp(6) without time zone", false ],
       "updated_at" => [ "timestamp(6) without time zone", false ]
     },
@@ -109,7 +110,7 @@ RSpec.describe "Fase 2: contrato estrutural PostgreSQL" do
   UNIQUE_INDEXES = {
     "users" => [ %w[email], %w[reset_password_token] ],
     "groups" => [],
-    "memberships" => [ %w[group_id user_id] ],
+    "memberships" => [ %w[group_id user_id], %w[group_id position] ],
     "expenses" => [],
     "expense_shares" => [ %w[expense_id user_id] ],
     "payments" => [ %w[idempotency_key] ]
@@ -222,7 +223,8 @@ RSpec.describe "Fase 2: contrato estrutural PostgreSQL" do
         group_id: create(:group).id,
         user_id: create(:user).id,
         role:,
-        status:
+        status:,
+        position: 0
       )
 
       expect([ membership.role, membership.status ]).to eq([ role, status ])
@@ -233,9 +235,9 @@ RSpec.describe "Fase 2: contrato estrutural PostgreSQL" do
     other_group = create(:group)
     other_user = create(:user)
 
-    first = insert_and_fetch(Membership, group_id: shared_group.id, user_id: shared_user.id, role: "member", status: "active")
-    same_user_other_group = insert_and_fetch(Membership, group_id: other_group.id, user_id: shared_user.id, role: "member", status: "active")
-    same_group_other_user = insert_and_fetch(Membership, group_id: shared_group.id, user_id: other_user.id, role: "member", status: "active")
+    first = insert_and_fetch(Membership, group_id: shared_group.id, user_id: shared_user.id, role: "member", status: "active", position: 0)
+    same_user_other_group = insert_and_fetch(Membership, group_id: other_group.id, user_id: shared_user.id, role: "member", status: "active", position: 0)
+    same_group_other_user = insert_and_fetch(Membership, group_id: shared_group.id, user_id: other_user.id, role: "member", status: "active", position: 1)
 
     expect([ first.id, same_user_other_group.id, same_group_other_user.id ].uniq.size).to eq(3)
   end
@@ -357,10 +359,13 @@ RSpec.describe "Fase 2: contrato estrutural PostgreSQL" do
       insert_direct(Group, name: "Versão negativa", currency_code: "BRL", financial_state_version: -1)
     end
     expect_postgres_error(PG::CheckViolation) do
-      insert_direct(Membership, group_id: group.id, user_id: user.id, role: "admin", status: "active")
+      insert_direct(Membership, group_id: group.id, user_id: user.id, role: "admin", status: "active", position: 0)
     end
     expect_postgres_error(PG::CheckViolation) do
-      insert_direct(Membership, group_id: group.id, user_id: user.id, role: "member", status: "pending")
+      insert_direct(Membership, group_id: group.id, user_id: user.id, role: "member", status: "pending", position: 0)
+    end
+    expect_postgres_error(PG::CheckViolation) do
+      insert_direct(Membership, group_id: group.id, user_id: user.id, role: "member", status: "active", position: -1)
     end
     expect_postgres_error(PG::CheckViolation) do
       insert_direct(Payment, **payment_attributes(group:, from_user:, to_user:).merge(status: "processing"))
@@ -376,9 +381,12 @@ RSpec.describe "Fase 2: contrato estrutural PostgreSQL" do
       insert_direct(Expense, **expense_attributes(group:, user:).merge(id:, replaces_expense_id: id))
     end
 
-    insert_direct(Membership, group_id: group.id, user_id: user.id, role: "member", status: "active")
+    insert_direct(Membership, group_id: group.id, user_id: user.id, role: "member", status: "active", position: 0)
     expect_postgres_error(PG::UniqueViolation) do
-      insert_direct(Membership, group_id: group.id, user_id: user.id, role: "owner", status: "inactive")
+      insert_direct(Membership, group_id: group.id, user_id: other_user.id, role: "member", status: "active", position: 0)
+    end
+    expect_postgres_error(PG::UniqueViolation) do
+      insert_direct(Membership, group_id: group.id, user_id: user.id, role: "owner", status: "inactive", position: 1)
     end
 
     insert_direct(ExpenseShare, expense_id: expense.id, user_id: other_user.id, amount_owed_cents: 1, position: 0)
@@ -546,7 +554,7 @@ RSpec.describe "Fase 2: contrato estrutural PostgreSQL" do
   end
 
   def required_attribute_cases(group:, user:, other_user:, expense:)
-    membership = { group_id: group.id, user_id: user.id, role: "member", status: "active" }
+    membership = { group_id: group.id, user_id: user.id, role: "member", status: "active", position: 0 }
     expense_data = expense_attributes(group:, user:)
     share = { expense_id: expense.id, user_id: user.id, amount_owed_cents: 100, position: 0 }
     payment = payment_attributes(group:, from_user: user, to_user: other_user)
@@ -557,7 +565,7 @@ RSpec.describe "Fase 2: contrato estrutural PostgreSQL" do
       *%i[name currency_code financial_state_version].map do |column_name|
         [ Group, column_name, { name: "Casa", currency_code: "BRL", financial_state_version: 0 } ]
       end,
-      *%i[group_id user_id role status].map { |column_name| [ Membership, column_name, membership ] },
+      *%i[group_id user_id role status position].map { |column_name| [ Membership, column_name, membership ] },
       *%i[group_id paid_by_user_id created_by_user_id amount_cents description occurred_on].map do |column_name|
         [ Expense, column_name, expense_data ]
       end,
@@ -574,8 +582,8 @@ RSpec.describe "Fase 2: contrato estrutural PostgreSQL" do
     payment = payment_attributes(group:, from_user:, to_user:)
 
     [
-      [ Membership, { group_id: missing_id, user_id: user.id, role: "member", status: "active" } ],
-      [ Membership, { group_id: group.id, user_id: missing_id, role: "member", status: "active" } ],
+      [ Membership, { group_id: missing_id, user_id: user.id, role: "member", status: "active", position: 0 } ],
+      [ Membership, { group_id: group.id, user_id: missing_id, role: "member", status: "active", position: 0 } ],
       [ Expense, expense_attributes(group:, user:).merge(group_id: missing_id) ],
       [ Expense, expense_attributes(group:, user:).merge(paid_by_user_id: missing_id) ],
       [ Expense, expense_attributes(group:, user:).merge(created_by_user_id: missing_id) ],

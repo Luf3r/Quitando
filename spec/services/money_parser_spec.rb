@@ -12,6 +12,18 @@ RSpec.describe MoneyParser do
       expect(described_class.parse_cents("90.071.992.547.409,93")).to eq(9_007_199_254_740_993)
     end
 
+    it "aceita o máximo bigint e rejeita o primeiro centavo acima dele" do
+      expect(described_class.parse_cents("92.233.720.368.547.758,07")).to eq(9_223_372_036_854_775_807)
+
+      expect { described_class.parse_cents("92.233.720.368.547.758,08") }
+        .to raise_error(MoneyParser::InvalidAmount, "valor excede o limite de bigint")
+    end
+
+    it "rejeita texto monetário patologicamente grande pelo mesmo limite explícito" do
+      expect { described_class.parse_cents("#{"9" * 10_000},00") }
+        .to raise_error(MoneyParser::InvalidAmount, "valor excede o limite de bigint")
+    end
+
     it "demonstra que um conversor incorreto com Float perde precisão" do
       incorrect_float_converter = lambda do |value|
         (value.delete(".").tr(",", ".").to_f * 100).round

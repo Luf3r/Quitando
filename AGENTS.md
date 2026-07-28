@@ -162,6 +162,7 @@ saldo_projetado = saldo_oficial
 - Autorização existe no backend, não apenas na visibilidade dos botões.
 - Todo acesso financeiro valida membership ativo no grupo correto.
 - IDs conhecidos não concedem acesso.
+- Antes da primeira consulta ou efeito sensível, valide a estrutura e a forma canônica de identificadores recebidos conforme o contrato de persistência; não coaja silenciosamente entradas malformadas.
 - Action Cable valida membership antes de assinar streams.
 - Owner não confirma pagamentos por terceiros no MVP.
 - Não exponha descrições financeiras, tokens ou payloads desnecessários em logs.
@@ -209,6 +210,8 @@ A implementação existente não prevalece sobre uma regra normativa apenas por 
 A especificação deve separar `caminho principal`, `caminho de erro` e cada `fallback autorizado`. Ela descreve o efeito observável principal, condições de sucesso, efeitos colaterais obrigatórios, falhas que permanecem visíveis, condições exatas de ativação de fallback, como usuário ou operador detecta a degradação e o que não conta como entrega concluída. Fallback não pode ser inferido durante a implementação porque o caminho principal é difícil. Se surgir uma necessidade legítima, interrompa o trabalho, registre a causa, proponha e sincronize a mudança de contrato na fonte normativa; somente então escreva as specs e implemente-o.
 
 O comportamento principal solicitado faz parte do contrato da tarefa. Entregar somente um fallback não implementa o comportamento principal, não satisfaz a tarefa nem o gate e não pode ser relatado como concluído. Por exemplo, HTTP pode reconciliar o estado quando um stream falha, mas não substitui uma tarefa que solicita Action Cable; devolver a imagem original após `LoadError` não prova processamento com `ruby-vips`.
+
+Quando o contrato exige que uma entrada seja rejeitada antes de uma fronteira — consulta sensível, persistência, cálculo financeiro ou efeito externo — a spec deve observar essa fronteira. Verificar apenas a exceção ou o estado final não prova a ordem exigida.
 
 Construa em pequenas fatias verticais. Cada fatia deve entregar um contrato verificável de ponta a ponta no nível exigido pela fase, sem antecipar funcionalidades posteriores. Para o `DebtSimplifier`, por exemplo, implemente um contrato por vez — validação da soma, caso simples, múltiplos saldos, determinismo e propriedades — em vez de escrever todo o algoritmo antes das specs.
 
@@ -347,12 +350,20 @@ Contratos especialmente importantes:
 
 Para regras financeiras, combine exemplos legíveis, casos de fronteira e testes de propriedades. Verifique conservação, soma zero, sinais, limites, determinismo, imutabilidade, arredondamento, atomicidade, concorrência e idempotência sempre que forem aplicáveis.
 
+Para contratos que envolvem tempo, isolamento ou efeitos externos:
+
+- uma prova de concorrência deve usar agentes de execução e recursos independentes, demonstrar o ponto real de contenção ou ordenação exigido e ter espera, término e cleanup limitados;
+- um efeito pós-commit deve provar separadamente ausência antes do commit, ausência após rollback e o tratamento definido para falha ocorrida depois da persistência;
+- um verificador que usa conexão, statement, subprocesso ou recurso temporário deve limitar cada fronteira bloqueante, encerrar descendentes no timeout e preservar a falha principal durante o cleanup;
+- fakes podem provar orquestração, argumentos e ownership, mas não substituem a integração real nem uma prova mínima do mecanismo de término quando ele fizer parte do contrato.
+
 ### 8.1 Hardening de specs e verificadores operacionais
 
 - Um gate RSpec deve falhar quando não descobrir exemplos. Em CI, `:focus` não pode reduzir a suíte executada; o uso de foco local pode permanecer disponível fora do CI quando configurado e coberto por spec de subprocesso.
 - Uma etapa explícita para `spec/system` só conta quando descobre e executa ao menos um exemplo. Não trate um job vazio, uma página renderizada ou ausência de exceção como evidência de jornada crítica.
 - Verificadores que criam banco, imagem, arquivo ou outro recurso temporário devem provar o caminho principal na integração real e também os caminhos de propriedade e cleanup. Um recurso só pode ser removido depois de criação bem-sucedida e confirmada pelo próprio processo.
 - O cleanup deve atingir somente o identificador temporário exato e validado. Uma falha principal permanece a falha observável mesmo se a limpeza posterior também falhar; uma falha de cleanup isolada também falha o comando.
+- Conexões, statements, subprocessos, threads e outros pontos bloqueantes de verificadores precisam de limite explícito e término observável. Em timeout, o cleanup deve aguardar a liberação do recurso antes de tocar seus dependentes; não deixe processos descendentes, locks ou recursos temporários órfãos.
 - Fakes de PostgreSQL, Docker ou comandos externos são permitidos somente em specs de orquestração para provar ownership, cleanup e preservação de status de erro. Eles não substituem a execução real exigida do banco, build ou integração principal.
 - Ao endurecer uma verificação que já está correta, use controle negativo restrito a `spec/` em vez de introduzir defeito em produção. Registre separadamente a evidência do caminho real e a eficácia do controle negativo.
 
@@ -471,6 +482,7 @@ Ao iniciar e concluir uma tarefa, reconcilie a documentação de estado com o re
 - mantenha a seção de status do README coerente com as funcionalidades realmente utilizáveis e com as limitações atuais;
 - substitua afirmações obsoletas como “a implementação ainda não existe” quando já houver fundação ou código, sem promover scaffolding a funcionalidade pronta;
 - registre uma capacidade como implementada somente depois que código, specs e verificações aplicáveis existirem;
+- uma afirmação de gate, fase, `Done` ou capacidade verificada exige evidência fresca executada sobre o diff material atual; execução anterior não cobre alterações posteriores;
 - quando a tarefa concluir ou alterar um item do roadmap, sincronize o estado compacto em `PROJECT.md` e qualquer relatório ou documento que ainda descreva a situação anterior;
 - não transforme o roadmap normativo em changelog: preserve seus contratos e gates e registre o progresso nos campos de estado destinados a isso.
 
@@ -529,6 +541,7 @@ Uma tarefa só está pronta quando:
 - documentação afetada foi atualizada;
 - fase atual, capacidades implementadas e pendências documentadas correspondem ao estado real do repositório;
 - subissue, issue-pai e campos do GitHub Project correspondem ao trabalho realmente demonstrado;
+- qualquer afirmação de conclusão usa evidência fresca do diff atual, não somente verificações executadas antes da última alteração material;
 - spec focada, conjunto relacionado e `bin/ci` foram executados quando disponíveis e viáveis;
 - testes não executados e respectivas razões são informados;
 - nenhum item fora do MVP foi introduzido implicitamente.

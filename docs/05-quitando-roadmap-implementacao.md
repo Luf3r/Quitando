@@ -313,12 +313,17 @@ Persistir uma despesa completa de forma atômica e reproduzível.
 - reconciliador de centavos residuais;
 - incremento atômico de `financial_state_version`;
 - auditoria de `created_by_user_id`.
+- evento `quitando.expense.created_by_third_party` após commit quando creator e pagador diferem.
 
 ### 6.3 Specs
 
 ```text
 spec/services/expense_creator_spec.rb
+spec/services/expense_creator_concurrency_spec.rb
 spec/services/equal_split_calculator_spec.rb
+spec/database/financial_schema_contract_spec.rb
+spec/infrastructure/financial_migration_command_runner_spec.rb
+spec/infrastructure/financial_schema_migration_verifier_spec.rb
 ```
 
 Casos:
@@ -337,10 +342,14 @@ Casos:
 - despesa precisa produzir ao menos uma obrigação para não pagador;
 - falha em uma share executa rollback integral;
 - criação concorrente é serializada sem falhar apenas por versão obsoleta.
+- payloads malformados falham com erro de domínio antes de consultas com IDs inválidos;
+- overflow monetário ou de versão não deixa despesa nem share parcial;
+- falha de consumidor do evento pós-commit é reportada sem alterar o sucesso já persistido;
+- migration faz backfill determinístico de memberships existentes e preserva suas identidades.
 
 ### 6.4 Gate de saída
 
-É possível criar despesas válidas por serviço e provar que nenhuma despesa parcial fica persistida.
+É possível criar despesas válidas por serviço e provar que nenhuma despesa parcial fica persistida, inclusive sob overflow, rollback externo e contenção entre conexões reais.
 
 ---
 
