@@ -33,7 +33,7 @@ class EqualSplitCalculator
   def validate!
     raise InvalidSplit, "valor deve ser um inteiro positivo" unless amount_cents.is_a?(Integer) && amount_cents.positive?
     raise InvalidSplit, "participantes devem ser uma coleção não vazia" unless memberships.is_a?(Array) && memberships.any?
-    raise InvalidSplit, "pagador deve ser identificado" unless paid_by_user_id.is_a?(String) && paid_by_user_id.present?
+    raise InvalidSplit, "pagador deve ser identificado" unless valid_user_id?(paid_by_user_id)
     raise InvalidSplit, "membership inválida" unless memberships.all? { |membership| valid_membership?(membership) }
     raise InvalidSplit, "participantes duplicados" unless memberships.map(&:user_id).uniq.length == memberships.length
     raise InvalidSplit, "posições duplicadas" unless memberships.map(&:position).uniq.length == memberships.length
@@ -42,8 +42,12 @@ class EqualSplitCalculator
 
   def valid_membership?(membership)
     membership.respond_to?(:user_id) && membership.respond_to?(:position) &&
-      membership.user_id.is_a?(String) && membership.user_id.present? &&
+      valid_user_id?(membership.user_id) &&
       membership.position.is_a?(Integer) && membership.position >= 0
+  end
+
+  def valid_user_id?(user_id)
+    user_id.is_a?(String) && !user_id.strip.empty?
   end
 
   def ordered_memberships
