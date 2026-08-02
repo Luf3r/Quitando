@@ -250,10 +250,10 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 
 ## 11. Milestone atual
 
-- **Última fase concluída:** Fase 5 — Primeiro plano de quitação
-- **Status atual:** gate demonstrado com `bin/ci`: o saldo oficial derivado gera sugestões tipadas, determinísticas e não persistidas, com lista textual equivalente por console
-- **Próxima fase:** Fase 6 — Saldo projetado
-- **Trabalho executável atual:** a [Fase 5 — issue #10](https://github.com/Luf3r/Quitando/issues/10) e as subissues [#55](https://github.com/Luf3r/Quitando/issues/55), [#56](https://github.com/Luf3r/Quitando/issues/56) e [#57](https://github.com/Luf3r/Quitando/issues/57) estão `Done`; a preparação da Fase 6 deve respeitar seu contrato e dependência próprios
+- **Última fase concluída:** Fase 6 — Saldo projetado
+- **Status atual:** gate demonstrado com `bin/ci`: reports pendentes ajustam somente o saldo projetado e deixam de ser sugeridos no plano restante, sem persistir plano, alterar fatos ou `financial_state_version`
+- **Próxima fase:** Fase 7 — Workflow de pagamentos
+- **Trabalho executável atual:** a [Fase 6 — issue #11](https://github.com/Luf3r/Quitando/issues/11) e as subissues [#59](https://github.com/Luf3r/Quitando/issues/59), [#61](https://github.com/Luf3r/Quitando/issues/61) e [#60](https://github.com/Luf3r/Quitando/issues/60) estão `Done`; a preparação da Fase 7 deve respeitar seu contrato e dependência próprios
 - **Gate integrado da Fase 0:** `bin/ci` executa localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação. O hardening adicional da PR #38 também foi aprovado nos checks remotos atuais.
 
 **Integrado e verificado até agora:**
@@ -302,9 +302,16 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 - cenário persistido demonstra Carla → Ana apesar da obrigação histórica de Carla ter surgido com Diego;
 - property test com seed fixa e controle negativo restrito à spec demonstram quitação, conservação, escopo e ausência de mutação.
 
+**Implementado e verificado na Fase 6:**
+
+- `ProjectedBalanceCalculator` deriva um novo mapa de saldos a partir do oficial e de pagamentos `reported`, aplicando exatamente dois deltas em centavos por report;
+- `SettlementPlanGenerator` calcula o plano restante sobre o saldo projetado, sem persistir sugestões, alterar fatos financeiros ou `financial_state_version`;
+- exemplos integrados cobrem report parcial, total, múltiplo, cancelado e confirmado, além da propagação visível de falhas;
+- property tests com seed fixa, shrinking e controle negativo exclusivo de spec demonstram conservação, direção a zero, tipos, imutabilidade, reversibilidade, determinismo e quitação da projeção em históricos persistidos.
+
 **Pendente antes de avançar no produto:**
 
-- preparar a tarefa executável e o contrato da Fase 6 — Saldo projetado;
+- preparar a tarefa executável e o contrato da Fase 7 — Workflow de pagamentos;
 - avaliar uma spec de Active Storage variant real quando attachments entrarem no domínio, além da prova atual de processamento com `ruby-vips`.
 
 Atualize esta seção e o [GitHub Project](https://github.com/users/Luf3r/projects/2) sempre que a tarefa ativa, uma entrega verificável, pendência, fase ou gate mudar. O estado detalhado e os critérios de saída ficam no [roadmap de implementação](./docs/05-quitando-roadmap-implementacao.md).
