@@ -250,10 +250,10 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 
 ## 11. Milestone atual
 
-- **Última fase concluída:** Fase 3 — Criação de despesas e arredondamento
-- **Status atual:** gate demonstrado com `bin/ci`, round-trip financeiro com backfill populado e specs de criação atômica, evento pós-commit e concorrência entre sessões PostgreSQL distintas
-- **Próxima fase:** Fase 4 — Ledger e saldo oficial
-- **Trabalho executável atual:** a [Fase 3 — issue #8](https://github.com/Luf3r/Quitando/issues/8) está `Done`; a preparação da Fase 4 ainda deve respeitar sua dependência e contrato próprios
+- **Última fase concluída:** Fase 4 — Ledger e saldo oficial
+- **Status atual:** gate demonstrado com `bin/ci`: `GroupBalanceCalculator` agrega despesas ativas, shares e pagamentos `confirmed` em uma consulta PostgreSQL, preserva soma zero e expõe inconsistência sem fallback
+- **Próxima fase:** Fase 5 — Primeiro plano de quitação
+- **Trabalho executável atual:** a [Fase 4 — issue #9](https://github.com/Luf3r/Quitando/issues/9) e as subissues [#49](https://github.com/Luf3r/Quitando/issues/49), [#50](https://github.com/Luf3r/Quitando/issues/50) e [#51](https://github.com/Luf3r/Quitando/issues/51) estão `Done`; a preparação da Fase 5 deve respeitar seu contrato e dependência próprios
 - **Gate integrado da Fase 0:** `bin/ci` executa localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação. O hardening adicional da PR #38 também foi aprovado nos checks remotos atuais.
 
 **Integrado e verificado até agora:**
@@ -287,9 +287,16 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 - evento `quitando.expense.created_by_third_party` após o commit externo, com falhas de consumidores reportadas sem transformar persistência já commitada em falso insucesso;
 - concorrência provada com duas sessões PostgreSQL distintas, contenção observada e duas criações integrais elevando a versão em dois.
 
+**Implementado e verificado na Fase 4:**
+
+- `GroupBalanceCalculator` retorna todos os memberships do grupo, inclusive inativos e zerados, em ordem estável, com saldos oficiais em `Integer`;
+- uma consulta PostgreSQL nomeada agrega despesas ativas, shares e pagamentos `confirmed`; despesas anuladas e pagamentos `reported`/`cancelled` não produzem delta;
+- a soma não nula é reportada com `group_id` e `financial_state_version` e lança `UnbalancedLedger`, sem resultado parcial;
+- exemplos de domínio, agregado acima de `bigint`, execução única da consulta e property test de 50 históricos persistidos demonstram conservação e reprodutibilidade.
+
 **Pendente antes de avançar no produto:**
 
-- preparar a tarefa executável e o contrato da Fase 4 — Ledger e saldo oficial;
+- preparar a tarefa executável e o contrato da Fase 5 — Primeiro plano de quitação;
 - avaliar uma spec de Active Storage variant real quando attachments entrarem no domínio, além da prova atual de processamento com `ruby-vips`.
 
 Atualize esta seção e o [GitHub Project](https://github.com/users/Luf3r/projects/2) sempre que a tarefa ativa, uma entrega verificável, pendência, fase ou gate mudar. O estado detalhado e os critérios de saída ficam no [roadmap de implementação](./docs/05-quitando-roadmap-implementacao.md).
