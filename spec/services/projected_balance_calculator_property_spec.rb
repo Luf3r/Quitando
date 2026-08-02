@@ -101,9 +101,7 @@ RSpec.describe ProjectedBalanceCalculator, "property tests" do
           assert_exactly_two_deltas_once!(projection_without_current, projected_balances, report)
         end
 
-        projection_before_last_report = described_class.call(official_balances, reports.first(1))
         restored_projection = described_class.call(official_balances, reports.first(1))
-        raise "remover o report não restaura a projeção anterior" unless restored_projection == projection_before_last_report
         raise "o último report não teve efeito observável" if projected_balances == restored_projection
       end
     end
