@@ -408,10 +408,12 @@ Constraints:
 
 - `amount_cents > 0`;
 - `from_user_id <> to_user_id`;
-- `idempotency_key` é um UUID globalmente único;
+- `idempotency_key` em `Payment` preserva a auditoria do report; a unicidade global de comandos pertence ao recibo em `payment_command_receipts`;
 - repetir a chave com payload diferente falha por conflito de `request_fingerprint`;
 - foreign keys obrigatórias;
 - índices por `group_id`, `status`, `reported_at` e `confirmed_at`.
+
+Cada comando possui recibo imutável em `payment_command_receipts`, com `payment_id`, tipo (`report`, `confirm` ou `cancel`), chave global e fingerprint canônico. Os campos do `Payment` permanecem auditoria exclusiva do report.
 
 ---
 
@@ -643,6 +645,8 @@ A versão é uma proteção contra decisão obsoleta, não substitui as validaç
 
 Operações sensíveis recebem chave de idempotência e fingerprint canônico do payload. Repetir a mesma chave com o mesmo payload retorna o resultado já criado; reutilizá-la com payload diferente retorna conflito e não reaproveita o comando anterior.
 
+O recibo é resolvido depois do lock e da autorização, mas antes das demais regras. Retry idêntico devolve o `Payment` em seu estado persistido atual, sem nova versão ou evento.
+
 ### 9.4 Confirmações simultâneas
 
 A confirmação usa lock ou atualização condicional:
@@ -658,6 +662,8 @@ Apenas uma execução realiza a transição.
 ### 9.5 Broadcasts
 
 Broadcasts são emitidos depois do commit. Informam que o estado mudou, mas não são fonte de verdade.
+
+Na Fase 7, comandos publicam eventos de domínio pós-commit (`quitando.payment.reported`, `quitando.payment.confirmed` e `quitando.payment.cancelled`) apenas com IDs e versão. Eles não são broadcasts Turbo/Action Cable, que pertencem à Fase 12; falha de consumidor é reportada operacionalmente e não desfaz o comando persistido.
 
 ### 9.6 Cálculos assíncronos futuros
 

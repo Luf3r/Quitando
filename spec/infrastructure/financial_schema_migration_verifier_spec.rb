@@ -162,6 +162,28 @@ RSpec.describe "Financial schema migration verifier safety" do
     end
   end
 
+  it "runs the payment command receipt SQLSTATE assertion before the structural RSpec suite" do
+    with_fake_migration_dependencies do |_stdout, _stderr, status, _statements, orchestration|
+      expect(status).to be_success
+      expect(orchestration).to include(a_string_including("payment command receipt mutation expected SQLSTATE 55000"))
+    end
+  end
+
+  it "runs the cutover backfill and final index assertions before the structural RSpec suite" do
+    with_fake_migration_dependencies do |_stdout, _stderr, status, _statements, orchestration|
+      expect(status).to be_success
+      expect(orchestration).to include(a_string_including("cutover backfill expected exactly one report receipt"))
+      expect(orchestration).to include(a_string_including("payments idempotency audit index expected non-unique"))
+    end
+  end
+
+  it "runs the migration lock timeout restoration assertion before the structural RSpec suite" do
+    with_fake_migration_dependencies do |_stdout, _stderr, status, _statements, orchestration|
+      expect(status).to be_success
+      expect(orchestration).to include(a_string_including("lock_timeout was not restored after cutover receipt migration"))
+    end
+  end
+
   it "cleans up after a primary failure and preserves that failure", :aggregate_failures do
     with_fake_migration_dependencies("SYSTEM_FAKE_FAILURE" => "true") do |_stdout, stderr, status, statements|
       expect(status).not_to be_success

@@ -6,6 +6,7 @@ abort("The Rails environment is running in production mode!") if Rails.env.produ
 require "rspec/rails"
 require "factory_bot_rails"
 require_relative "spec_helper"
+require_relative "support/payment_command_receipt_cleanup"
 
 begin
   ActiveRecord::Migration.maintain_test_schema!
@@ -15,6 +16,7 @@ end
 
 RSpec.configure do |config|
   config.include FactoryBot::Syntax::Methods
+  config.include PaymentCommandReceiptCleanup
   config.fixture_paths = [ Rails.root.join("spec/fixtures") ]
   config.use_transactional_fixtures = true
   config.infer_spec_type_from_file_location!

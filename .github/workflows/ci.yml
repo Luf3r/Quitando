@@ -24,7 +24,14 @@ jobs:
 
     steps:
       - name: Install native dependencies
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libpq-dev libvips-dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y ca-certificates curl gnupg libpq-dev libvips-dev
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor --output /usr/share/keyrings/postgresql.gpg
+          . /etc/os-release
+          echo "deb [signed-by=/usr/share/keyrings/postgresql.gpg] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y postgresql-client-18
 
       - name: Checkout code
         uses: actions/checkout@v7

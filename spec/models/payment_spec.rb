@@ -20,7 +20,8 @@ RSpec.describe Payment do
       to_user: { class_name: "User", foreign_key: "to_user_id", macro: :belongs_to, optional: false },
       reported_by_user: { class_name: "User", foreign_key: "reported_by_user_id", macro: :belongs_to, optional: false },
       confirmed_by_user: { class_name: "User", foreign_key: "confirmed_by_user_id", macro: :belongs_to, optional: true },
-      cancelled_by_user: { class_name: "User", foreign_key: "cancelled_by_user_id", macro: :belongs_to, optional: true }
+      cancelled_by_user: { class_name: "User", foreign_key: "cancelled_by_user_id", macro: :belongs_to, optional: true },
+      command_receipts: { class_name: "PaymentCommandReceipt", foreign_key: "payment_id", macro: :has_many, optional: false }
     )
   end
 
