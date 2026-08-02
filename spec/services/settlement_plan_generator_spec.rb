@@ -222,12 +222,14 @@ RSpec.describe SettlementPlanGenerator do
       expect { described_class.call(group) }.to raise_error(GroupBalanceCalculator::UnbalancedLedger)
     end
 
-    it "propaga a falha ao consultar payments reported sem devolver plano parcial" do
+    it "propaga a falha ao enumerar payments reported sem devolver plano parcial" do
       group = create(:group)
       payment_scope = double("payments relation")
-      query_failure = Class.new(StandardError)
+      query_failure = ActiveRecord::StatementInvalid.new("falha na consulta")
+      lazy_reports = Object.new
+      lazy_reports.define_singleton_method(:each) { raise query_failure }
       allow(group).to receive(:payments).and_return(payment_scope)
-      allow(payment_scope).to receive(:reported).and_raise(query_failure)
+      allow(payment_scope).to receive(:reported).and_return(lazy_reports)
 
       expect { described_class.call(group) }.to raise_error(query_failure)
     end

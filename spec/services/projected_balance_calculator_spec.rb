@@ -59,12 +59,28 @@ RSpec.describe "ProjectedBalanceCalculator" do
       expect(ProjectedBalanceCalculator.call(official_balances, reported_payments).values.sum).to eq(0)
     end
 
+    it "exige a chave da origem mesmo quando o mapa oficial tem default" do
+      official_balances = Hash.new(0).merge("ana" => 2_000, "bruno" => -2_000)
+      report = ReportedPayment.new(from_user_id: "diego", to_user_id: "ana", amount_cents: 1_000)
+
+      expect { ProjectedBalanceCalculator.call(official_balances, [ report ]) }
+        .to raise_error(KeyError, /diego/)
+    end
+
+    it "exige a chave do destino mesmo quando o mapa oficial tem default_proc" do
+      official_balances = Hash.new { |_hash, _key| 0 }.merge("ana" => 2_000, "bruno" => -2_000)
+      report = ReportedPayment.new(from_user_id: "bruno", to_user_id: "diego", amount_cents: 1_000)
+
+      expect { ProjectedBalanceCalculator.call(official_balances, [ report ]) }
+        .to raise_error(KeyError, /diego/)
+    end
+
     it "expõe o erro quando um report referencia participante ausente" do
       official_balances = { "ana" => 2_000, "bruno" => -2_000 }
       reported_payments = [ ReportedPayment.new(from_user_id: "diego", to_user_id: "ana", amount_cents: 1_000) ]
 
       expect { ProjectedBalanceCalculator.call(official_balances, reported_payments) }
-        .to raise_error(NoMethodError, /\+/)
+        .to raise_error(KeyError, /diego/)
     end
 
     it "expõe o erro quando um report não possui amount_cents" do
