@@ -55,10 +55,9 @@ RSpec.describe ProjectedBalanceCalculator, "property tests" do
     raise "o destino não caminha em direção a zero" unless (receiver_before - report.amount_cents).abs < receiver_before.abs
   end
 
-  def assert_exactly_two_deltas_once!(official_balances, report)
-    projection = described_class.call(official_balances, [ report ])
-    deltas = projection.each_with_object({}) do |(user_id, balance), changed_balances|
-      delta = balance - official_balances.fetch(user_id)
+  def assert_exactly_two_deltas_once!(projection_without_report, projection_with_report, report)
+    deltas = projection_with_report.each_with_object({}) do |(user_id, balance), changed_balances|
+      delta = balance - projection_without_report.fetch(user_id)
       changed_balances[user_id] = delta unless delta.zero?
     end
 
@@ -67,13 +66,6 @@ RSpec.describe ProjectedBalanceCalculator, "property tests" do
       report.to_user_id => -report.amount_cents
     }
     raise "o report não aplicou exatamente dois deltas uma vez" unless deltas == expected_deltas
-  end
-
-  def expected_projection(official_balances, reports)
-    reports.each_with_object(official_balances.dup) do |report, balances|
-      balances[report.from_user_id] += report.amount_cents
-      balances[report.to_user_id] -= report.amount_cents
-    end
   end
 
   it "preserva conservação, direção, tipos, imutabilidade e reversibilidade em 60 projeções válidas" do
@@ -91,19 +83,25 @@ RSpec.describe ProjectedBalanceCalculator, "property tests" do
         persisted_payment_count = Payment.count
 
         projected_balances = described_class.call(official_balances, reports)
-        expected_projected_balances = expected_projection(official_balances, reports)
 
         raise "o mapa oficial foi modificado" unless official_balances == original_official_balances
         raise "a projeção alterou fatos persistidos" unless Payment.count == persisted_payment_count
         raise "participante sem String" unless projected_balances.keys.all?(String)
         raise "saldo sem Integer" unless projected_balances.values.all?(Integer)
         raise "a projeção não conserva valor" unless projected_balances.values.sum.zero?
-        raise "a projeção não aplicou todos os reports exatamente uma vez" unless projected_balances == expected_projected_balances
         raise "a projeção não é determinística" unless described_class.call(official_balances, reports) == projected_balances
 
-        reports.each { |report| assert_exactly_two_deltas_once!(official_balances, report) }
+        reports.each_index do |report_index|
+          report = reports.fetch(report_index)
+          reports_without_current = reports.each_with_index.filter_map do |candidate, candidate_index|
+            candidate unless candidate_index == report_index
+          end
+          projection_without_current = described_class.call(official_balances, reports_without_current)
 
-        projection_before_last_report = expected_projection(official_balances, reports.first(1))
+          assert_exactly_two_deltas_once!(projection_without_current, projected_balances, report)
+        end
+
+        projection_before_last_report = described_class.call(official_balances, reports.first(1))
         restored_projection = described_class.call(official_balances, reports.first(1))
         raise "remover o report não restaura a projeção anterior" unless restored_projection == projection_before_last_report
         raise "o último report não teve efeito observável" if projected_balances == restored_projection
