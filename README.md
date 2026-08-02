@@ -6,13 +6,13 @@ O Quitando ajuda grupos que já confiam uns nos outros a encerrar despesas compa
 
 ## Status
 
-O projeto está em construção. As **Fases 0 a 4** estão implementadas e verificadas. A **Fase 4 — Ledger e saldo oficial** acrescenta `GroupBalanceCalculator`: ele calcula saldos oficiais a partir de despesas ativas, shares e pagamentos confirmados, mantém memberships inativos ou zerados no resultado e rejeita um ledger não conservado com erro explícito. A **Fase 3 — Criação de despesas e arredondamento** acrescentou criação append-only de despesas por serviço, divisão igual ou exata sem perda monetária, ordem estável por membership, lock por grupo, incremento atômico de `financial_state_version` e evento pós-commit para despesas registradas por terceiro.
+O projeto está em construção. As **Fases 0 a 5** estão implementadas e verificadas. A **Fase 5 — Primeiro plano de quitação** acrescenta `SettlementPlanGenerator` e `SettlementPlanTextPresenter`: eles transformam o saldo oficial em sugestões tipadas e linhas textuais de quem paga quem, sem persistir plano ou criar pagamentos. A **Fase 4 — Ledger e saldo oficial** acrescentou `GroupBalanceCalculator`, e a **Fase 3 — Criação de despesas e arredondamento** acrescentou criação append-only de despesas por serviço, divisão igual ou exata sem perda monetária, ordem estável por membership, lock por grupo, incremento atômico de `financial_state_version` e evento pós-commit para despesas registradas por terceiro.
 
 A base integrada já oferece o bootstrap Rails, RSpec com exemplos reais, `bin/ci`, checagens de lint e segurança, Docker com PostgreSQL 18, Active Storage/Vips, Devise, Pundit, FactoryBot, parser monetário em centavos e locale `pt-BR`.
 
-Há uma jornada mínima de cadastro e os smoke tests da fundação. A criação transacional de despesas e o ledger oficial já existem no nível de serviço, mas ainda não há fluxo HTTP/UI para operá-los. Políticas e demais jornadas do MVP serão implementadas nas fases seguintes. Portanto, o estado atual ainda não constitui um MVP funcional.
+Há uma jornada mínima de cadastro e os smoke tests da fundação. A criação transacional de despesas, o ledger oficial e o primeiro plano textual já existem no nível de serviço e podem ser demonstrados por console, mas ainda não há fluxo HTTP/UI para operá-los. Políticas e demais jornadas do MVP serão implementadas nas fases seguintes. Portanto, o estado atual ainda não constitui um MVP funcional.
 
-O trabalho é acompanhado no [GitHub Project — Quitando](https://github.com/users/Luf3r/projects/2). As [Fases 3](https://github.com/Luf3r/Quitando/issues/8) e [4](https://github.com/Luf3r/Quitando/issues/9), com suas subissues, estão em `Done`; a próxima etapa é a Fase 5 — primeiro plano de quitação. Status e campos do quadro devem refletir apenas trabalho realmente demonstrado; contratos e gates continuam definidos pela documentação do repositório.
+O trabalho é acompanhado no [GitHub Project — Quitando](https://github.com/users/Luf3r/projects/2). As [Fases 3](https://github.com/Luf3r/Quitando/issues/8), [4](https://github.com/Luf3r/Quitando/issues/9) e [5](https://github.com/Luf3r/Quitando/issues/10), com suas subissues, estão em `Done`; a próxima etapa é a Fase 6 — saldo projetado. Status e campos do quadro devem refletir apenas trabalho realmente demonstrado; contratos e gates continuam definidos pela documentação do repositório.
 
 ## Como funciona
 
@@ -128,7 +128,7 @@ O comando de integração contínua disponível hoje é:
 bin/ci
 ```
 
-Ele prepara o ambiente e executa lint, auditorias de dependências e segurança, eager load com Zeitwerk, RSpec e seeds de teste. A suíte cobre boot, health check, parser monetário, factories, cadastro, processamento Vips, criação financeira transacional da Fase 3 e o ledger oficial da Fase 4.
+Ele prepara o ambiente e executa lint, auditorias de dependências e segurança, eager load com Zeitwerk, RSpec e seeds de teste. A suíte cobre boot, health check, parser monetário, factories, cadastro, processamento Vips, criação financeira transacional da Fase 3, ledger oficial da Fase 4 e o primeiro plano textual derivado da Fase 5.
 
 `bin/ci` também executa o verificador de migrations financeiras. A evidência estrutural e comportamental combina:
 

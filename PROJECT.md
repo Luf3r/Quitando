@@ -250,10 +250,10 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 
 ## 11. Milestone atual
 
-- **Última fase concluída:** Fase 4 — Ledger e saldo oficial
-- **Status atual:** gate demonstrado com `bin/ci`: `GroupBalanceCalculator` agrega despesas ativas, shares e pagamentos `confirmed` em uma consulta PostgreSQL, preserva soma zero e expõe inconsistência sem fallback
-- **Próxima fase:** Fase 5 — Primeiro plano de quitação
-- **Trabalho executável atual:** a [Fase 4 — issue #9](https://github.com/Luf3r/Quitando/issues/9) e as subissues [#49](https://github.com/Luf3r/Quitando/issues/49), [#50](https://github.com/Luf3r/Quitando/issues/50) e [#51](https://github.com/Luf3r/Quitando/issues/51) estão `Done`; a preparação da Fase 5 deve respeitar seu contrato e dependência próprios
+- **Última fase concluída:** Fase 5 — Primeiro plano de quitação
+- **Status atual:** gate demonstrado com `bin/ci`: o saldo oficial derivado gera sugestões tipadas, determinísticas e não persistidas, com lista textual equivalente por console
+- **Próxima fase:** Fase 6 — Saldo projetado
+- **Trabalho executável atual:** a [Fase 5 — issue #10](https://github.com/Luf3r/Quitando/issues/10) e as subissues [#55](https://github.com/Luf3r/Quitando/issues/55), [#56](https://github.com/Luf3r/Quitando/issues/56) e [#57](https://github.com/Luf3r/Quitando/issues/57) estão `Done`; a preparação da Fase 6 deve respeitar seu contrato e dependência próprios
 - **Gate integrado da Fase 0:** `bin/ci` executa localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação. O hardening adicional da PR #38 também foi aprovado nos checks remotos atuais.
 
 **Integrado e verificado até agora:**
@@ -294,9 +294,17 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 - a soma não nula é reportada com `group_id` e `financial_state_version` e lança `UnbalancedLedger`, sem resultado parcial;
 - exemplos de domínio, agregado acima de `bigint`, execução única da consulta e property test de 50 históricos persistidos demonstram conservação e reprodutibilidade.
 
+**Implementado e verificado na Fase 5:**
+
+- `SettlementPlanGenerator` conecta `GroupBalanceCalculator` a `DebtSimplifier` sem persistir sugestões, criar pagamentos ou alterar `financial_state_version`;
+- `SettlementPlanTextPresenter` expõe uma linha textual ordenada por transferência, com UUIDs e centavos diretos para uso por console;
+- o plano quita o saldo oficial, preserva determinismo e escopo do grupo, e deixa erros de ledger visíveis;
+- cenário persistido demonstra Carla → Ana apesar da obrigação histórica de Carla ter surgido com Diego;
+- property test com seed fixa e controle negativo restrito à spec demonstram quitação, conservação, escopo e ausência de mutação.
+
 **Pendente antes de avançar no produto:**
 
-- preparar a tarefa executável e o contrato da Fase 5 — Primeiro plano de quitação;
+- preparar a tarefa executável e o contrato da Fase 6 — Saldo projetado;
 - avaliar uma spec de Active Storage variant real quando attachments entrarem no domínio, além da prova atual de processamento com `ruby-vips`.
 
 Atualize esta seção e o [GitHub Project](https://github.com/users/Luf3r/projects/2) sempre que a tarefa ativa, uma entrega verificável, pendência, fase ou gate mudar. O estado detalhado e os critérios de saída ficam no [roadmap de implementação](./docs/05-quitando-roadmap-implementacao.md).
