@@ -2,6 +2,7 @@ require "rails_helper"
 
 RSpec.describe "ProjectedBalanceCalculator" do
   ReportedPayment = Data.define(:from_user_id, :to_user_id, :amount_cents)
+  IncompleteReportedPayment = Data.define(:from_user_id, :to_user_id)
 
   describe ".call" do
     it "projeta o exemplo normativo de Bruno para Ana" do
@@ -56,6 +57,22 @@ RSpec.describe "ProjectedBalanceCalculator" do
       ]
 
       expect(ProjectedBalanceCalculator.call(official_balances, reported_payments).values.sum).to eq(0)
+    end
+
+    it "expõe o erro quando um report referencia participante ausente" do
+      official_balances = { "ana" => 2_000, "bruno" => -2_000 }
+      reported_payments = [ ReportedPayment.new(from_user_id: "diego", to_user_id: "ana", amount_cents: 1_000) ]
+
+      expect { ProjectedBalanceCalculator.call(official_balances, reported_payments) }
+        .to raise_error(NoMethodError, /\+/)
+    end
+
+    it "expõe o erro quando um report não possui amount_cents" do
+      official_balances = { "ana" => 2_000, "bruno" => -2_000 }
+      reported_payments = [ IncompleteReportedPayment.new(from_user_id: "bruno", to_user_id: "ana") ]
+
+      expect { ProjectedBalanceCalculator.call(official_balances, reported_payments) }
+        .to raise_error(NoMethodError, /amount_cents/)
     end
   end
 end
