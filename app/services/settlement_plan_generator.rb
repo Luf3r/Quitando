@@ -8,7 +8,10 @@ class SettlementPlanGenerator
   end
 
   def call
-    DebtSimplifier.new(GroupBalanceCalculator.call(group)).call
+    official_balances = GroupBalanceCalculator.call(group)
+    projected_balances = ProjectedBalanceCalculator.call(official_balances, group.payments.reported)
+
+    DebtSimplifier.new(projected_balances).call
   end
 
   private
