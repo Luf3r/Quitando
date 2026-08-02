@@ -4,6 +4,10 @@ require "image_processing/vips"
 require "tempfile"
 
 RSpec.describe "ImageProcessing com Vips" do
+  it "configura Vips como processador de variantes do Active Storage" do
+    expect(Rails.application.config.active_storage.variant_processor).to eq(:vips)
+  end
+
   it "redimensiona uma imagem com ruby-vips" do
     input = Tempfile.new([ "input", ".png" ])
     input.binmode

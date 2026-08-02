@@ -70,7 +70,9 @@ O destinatário do plano pode ser diferente da pessoa associada à dívida perce
 O modo padrão usa uma simplificação gulosa determinística:
 
 - recebe saldos cuja soma é zero;
+- recebe participantes identificados por strings UUID v7 canônicas;
 - casa o maior devedor com o maior credor;
+- desempata magnitudes iguais por UUID crescente em ordem lexicográfica;
 - gera no máximo `m - 1` transferências, com `m` igual à quantidade de saldos não zero;
 - com filas de prioridade, opera em `O(m log m)`;
 - não promete o menor número matematicamente possível em todos os casos.
@@ -248,13 +250,13 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 
 ## 11. Milestone atual
 
-- **Fase atual:** Fase 1 — `DebtSimplifier` em Ruby puro
-- **Status atual:** Fase 0 concluída; Fase 1 em andamento no planejamento executável, ainda sem implementação do `DebtSimplifier`
-- **Próxima fase:** Fase 2 — Schema e entidades financeiras mínimas
-- **Trabalho executável atual:** issue [#20 — API, saída e erros tipados](https://github.com/Luf3r/Quitando/issues/20) em `Ready`; épico [#6](https://github.com/Luf3r/Quitando/issues/6) em `In progress`
-- **Gate concluído da Fase 0:** repositório executa `bin/ci` localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação.
+- **Última fase concluída:** Fase 6 — Saldo projetado
+- **Status atual:** gate demonstrado com `bin/ci`: reports pendentes ajustam somente o saldo projetado e deixam de ser sugeridos no plano restante, sem persistir plano, alterar fatos ou `financial_state_version`
+- **Próxima fase:** Fase 7 — Workflow de pagamentos
+- **Trabalho executável atual:** a [Fase 6 — issue #11](https://github.com/Luf3r/Quitando/issues/11) e as subissues [#59](https://github.com/Luf3r/Quitando/issues/59), [#61](https://github.com/Luf3r/Quitando/issues/61) e [#60](https://github.com/Luf3r/Quitando/issues/60) estão `Done`; a preparação da Fase 7 deve respeitar seu contrato e dependência próprios
+- **Gate integrado da Fase 0:** `bin/ci` executa localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação. O hardening adicional da PR #38 também foi aprovado nos checks remotos atuais.
 
-**Implementado e verificado até agora:**
+**Integrado e verificado até agora:**
 
 - aplicação Rails com Ruby e dependências fixadas;
 - PostgreSQL 18 padronizado no Docker local e no CI;
@@ -262,16 +264,54 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 - `bin/ci` com lint, auditorias de dependências e segurança, eager load, RSpec e seeds;
 - configuração de desenvolvimento Docker, Active Storage e locale padrão `pt-BR`.
 - FactoryBot integrado ao RSpec, factory inicial de `User`, Devise e Pundit configurados;
+- PK inicial de `User` em UUID v7 gerado pelo PostgreSQL 18, com generators Rails preparados para PKs UUID;
+- `DebtSimplifier` Ruby puro, determinístico e guloso, com UUID v7 canônica, erros tipados e transferências em `O(m log m)`;
+- exemplos, property tests com seed/shrinking e subprocesso de isolamento cobrindo o gate da Fase 1;
 - parser monetário `pt-BR` para centavos sem `float`;
 - specs reais de boot, health check, autenticação, parser, factory e processamento Vips;
 - imagem de produção sem gems dos grupos `development` e `test`.
-- GitHub Actions `CI` executando `bin/ci` no commit `f18479c` com conclusão `success` em 16 de julho de 2026.
+
+**Integrado e verificado na Fase 2:**
+
+- `Group`, `Membership`, `Expense`, `ExpenseShare` e `Payment` persistidos com PK UUID v7, FKs UUID, dinheiro em `bigint`, índices e checks estruturais;
+- specs estruturais de models, enums e factories, além da matriz de catálogo, inserções válidas e violações diretas contra PostgreSQL real;
+- `bin/verify-financial-schema-migrations` realizando migrate, backfill populado, down/up das migrations financeiras e reexecução do contrato PostgreSQL em banco temporário isolado, com limites para conexões, statements e grupos de subprocessos provados também contra processo e filho reais;
+- `bin/verify-production-image` construindo e inspecionando a imagem real, separado de `bin/ci` em um job próprio do workflow.
+
+**Implementado e verificado na Fase 3:**
+
+- `Membership#position` zero-based, não negativa e única por grupo, com backfill determinístico por `created_at, id`;
+- `MoneyParser` limitado ao máximo de `bigint` antes de construir inteiros arbitrariamente grandes;
+- `EqualSplitCalculator` puro, determinístico e imutável, com residual priorizado para o pagador e depois pela ordem das memberships;
+- `ExpenseCreator` criando despesa e shares iguais ou exatas em uma transação, revalidando grupo e memberships sob lock e incrementando `financial_state_version` uma vez;
+- evento `quitando.expense.created_by_third_party` após o commit externo, com falhas de consumidores reportadas sem transformar persistência já commitada em falso insucesso;
+- concorrência provada com duas sessões PostgreSQL distintas, contenção observada e duas criações integrais elevando a versão em dois.
+
+**Implementado e verificado na Fase 4:**
+
+- `GroupBalanceCalculator` retorna todos os memberships do grupo, inclusive inativos e zerados, em ordem estável, com saldos oficiais em `Integer`;
+- uma consulta PostgreSQL nomeada agrega despesas ativas, shares e pagamentos `confirmed`; despesas anuladas e pagamentos `reported`/`cancelled` não produzem delta;
+- a soma não nula é reportada com `group_id` e `financial_state_version` e lança `UnbalancedLedger`, sem resultado parcial;
+- exemplos de domínio, agregado acima de `bigint`, execução única da consulta e property test de 50 históricos persistidos demonstram conservação e reprodutibilidade.
+
+**Implementado e verificado na Fase 5:**
+
+- `SettlementPlanGenerator` conecta `GroupBalanceCalculator` a `DebtSimplifier` sem persistir sugestões, criar pagamentos ou alterar `financial_state_version`;
+- `SettlementPlanTextPresenter` expõe uma linha textual ordenada por transferência, com UUIDs e centavos diretos para uso por console;
+- o plano quita o saldo oficial, preserva determinismo e escopo do grupo, e deixa erros de ledger visíveis;
+- cenário persistido demonstra Carla → Ana apesar da obrigação histórica de Carla ter surgido com Diego;
+- property test com seed fixa e controle negativo restrito à spec demonstram quitação, conservação, escopo e ausência de mutação.
+
+**Implementado e verificado na Fase 6:**
+
+- `ProjectedBalanceCalculator` deriva um novo mapa de saldos a partir do oficial e de pagamentos `reported`, aplicando exatamente dois deltas em centavos por report;
+- `SettlementPlanGenerator` calcula o plano restante sobre o saldo projetado, sem persistir sugestões, alterar fatos financeiros ou `financial_state_version`;
+- exemplos integrados cobrem report parcial, total, múltiplo, cancelado e confirmado, além da propagação visível de falhas;
+- property tests com seed fixa, shrinking e controle negativo exclusivo de spec demonstram conservação, direção a zero, tipos, imutabilidade, reversibilidade, determinismo e quitação da projeção em históricos persistidos.
 
 **Pendente antes de avançar no produto:**
 
-- executar a issue #20 e avançar as subissues #21–#28 conforme suas dependências explícitas no GitHub Project;
-- implementar e provar todos os contratos da Fase 1 antes de concluir o épico #6 ou o gate;
-- definir limite superior, overflow e mensagem do parser monetário quando ele alimentar colunas `bigint` nas fases de despesas e constraints;
+- preparar a tarefa executável e o contrato da Fase 7 — Workflow de pagamentos;
 - avaliar uma spec de Active Storage variant real quando attachments entrarem no domínio, além da prova atual de processamento com `ruby-vips`.
 
 Atualize esta seção e o [GitHub Project](https://github.com/users/Luf3r/projects/2) sempre que a tarefa ativa, uma entrega verificável, pendência, fase ou gate mudar. O estado detalhado e os critérios de saída ficam no [roadmap de implementação](./docs/05-quitando-roadmap-implementacao.md).

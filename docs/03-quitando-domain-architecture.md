@@ -222,6 +222,7 @@ Essa escolha reduz fricção em grupos colaborativos, mas torna o produto inadeq
 - creator e pagador são registrados separadamente quando pessoas diferentes;
 - origem e destino de pagamento são diferentes;
 - membership com histórico não é excluído fisicamente;
+- `position` é zero-based, não negativa e única no grupo; preserva a ordem estável usada no arredondamento e será criada ou reordenada pelo owner na Fase 10;
 - usuário inativo não recebe novas despesas nem inicia pagamentos;
 - membership só pode ser inativado quando saldo oficial e projetado são zero e não há pagamento pendente envolvendo o usuário;
 - membership inativo pode ser reativado pelo owner, reutilizando o mesmo registro;
@@ -257,12 +258,13 @@ No MVP:
 ### 5.5 Simplificador
 
 - entrada possui soma zero;
+- identificadores são strings UUID v7 canônicas, minúsculas e com variante RFC válida;
 - saldos zero são ignorados;
 - cada transferência tem valor positivo;
 - origem e destino são diferentes;
 - aplicar todas as transferências zera todos os saldos;
 - entrada não é modificada;
-- empates seguem ordem determinística;
+- empates de mesma magnitude seguem UUID crescente em ordem lexicográfica;
 - quantidade de transferências não excede `m - 1`.
 
 ### 5.6 Despesa válida
@@ -276,6 +278,8 @@ No MVP:
 ---
 
 ## 6. Entidades e campos sugeridos
+
+Todas as chaves primárias das entidades usam o tipo PostgreSQL `uuid` com default explícito `uuidv7()`. Todas as foreign keys usam `uuid`. Ruby representa esses identificadores como strings canônicas minúsculas. A configuração global dos generators Rails usa `primary_key_type: :uuid`, mas cada migration continua responsável por declarar `default: -> { "uuidv7()" }`; o default UUID v4 implícito não satisfaz o contrato.
 
 ### 6.1 `groups`
 
@@ -299,6 +303,7 @@ group_id
 user_id
 role          # owner, member
 status        # active, inactive
+position      # integer zero-based, ordem estável no grupo
 created_at
 updated_at
 ```
@@ -306,9 +311,11 @@ updated_at
 Constraints:
 
 - `unique(group_id, user_id)`;
+- `unique(group_id, position)`;
+- `position >= 0` e `NOT NULL`;
 - ao menos um owner ativo por grupo não arquivado.
 
-A segunda regra é uma invariável transacional protegida pelo lock do grupo; não deve ser descrita como um `CHECK` simples entre linhas.
+A regra de owner ativo é uma invariável transacional protegida pelo lock do grupo; não deve ser descrita como um `CHECK` simples entre linhas.
 
 ### 6.3 `group_invitations`
 
@@ -508,6 +515,14 @@ Entrada:
 { user_id => balance_cents }
 ```
 
+Tipos públicos:
+
+```ruby
+Hash<String, Integer>
+```
+
+Cada `user_id` é UUID v7 canônica, minúscula e com variante RFC válida. A validação ocorre na ordem: estrutura, IDs, saldos e soma zero.
+
 Saída:
 
 ```ruby
@@ -520,6 +535,7 @@ Responsabilidades:
 
 - validar soma zero;
 - produzir saída determinística;
+- desempatar saldos de mesma magnitude pela ordem lexicográfica crescente do UUID;
 - não consultar banco;
 - não persistir pagamentos;
 - opcionalmente produzir trace para auditoria.
@@ -555,6 +571,8 @@ Responsabilidades:
 - incrementar `financial_state_version` atomicamente em mudanças financeiras;
 - manter reports existentes e recalcular a projeção quando a despesa muda;
 - emitir broadcast depois do commit.
+
+Na criação de uma despesa por terceiro, o comando publica somente depois do commit o evento `quitando.expense.created_by_third_party`, com `expense_id`, `group_id`, `recipient_user_id` e `created_by_user_id`. O evento não é persistente, não possui consumidor de UI nesta fase e não é publicado para creator igual ao pagador nem após rollback. Se um consumidor síncrono falhar depois do commit, a falha é reportada operacionalmente e não transforma a despesa já persistida em aparente falha do comando; esta recuperação não oferece retry nem garantia de entrega.
 
 ### 8.8 `GroupInvitationCreator`, `GroupInvitationAccepter` e `MembershipReactivator`
 

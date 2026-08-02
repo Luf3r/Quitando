@@ -148,7 +148,7 @@ O resultado:
 - é rápido e previsível;
 - não garante o mínimo absoluto em todos os casos.
 
-Empates são resolvidos de forma determinística pelo `user_id` recebido ou por uma ordem estável fornecida explicitamente ao serviço, para que a mesma entrada produza a mesma saída.
+Os `user_id` recebidos são strings UUID v7 canônicas, minúsculas e com variante RFC válida. Empates são resolvidos pela ordem lexicográfica crescente desses identificadores, para que a mesma entrada lógica produza a mesma saída independentemente da ordem do mapa.
 
 ### 4.2 Modo exato — fase posterior
 
@@ -172,6 +172,8 @@ Em uma divisão igual:
 2. os centavos residuais são distribuídos por ordem estável;
 3. se o pagador estiver incluído, ele recebe prioridade no primeiro centavo residual;
 4. os demais seguem a ordem do membership.
+
+A ordem é a `position` zero-based e exclusiva no grupo; sua administração pelo owner pertence à Fase 10.
 
 A regra precisa ser visível no detalhe da despesa e coberta por testes. O objetivo não é eliminar o arredondamento, mas torná-lo reproduzível e auditável.
 
@@ -221,6 +223,7 @@ Group
 Membership
   belongs_to :group
   belongs_to :user
+  position # ordem estável zero-based no grupo; owner a administra na Fase 10
   role
   status
 
@@ -326,6 +329,8 @@ class DebtSimplifier
   end
 end
 ```
+
+O mapa de entrada usa `Hash<String, Integer>`: as chaves são UUIDs v7 canônicas e os valores são centavos. A validação ocorre na ordem estrutura, identificadores, saldos e soma zero.
 
 O plano acionável usa saldos projetados, evitando sugerir novamente um pagamento que já está aguardando confirmação.
 

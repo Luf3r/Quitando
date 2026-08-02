@@ -38,7 +38,9 @@ Este arquivo resume decisões que precisam permanecer consistentes entre produto
 - Um pagamento no MVP só pode ser reportado a partir de uma sugestão atual e por valor positivo não superior ao sugerido.
 - Campos financeiros de uma despesa são corrigidos por anulação e substituição, não por sobrescrita.
 - Qualquer membro ativo pode registrar despesa indicando outro pagador ativo; creator e pagador são auditados separadamente e o pagador recebe destaque contextual no aplicativo.
+- Quando creator e pagador diferem, a criação persistida publica `quitando.expense.created_by_third_party` após commit; o payload é mínimo e não cria notificação persistida. Falha de consumidor síncrono depois do commit é reportada operacionalmente sem reverter nem apresentar como falha a despesa já persistida; não há retry ou garantia de entrega nesta fase.
 - Membership inativo é reativado no mesmo registro, preservando histórico.
+- `Membership#position` é a ordem estável zero-based e exclusiva no grupo usada para apresentação e residual; sua gestão pelo owner pertence à Fase 10.
 - Toda alteração que possa mudar saldo, projeção ou plano incrementa `financial_state_version`.
 
 ### Estados
@@ -54,6 +56,13 @@ Este arquivo resume decisões que precisam permanecer consistentes entre produto
 - Reports e correções financeiras enviam a versão financeira esperada; criação append-only de despesa é serializada, mas não falha apenas porque outra criação ocorreu em paralelo.
 - Broadcasts ocorrem depois do commit e nunca substituem a leitura por HTTP.
 - Edições históricas não apagam fatos silenciosamente; correções preservam ator, motivo e relação com o registro substituído.
+
+### Arquitetura
+
+- Chaves primárias e foreign keys usam o tipo PostgreSQL `uuid`.
+- PostgreSQL 18 gera todas as PKs com default explícito `uuidv7()`; o default UUID v4 implícito do adapter Rails não satisfaz o contrato.
+- Ruby representa identificadores persistentes como strings UUID v7 canônicas e minúsculas.
+- Empates do `DebtSimplifier` usam ordem lexicográfica crescente dos UUIDs.
 
 ---
 
