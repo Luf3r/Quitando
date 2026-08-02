@@ -222,6 +222,32 @@ RSpec.describe SettlementPlanGenerator do
       expect { described_class.call(group) }.to raise_error(GroupBalanceCalculator::UnbalancedLedger)
     end
 
+    it "propaga a falha ao consultar payments reported sem devolver plano parcial" do
+      group = create(:group)
+      payment_scope = double("payments relation")
+      query_failure = Class.new(StandardError)
+      allow(group).to receive(:payments).and_return(payment_scope)
+      allow(payment_scope).to receive(:reported).and_raise(query_failure)
+
+      expect { described_class.call(group) }.to raise_error(query_failure)
+    end
+
+    it "propaga a falha do projetor sem devolver plano parcial" do
+      group = create(:group)
+      projection_failure = Class.new(StandardError)
+      allow(ProjectedBalanceCalculator).to receive(:call).and_raise(projection_failure)
+
+      expect { described_class.call(group) }.to raise_error(projection_failure)
+    end
+
+    it "propaga a falha do simplificador sem devolver plano parcial" do
+      group = create(:group)
+      simplifier_failure = Class.new(StandardError)
+      allow(DebtSimplifier).to receive(:new).and_raise(simplifier_failure)
+
+      expect { described_class.call(group) }.to raise_error(simplifier_failure)
+    end
+
     it "não altera fatos financeiros persistidos" do
       group = create(:group)
       payer = create(:user)
