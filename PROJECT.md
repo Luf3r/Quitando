@@ -250,10 +250,10 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 
 ## 11. Milestone atual
 
-- **Última fase concluída:** Fase 6 — Saldo projetado
-- **Status atual:** gate demonstrado com `bin/ci`: reports pendentes ajustam somente o saldo projetado e deixam de ser sugeridos no plano restante, sem persistir plano, alterar fatos ou `financial_state_version`
-- **Próxima fase:** Fase 7 — Workflow de pagamentos
-- **Trabalho executável atual:** a [Fase 6 — issue #11](https://github.com/Luf3r/Quitando/issues/11) e as subissues [#59](https://github.com/Luf3r/Quitando/issues/59), [#61](https://github.com/Luf3r/Quitando/issues/61) e [#60](https://github.com/Luf3r/Quitando/issues/60) estão `Done`; a preparação da Fase 7 deve respeitar seu contrato e dependência próprios
+- **Última fase concluída:** Fase 7 — Workflow de pagamentos
+- **Status atual:** gate demonstrado com recibos append-only, idempotência global, transições terminais, eventos pós-commit, contenção PostgreSQL observada e `bin/ci` fresco.
+- **Próxima fase:** Fase 8 — Situação derivada do grupo.
+- **Trabalho executável atual:** a [Fase 7 — issue #12](https://github.com/Luf3r/Quitando/issues/12) e as subissues #66, #64, #68, #67 e #65 estão `Done` no GitHub Project.
 - **Gate integrado da Fase 0:** `bin/ci` executa localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação. O hardening adicional da PR #38 também foi aprovado nos checks remotos atuais.
 
 **Integrado e verificado até agora:**
@@ -275,7 +275,7 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 
 - `Group`, `Membership`, `Expense`, `ExpenseShare` e `Payment` persistidos com PK UUID v7, FKs UUID, dinheiro em `bigint`, índices e checks estruturais;
 - specs estruturais de models, enums e factories, além da matriz de catálogo, inserções válidas e violações diretas contra PostgreSQL real;
-- `bin/verify-financial-schema-migrations` realizando migrate, backfill populado, down/up das migrations financeiras e reexecução do contrato PostgreSQL em banco temporário isolado, com limites para conexões, statements e grupos de subprocessos provados também contra processo e filho reais;
+- `db/structure.sql` preserva funções e triggers PostgreSQL; `bin/verify-financial-schema-migrations` inicia um banco limpo com `db:prepare`, prova o trigger append-only, exercita backfill e down/up das migrations financeiras e reexecuta o contrato PostgreSQL em banco temporário isolado, com limites para conexões, statements e grupos de subprocessos provados também contra processo e filho reais;
 - `bin/verify-production-image` construindo e inspecionando a imagem real, separado de `bin/ci` em um job próprio do workflow.
 
 **Implementado e verificado na Fase 3:**
@@ -311,7 +311,7 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 
 **Pendente antes de avançar no produto:**
 
-- preparar a tarefa executável e o contrato da Fase 7 — Workflow de pagamentos;
+- iniciar o gate da Fase 8 — Situação derivada do grupo;
 - avaliar uma spec de Active Storage variant real quando attachments entrarem no domínio, além da prova atual de processamento com `ruby-vips`.
 
 Atualize esta seção e o [GitHub Project](https://github.com/users/Luf3r/projects/2) sempre que a tarefa ativa, uma entrega verificável, pendência, fase ou gate mudar. O estado detalhado e os critérios de saída ficam no [roadmap de implementação](./docs/05-quitando-roadmap-implementacao.md).

@@ -53,8 +53,9 @@ Este arquivo resume decisões que precisam permanecer consistentes entre produto
 ### Consistência
 
 - Comandos financeiros são revalidados dentro de transação e serializados por grupo.
+- `report`, `confirm` e `cancel` usam recibo com chave global e fingerprint canônico; retry idêntico retorna o mesmo pagamento no estado atual, sem novo efeito financeiro.
 - Reports e correções financeiras enviam a versão financeira esperada; criação append-only de despesa é serializada, mas não falha apenas porque outra criação ocorreu em paralelo.
-- Broadcasts ocorrem depois do commit e nunca substituem a leitura por HTTP.
+- Eventos de domínio de pagamento ocorrem depois do commit e nunca substituem a leitura por HTTP; broadcasts Turbo/Action Cable permanecem na Fase 12.
 - Edições históricas não apagam fatos silenciosamente; correções preservam ator, motivo e relação com o registro substituído.
 
 ### Arquitetura

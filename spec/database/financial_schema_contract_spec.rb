@@ -76,6 +76,15 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
       "cancellation_reason" => [ "character varying", true ],
       "created_at" => [ "timestamp(6) without time zone", false ],
       "updated_at" => [ "timestamp(6) without time zone", false ]
+    },
+    "payment_command_receipts" => {
+      "id" => [ "uuid", false ],
+      "payment_id" => [ "uuid", false ],
+      "command_type" => [ "character varying", false ],
+      "idempotency_key" => [ "uuid", false ],
+      "request_fingerprint" => [ "character varying", false ],
+      "created_at" => [ "timestamp(6) without time zone", false ],
+      "updated_at" => [ "timestamp(6) without time zone", false ]
     }
   }.freeze
 
@@ -104,7 +113,8 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
       [ "group_id", "groups", "id" ],
       [ "reported_by_user_id", "users", "id" ],
       [ "to_user_id", "users", "id" ]
-    ]
+    ],
+    "payment_command_receipts" => [ [ "payment_id", "payments", "id" ] ]
   }.freeze
 
   UNIQUE_INDEXES = {
@@ -113,7 +123,8 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
     "memberships" => [ %w[group_id user_id], %w[group_id position] ],
     "expenses" => [],
     "expense_shares" => [ %w[expense_id user_id] ],
-    "payments" => [ %w[idempotency_key] ]
+    "payments" => [],
+    "payment_command_receipts" => [ %w[idempotency_key], %w[payment_id command_type] ]
   }.freeze
 
   MONEY_COLUMNS = {
@@ -123,7 +134,7 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
   }.freeze
 
   it "prova PK real em id, tipos, nullability e default UUID v7 no catálogo", :aggregate_failures do
-    expect(TABLE_COLUMNS.keys).to match_array(%w[users groups memberships expenses expense_shares payments])
+    expect(TABLE_COLUMNS.keys).to match_array(%w[users groups memberships expenses expense_shares payments payment_command_receipts])
 
     TABLE_COLUMNS.each do |table_name, expected_columns|
       expect(primary_key_columns(table_name)).to eq([ "id" ]), table_name
@@ -133,7 +144,7 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
   end
 
   it "prova cada FK com coluna de origem e destino exatas", :aggregate_failures do
-    expect(FOREIGN_KEYS.keys).to match_array(%w[users groups memberships expenses expense_shares payments])
+    expect(FOREIGN_KEYS.keys).to match_array(%w[users groups memberships expenses expense_shares payments payment_command_receipts])
 
     FOREIGN_KEYS.each do |table_name, expected_foreign_keys|
       expect(foreign_keys(table_name)).to eq(expected_foreign_keys), table_name
@@ -348,7 +359,6 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
 
   it "recusa enums, versões, self replacement e duplicidades estruturais", :aggregate_failures do
     group = create(:group)
-    other_group = create(:group)
     user = create(:user)
     other_user = create(:user)
     expense = create(:expense, group:, paid_by_user: user, created_by_user: user)
@@ -394,15 +404,11 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
       insert_direct(ExpenseShare, expense_id: expense.id, user_id: other_user.id, amount_owed_cents: 2, position: 1)
     end
 
+    payment_id = insert_direct(Payment, **payment_attributes(group:, from_user:, to_user:))
     idempotency_key = database_uuid
-    insert_direct(Payment, **payment_attributes(group:, from_user:, to_user:, idempotency_key:))
+    PaymentCommandReceipt.create!(payment_id:, command_type: :report, idempotency_key:, request_fingerprint: "payload")
     expect_postgres_error(PG::UniqueViolation) do
-      insert_direct(
-        Payment,
-        **payment_attributes(group: other_group, from_user:, to_user:, idempotency_key:).merge(
-          request_fingerprint: "payload-diferente"
-        )
-      )
+      PaymentCommandReceipt.create!(payment_id:, command_type: :confirm, idempotency_key:, request_fingerprint: "payload-diferente")
     end
   end
 

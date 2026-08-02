@@ -502,11 +502,14 @@ Implementar comandos financeiros seguros e concorrentes.
 - `PaymentReporter`;
 - `PaymentConfirmer`;
 - `PaymentCanceller`;
+- recibos imutáveis de comando para report, confirmação e cancelamento;
 - `request_fingerprint`;
 - idempotência;
 - lock/serialização por grupo;
 - checagem de `expected_financial_state_version` no report;
 - transições condicionais para confirmar e cancelar.
+
+Os comandos publicam somente eventos de domínio pós-commit (`quitando.payment.reported`, `quitando.payment.confirmed` e `quitando.payment.cancelled`). Esses eventos não são broadcasts Turbo/Action Cable; a entrega de interface em tempo real permanece na Fase 12. Falha de consumidor é reportada operacionalmente e não desfaz o comando já commitado.
 
 ### 10.3 Specs do reporter
 
@@ -565,6 +568,8 @@ despesa
 -> confirmação
 -> novo saldo oficial
 ```
+
+Gate demonstrado sobre o diff corrente: verificador de migrations, service specs incluindo contenção PostgreSQL observada, property test com controle negativo, lint e `bin/ci` passaram. A Fase 7 está concluída e libera a Fase 8.
 
 ---
 
