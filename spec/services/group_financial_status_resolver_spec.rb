@@ -109,20 +109,19 @@ RSpec.describe "GroupFinancialStatusResolver" do
     end
 
     it "does not persist a status or change financial facts while reading" do
-      group, _receiver, _sender = create_reportable_group
-      snapshot = {
-        financial_state_version: group.reload.financial_state_version,
-        expense_ids: group.expenses.order(:id).pluck(:id),
-        payment_ids: group.payments.order(:id).pluck(:id)
-      }
+      group, receiver, sender = create_reportable_group
+      report_payment(group:, receiver:, sender:, amount_text: "3,00")
+      snapshot = financial_facts_snapshot(group)
 
       GroupFinancialStatusResolver.call(group)
 
-      expect(
-        financial_state_version: group.reload.financial_state_version,
-        expense_ids: group.expenses.order(:id).pluck(:id),
-        payment_ids: group.payments.order(:id).pluck(:id)
-      ).to eq(snapshot)
+      expect(financial_facts_snapshot(group)).to eq(snapshot)
+
+      mutated_snapshot = snapshot.deep_dup
+      mutated_snapshot[:expenses].first[1] += 1
+
+      expect { expect(mutated_snapshot).to eq(snapshot) }
+        .to raise_error(RSpec::Expectations::ExpectationNotMetError)
     end
 
     def create_two_member_group
@@ -145,6 +144,36 @@ RSpec.describe "GroupFinancialStatusResolver" do
         split: { type: :equal, participant_user_ids: [ receiver.id, sender.id ] }
       )
       [ group, receiver, sender ]
+    end
+
+    def financial_facts_snapshot(group)
+      {
+        financial_state_version: group.reload.financial_state_version,
+        expenses: group.expenses.order(:id).pluck(
+          :id,
+          :amount_cents,
+          :paid_by_user_id,
+          :created_by_user_id,
+          :voided_at,
+          :voided_by_user_id,
+          :void_reason
+        ),
+        payments: group.payments.order(:id).pluck(
+          :id,
+          :amount_cents,
+          :from_user_id,
+          :to_user_id,
+          :status,
+          :source_financial_state_version,
+          :reported_by_user_id,
+          :reported_at,
+          :confirmed_by_user_id,
+          :confirmed_at,
+          :cancelled_by_user_id,
+          :cancelled_at,
+          :cancellation_reason
+        )
+      }
     end
 
     def report_payment(group:, receiver:, sender:, amount_text:)
