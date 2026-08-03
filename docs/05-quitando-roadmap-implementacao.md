@@ -603,6 +603,8 @@ spec/services/group_financial_status_resolver_spec.rb
 
 Todos os estados do dashboard podem ser derivados de fatos persistidos, sem coluna de status financeiro mutável.
 
+Gate demonstrado sobre o diff corrente: matriz de estados e transições reais do workflow, propagação de inconsistência do ledger, verificação estrutural sem coluna de status, lint e `bin/ci` passaram. A Fase 8 está concluída e libera a Fase 9.
+
 ---
 
 ## 12. Fase 9 — Correção imutável de despesas

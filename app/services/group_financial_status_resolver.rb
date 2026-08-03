@@ -8,9 +8,13 @@ class GroupFinancialStatusResolver
   end
 
   def call
-    return :empty unless financial_activity?
+    reported_payment = reported_payment?
 
-    return :settled if official_balances.values.all?(&:zero?)
+    return :empty unless financial_activity?(reported_payment:)
+    balances = official_balances
+
+    return :awaiting_confirmation if reported_payment
+    return :settled if balances.values.all?(&:zero?)
 
     :open
   end
@@ -19,9 +23,14 @@ class GroupFinancialStatusResolver
 
   attr_reader :group
 
-  def financial_activity?
+  def financial_activity?(reported_payment:)
     group.expenses.where(voided_at: nil).exists? ||
-      group.payments.where(status: %w[reported confirmed]).exists?
+      reported_payment ||
+      group.payments.confirmed.exists?
+  end
+
+  def reported_payment?
+    group.payments.reported.exists?
   end
 
   def official_balances
