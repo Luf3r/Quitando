@@ -250,10 +250,10 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 
 ## 11. Milestone atual
 
-- **Última fase concluída:** Fase 7 — Workflow de pagamentos
-- **Status atual:** gate demonstrado com recibos append-only, idempotência global, transições terminais, eventos pós-commit, contenção PostgreSQL observada e `bin/ci` fresco.
-- **Próxima fase:** Fase 8 — Situação derivada do grupo.
-- **Trabalho executável atual:** a [Fase 7 — issue #12](https://github.com/Luf3r/Quitando/issues/12) e as subissues #66, #64, #68, #67 e #65 estão `Done` no GitHub Project.
+- **Última fase concluída:** Fase 8 — Situação financeira derivada do grupo.
+- **Status atual:** gate demonstrado com estado financeiro recalculável, sem coluna mutável, reports com precedência explícita e propagação de inconsistência do ledger.
+- **Próxima fase:** Fase 9 — Correção imutável de despesas.
+- **Trabalho executável atual:** a [Fase 8 — issue #13](https://github.com/Luf3r/Quitando/issues/13) e as subissues #70 e #71 estão `Done` no GitHub Project.
 - **Gate integrado da Fase 0:** `bin/ci` executa localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação. O hardening adicional da PR #38 também foi aprovado nos checks remotos atuais.
 
 **Integrado e verificado até agora:**
@@ -309,9 +309,15 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 - exemplos integrados cobrem report parcial, total, múltiplo, cancelado e confirmado, além da propagação visível de falhas;
 - property tests com seed fixa, shrinking e controle negativo exclusivo de spec demonstram conservação, direção a zero, tipos, imutabilidade, reversibilidade, determinismo e quitação da projeção em históricos persistidos.
 
+**Implementado e verificado na Fase 8:**
+
+- `GroupFinancialStatusResolver` deriva `empty`, `open`, `awaiting_confirmation` e `settled` somente de despesas, pagamentos e saldo oficial recalculável;
+- despesas anuladas e pagamentos cancelados isolados não criam atividade; reports têm precedência e podem coexistir com plano restante vazio ou não vazio;
+- a leitura não persiste status, não altera fatos ou versão financeira, mantém `archived` como condição operacional separada e propaga ledger desequilibrado, inclusive com report pendente.
+
 **Pendente antes de avançar no produto:**
 
-- iniciar o gate da Fase 8 — Situação derivada do grupo;
+- preparar o gate da Fase 9 — Correção imutável de despesas;
 - avaliar uma spec de Active Storage variant real quando attachments entrarem no domínio, além da prova atual de processamento com `ruby-vips`.
 
 Atualize esta seção e o [GitHub Project](https://github.com/users/Luf3r/projects/2) sempre que a tarefa ativa, uma entrega verificável, pendência, fase ou gate mudar. O estado detalhado e os critérios de saída ficam no [roadmap de implementação](./docs/05-quitando-roadmap-implementacao.md).
