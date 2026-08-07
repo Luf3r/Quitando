@@ -621,11 +621,18 @@ Corrigir fatos financeiros sem sobrescrever histórico.
 - `void_reason`, ator e `replaces_expense_id`;
 - edição separada para campos puramente descritivos;
 - versionamento de mudanças financeiras.
+- recibo financeiro unificado para pagamentos e correções, com chave global e fingerprint canônico;
+- guards PostgreSQL append-only para despesas, shares, recibos e revisões descritivas.
 
 ### 12.3 Specs
 
 ```text
 spec/services/expense_corrector_spec.rb
+spec/services/expense_corrector_concurrency_spec.rb
+spec/services/expense_description_editor_spec.rb
+spec/services/expense_description_editor_concurrency_spec.rb
+spec/database/financial_schema_contract_spec.rb
+spec/infrastructure/financial_schema_migration_verifier_spec.rb
 ```
 
 - valor, pagador e shares originais não são sobrescritos;
@@ -637,10 +644,15 @@ spec/services/expense_corrector_spec.rb
 - saldo oficial, projeção e plano são recalculados;
 - correção concorrente com report respeita lock e versão;
 - descrição pode ser alterada sem modificar versão financeira quando não afeta o ledger.
+- retry idêntico, conflito de payload e colisão global entre pagamento e correção;
+- concorrência entre correções em sessões PostgreSQL independentes;
+- eventos de correção somente depois do commit e preservação após falha do consumidor.
 
 ### 12.4 Gate de saída
 
 O histórico explica integralmente como o estado atual foi obtido.
+
+Gate demonstrado sobre o diff corrente: recibos financeiros unificados, guards PostgreSQL, correções e revisões descritivas, concorrência real, eventos pós-commit, verificador de migrations, lint e `bin/ci` passaram. A Fase 9 está concluída e libera a Fase 10.
 
 ---
 
