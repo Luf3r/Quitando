@@ -23,7 +23,8 @@ RSpec.describe Expense do
       voided_by_user: { class_name: "User", foreign_key: "voided_by_user_id", macro: :belongs_to, optional: true },
       replaces_expense: { class_name: "Expense", foreign_key: "replaces_expense_id", macro: :belongs_to, optional: true },
       replacement_expenses: { class_name: "Expense", foreign_key: "replaces_expense_id", macro: :has_many, optional: nil },
-      expense_shares: { class_name: "ExpenseShare", foreign_key: "expense_id", macro: :has_many, optional: nil }
+      expense_shares: { class_name: "ExpenseShare", foreign_key: "expense_id", macro: :has_many, optional: nil },
+      expense_description_revisions: { class_name: "ExpenseDescriptionRevision", foreign_key: "expense_id", macro: :has_many, optional: nil }
     )
   end
 

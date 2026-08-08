@@ -9,6 +9,7 @@ require_relative "../lib/financial_migration_command_runner"
 TEMPORARY_DATABASE_PREFIX = "quitando_financial_schema_migrations".freeze
 FINANCIAL_MIGRATION_VERSIONS = %w[20260721160000 20260721161000 20260721165000 20260727120000 20260802150000].freeze
 MEMBERSHIP_POSITION_MIGRATION_VERSION = "20260727120000".freeze
+PHASE_NINE_MIGRATION_VERSION = "20260803170000".freeze
 COMMAND_TIMEOUT_SECONDS = Float(ENV.fetch("FINANCIAL_MIGRATION_COMMAND_TIMEOUT_SECONDS", "900"))
 COMMAND_TERMINATION_GRACE_SECONDS = Float(ENV.fetch("FINANCIAL_MIGRATION_TERMINATION_GRACE_SECONDS", "5"))
 DATABASE_TIMEOUT_SECONDS = Integer(ENV.fetch("FINANCIAL_MIGRATION_DATABASE_TIMEOUT_SECONDS", "30"), 10)
@@ -165,6 +166,27 @@ PAYMENT_COMMAND_RECEIPT_APPEND_ONLY_ASSERTION = <<~'RUBY'.freeze
     end
   end
 RUBY
+PHASE_NINE_RECEIPT_ASSERTION = <<~'RUBY'.freeze
+  connection = ApplicationRecord.connection
+  abort "financial command receipts table is missing" unless connection.data_source_exists?("financial_command_receipts")
+  abort "legacy payment command receipts table still exists" if connection.data_source_exists?("payment_command_receipts")
+
+  preserved_reports = connection.select_value("SELECT COUNT(*) FROM financial_command_receipts WHERE command_type = 'report'").to_i
+  abort "legacy payment receipts were not preserved by phase 9 migration" unless preserved_reports.positive?
+RUBY
+PHASE_NINE_DESCRIPTION_REVISION_FIXTURE = <<~'RUBY'.freeze
+  token = SecureRandom.hex(12)
+  user = User.create!(email: "phase-nine-revision-#{token}@example.test", password: "password-#{token}")
+  group = Group.create!(name: "Phase nine revision #{token}", currency_code: "BRL")
+  expense = Expense.create!(group:, created_by_user: user, paid_by_user: user, amount_cents: 100, description: "Antes", occurred_on: Date.current)
+  ExpenseDescriptionRevision.create!(expense:, actor_user: user, previous_description: "Antes", new_description: "Depois")
+RUBY
+PHASE_NINE_DESCRIPTION_REVISION_CLEANUP = <<~'RUBY'.freeze
+  connection = ApplicationRecord.connection
+  connection.execute("ALTER TABLE expense_description_revisions DISABLE TRIGGER expense_description_revisions_append_only")
+  ExpenseDescriptionRevision.delete_all
+  connection.execute("ALTER TABLE expense_description_revisions ENABLE TRIGGER expense_description_revisions_append_only")
+RUBY
 
 class CommandFailure < StandardError; end
 
@@ -227,6 +249,12 @@ rescue FinancialMigrationCommandRunner::CommandTimedOut => error
   raise CommandFailure, "#{error.message}: #{command.join(' ')}", cause: nil
 end
 
+def run_expect_failure!(*command, environment:)
+  puts "==> expected failure: #{command.join(' ')}"
+  status = COMMAND_RUNNER.call(*command, environment: environment.merge("FINANCIAL_MIGRATION_EXPECT_FAILURE" => "true"))
+  raise CommandFailure, "command unexpectedly succeeded: #{command.join(' ')}" if status.success?
+end
+
 source_uri = database_uri(ENV.fetch("TEST_DATABASE_URL"))
 temporary_database_name = validate_temporary_database_name!(
   "#{TEMPORARY_DATABASE_PREFIX}_#{Process.pid}_#{SecureRandom.hex(8)}"
@@ -248,6 +276,10 @@ begin
   database_created = true
 
   run!("bin/rails", "db:prepare", environment: child_environment)
+  run!(
+    "bin/rails", "db:migrate:down",
+    environment: child_environment.merge("VERSION" => PHASE_NINE_MIGRATION_VERSION)
+  )
   run!("bin/rails", "runner", PAYMENT_COMMAND_RECEIPT_APPEND_ONLY_ASSERTION, environment: child_environment)
   run!(
     "bin/rails", "db:migrate:down",
@@ -270,6 +302,23 @@ begin
 
   run!("bin/rails", "runner", PAYMENT_COMMAND_RECEIPT_MIGRATION_ASSERTION, environment: child_environment)
   run!("bin/rails", "runner", PAYMENT_COMMAND_RECEIPT_APPEND_ONLY_ASSERTION, environment: child_environment)
+  run!(
+    "bin/rails", "db:migrate:up",
+    environment: child_environment.merge("VERSION" => PHASE_NINE_MIGRATION_VERSION)
+  )
+  run!("bin/rails", "runner", PHASE_NINE_RECEIPT_ASSERTION, environment: child_environment)
+  run!("bin/rails", "runner", PHASE_NINE_DESCRIPTION_REVISION_FIXTURE, environment: child_environment)
+  run_expect_failure!(
+    "bin/rails", "db:migrate:down",
+    environment: child_environment.merge("VERSION" => PHASE_NINE_MIGRATION_VERSION)
+  )
+  run!("bin/rails", "runner", PHASE_NINE_DESCRIPTION_REVISION_CLEANUP, environment: child_environment)
+  run!(
+    "bin/rails", "db:migrate:down",
+    environment: child_environment.merge("VERSION" => PHASE_NINE_MIGRATION_VERSION)
+  )
+  run!("bin/rails", "db:migrate:up", environment: child_environment.merge("VERSION" => PHASE_NINE_MIGRATION_VERSION))
+  run!("bin/rails", "runner", PHASE_NINE_RECEIPT_ASSERTION, environment: child_environment)
   run!(
     "bundle", "exec", "rspec", "spec/database/financial_schema_contract_spec.rb",
     environment: child_environment.merge("CI" => "true")

@@ -85,8 +85,7 @@ RSpec.describe ExpenseCreator, :non_transactional do
         ApplicationRecord.connection.execute("SET LOCAL lock_timeout = '5s'")
         if group&.persisted?
           expense_ids = Expense.where(group_id: group.id).pluck(:id)
-          ExpenseShare.where(expense_id: expense_ids).delete_all
-          Expense.where(id: expense_ids).delete_all
+          delete_expense_history_for_cleanup!(Expense.where(id: expense_ids))
           Membership.where(group_id: group.id).delete_all
           Group.where(id: group.id).delete_all
         end

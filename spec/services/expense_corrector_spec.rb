@@ -78,6 +78,106 @@ RSpec.describe "ExpenseCorrector" do
     }.to raise_error(ExpenseCorrector::InvalidExpense, "identificadores inválidos")
   end
 
+  it "rejeita UUID não v7 no split igual antes de acessar o grupo" do
+    attributes = {
+      group_id: "018f0b5b-2df3-7c64-8000-000000000001",
+      expense_id: "018f0b5b-2df3-7c64-8000-000000000002",
+      actor_user_id: "018f0b5b-2df3-7c64-8000-000000000003",
+      reason: "Valor corrigido",
+      paid_by_user_id: "018f0b5b-2df3-7c64-8000-000000000004",
+      description: "Almoço corrigido",
+      occurred_on: Date.new(2026, 8, 3),
+      amount_text: "12,00",
+      split: { type: :equal, participant_user_ids: [ "018f0b5b-2df3-7c64-8000-000000000003", "018f0b5b-2df3-4c64-8000-000000000005" ] },
+      expected_financial_state_version: 1,
+      idempotency_key: SecureRandom.uuid
+    }
+
+    expect(Group).not_to receive(:lock)
+    expect {
+      ExpenseCorrector.call(**attributes)
+    }.to raise_error(ExpenseCorrector::InvalidExpense, "identificadores inválidos")
+  end
+
+  it "rejeita UUID não v7 no split exato antes de acessar o grupo" do
+    attributes = {
+      group_id: "018f0b5b-2df3-7c64-8000-000000000001",
+      expense_id: "018f0b5b-2df3-7c64-8000-000000000002",
+      actor_user_id: "018f0b5b-2df3-7c64-8000-000000000003",
+      reason: "Valor corrigido",
+      paid_by_user_id: "018f0b5b-2df3-7c64-8000-000000000004",
+      description: "Almoço corrigido",
+      occurred_on: Date.new(2026, 8, 3),
+      amount_text: "12,00",
+      split: {
+        type: :exact,
+        shares: [
+          { user_id: "018f0b5b-2df3-7c64-8000-000000000003", amount_text: "6,00" },
+          { user_id: "018f0b5b-2df3-4c64-8000-000000000005", amount_text: "6,00" }
+        ]
+      },
+      expected_financial_state_version: 1,
+      idempotency_key: SecureRandom.uuid
+    }
+
+    expect(Group).not_to receive(:lock)
+    expect {
+      ExpenseCorrector.call(**attributes)
+    }.to raise_error(ExpenseCorrector::InvalidExpense, "identificadores inválidos")
+  end
+
+  it "rejeita envelope inválido do split igual antes de acessar o grupo" do
+    attributes = {
+      group_id: "018f0b5b-2df3-7c64-8000-000000000001",
+      expense_id: "018f0b5b-2df3-7c64-8000-000000000002",
+      actor_user_id: "018f0b5b-2df3-7c64-8000-000000000003",
+      reason: "Valor corrigido",
+      paid_by_user_id: "018f0b5b-2df3-7c64-8000-000000000004",
+      description: "Almoço corrigido",
+      occurred_on: Date.new(2026, 8, 3),
+      amount_text: "12,00",
+      expected_financial_state_version: 1,
+      idempotency_key: SecureRandom.uuid
+    }
+    malformed_splits = [
+      { type: :equal },
+      { type: :equal, participant_user_ids: "018f0b5b-2df3-7c64-8000-000000000003" }
+    ]
+
+    expect(Group).not_to receive(:lock)
+    malformed_splits.each do |split|
+      expect {
+        ExpenseCorrector.call(**attributes, split:)
+      }.to raise_error(ExpenseCorrector::InvalidExpense, "divisão inválida")
+    end
+  end
+
+  it "rejeita entradas inválidas do split exato antes de acessar o grupo" do
+    attributes = {
+      group_id: "018f0b5b-2df3-7c64-8000-000000000001",
+      expense_id: "018f0b5b-2df3-7c64-8000-000000000002",
+      actor_user_id: "018f0b5b-2df3-7c64-8000-000000000003",
+      reason: "Valor corrigido",
+      paid_by_user_id: "018f0b5b-2df3-7c64-8000-000000000004",
+      description: "Almoço corrigido",
+      occurred_on: Date.new(2026, 8, 3),
+      amount_text: "12,00",
+      expected_financial_state_version: 1,
+      idempotency_key: SecureRandom.uuid
+    }
+    malformed_splits = [
+      { type: :exact, shares: [ "018f0b5b-2df3-7c64-8000-000000000003" ] },
+      { type: :exact, shares: [ { amount_text: "12,00" } ] }
+    ]
+
+    expect(Group).not_to receive(:lock)
+    malformed_splits.each do |split|
+      expect {
+        ExpenseCorrector.call(**attributes, split:)
+      }.to raise_error(ExpenseCorrector::InvalidExpense, "divisão inválida")
+    end
+  end
+
   it "rejeita grupo arquivado sem persistir efeitos da correção" do
     group = create(:group)
     owner = create(:user)

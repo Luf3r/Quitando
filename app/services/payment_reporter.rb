@@ -50,7 +50,7 @@ class PaymentReporter < PaymentCommand
           reported_by_user_id: actor_user_id,
           reported_at: Time.current
         )
-        PaymentCommandReceipt.create!(payment:, command_type: :report, idempotency_key:, request_fingerprint:)
+        FinancialCommandReceipt.create!(payment:, command_type: :report, idempotency_key:, request_fingerprint:)
         group.increment!(:financial_state_version)
         publish("quitando.payment.reported", payment:, actor_user_id:, financial_state_version: group.financial_state_version)
         payment

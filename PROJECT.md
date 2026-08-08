@@ -250,10 +250,10 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 
 ## 11. Milestone atual
 
-- **Última fase concluída:** Fase 8 — Situação financeira derivada do grupo.
-- **Status atual:** gate demonstrado com estado financeiro recalculável, sem coluna mutável, reports com precedência explícita e propagação de inconsistência do ledger.
-- **Próxima fase:** Fase 9 — Correção imutável de despesas.
-- **Trabalho executável atual:** a [Fase 8 — issue #13](https://github.com/Luf3r/Quitando/issues/13) e as subissues #70 e #71 estão `Done` no GitHub Project.
+- **Última fase concluída:** Fase 9 — Correção imutável de despesas.
+- **Status atual:** gate demonstrado com correção append-only, recibos financeiros globais, guards PostgreSQL, revisões descritivas auditáveis, serialização por grupo e eventos pós-commit.
+- **Próxima fase:** Fase 10 — Grupos, convites e ciclo de memberships.
+- **Trabalho executável atual:** a [Fase 9 — issue #14](https://github.com/Luf3r/Quitando/issues/14) e as subissues #73 a #77 estão `Done` no GitHub Project.
 - **Gate integrado da Fase 0:** `bin/ci` executa localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação. O hardening adicional da PR #38 também foi aprovado nos checks remotos atuais.
 
 **Integrado e verificado até agora:**
@@ -315,9 +315,18 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 - despesas anuladas e pagamentos cancelados isolados não criam atividade; reports têm precedência e podem coexistir com plano restante vazio ou não vazio;
 - a leitura não persiste status, não altera fatos ou versão financeira, mantém `archived` como condição operacional separada e propaga ledger desequilibrado, inclusive com report pendente.
 
+**Implementado e verificado na Fase 9:**
+
+- `ExpenseCorrector` cria a substituta e anula a original na mesma transação, preservando valor, pagador, autoria, data, shares e pagamentos históricos;
+- `FinancialCommandReceipt` unifica recibos de pagamentos e correções com chave de idempotência global, fingerprint canônico e compatibilidade de API para os comandos de pagamento;
+- triggers PostgreSQL impedem reescrita ou remoção de despesas, shares, recibos e revisões, e permitem somente a transição auditável `active → voided`;
+- `ExpenseDescriptionEditor` registra cada alteração em `ExpenseDescriptionRevision`, inclusive em despesa anulada autorizada, sem afetar ledger, plano, status ou `financial_state_version`;
+- specs exercitam retry, colisões globais, rollback, eventos pós-commit, consumidores com falha e contenção real entre correções e reports em sessões PostgreSQL independentes;
+- `bin/verify-financial-schema-migrations`, o gate RSpec, RuboCop e `bin/ci` passaram sobre este diff.
+
 **Pendente antes de avançar no produto:**
 
-- preparar o gate da Fase 9 — Correção imutável de despesas;
+- preparar o gate da Fase 10 — Grupos, convites e ciclo de memberships;
 - avaliar uma spec de Active Storage variant real quando attachments entrarem no domínio, além da prova atual de processamento com `ruby-vips`.
 
 Atualize esta seção e o [GitHub Project](https://github.com/users/Luf3r/projects/2) sempre que a tarefa ativa, uma entrega verificável, pendência, fase ou gate mudar. O estado detalhado e os critérios de saída ficam no [roadmap de implementação](./docs/05-quitando-roadmap-implementacao.md).

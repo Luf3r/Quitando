@@ -30,7 +30,7 @@ class PaymentCanceller < PaymentCommand
         raise InvalidTransition, payment.status unless payment.reported?
 
         payment.update!(status: :cancelled, cancelled_by_user_id: actor_user_id, cancelled_at: Time.current, cancellation_reason: normalized_reason)
-        PaymentCommandReceipt.create!(payment:, command_type: :cancel, idempotency_key:, request_fingerprint:)
+        FinancialCommandReceipt.create!(payment:, command_type: :cancel, idempotency_key:, request_fingerprint:)
         group.increment!(:financial_state_version)
         publish("quitando.payment.cancelled", payment:, actor_user_id:, financial_state_version: group.financial_state_version)
         payment
