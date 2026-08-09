@@ -217,7 +217,7 @@ No MVP:
 Group
   has_many :memberships
   has_many :users, through: :memberships
-  currency_code
+  currency_code # BRL no MVP
   financial_state_version
 
 Membership
@@ -469,7 +469,7 @@ O MVP está completo quando um grupo consegue:
 - relatórios avançados;
 - analytics ou ranking de comportamento.
 
-Cada grupo utiliza uma única moeda, definida na criação e imutável enquanto existir qualquer despesa ou pagamento registrado. O MVP só convida contas já cadastradas; convites aparecem dentro do aplicativo e não criam shares antes da aceitação. Um grupo só pode ser arquivado quando estiver vazio ou quitado, sem pagamentos ou convites pendentes. O modelo de colaboração assume grupos de confiança: qualquer membro ativo pode registrar uma despesa indicando outro membro ativo como pagador, mas autoria e pagador são sempre exibidos separadamente. O destaque contextual no dashboard/feed é derivado da própria despesa e não equivale ao sistema de notificações por e-mail, push ou digest previsto para uma fase posterior.
+Cada grupo utiliza BRL, a única moeda suportada no MVP; `currency_code` não é uma escolha de interface e permanece imutável enquanto existir qualquer despesa ou pagamento registrado. O MVP só convida contas já cadastradas; convites aparecem dentro do aplicativo e não criam shares antes da aceitação. Um grupo só pode ser arquivado quando estiver vazio ou quitado, sem pagamentos ou convites pendentes. O modelo de colaboração assume grupos de confiança: qualquer membro ativo pode registrar uma despesa indicando outro membro ativo como pagador, mas autoria e pagador são sempre exibidos separadamente. O destaque contextual no dashboard/feed é derivado da própria despesa e não equivale ao sistema de notificações por e-mail, push ou digest previsto para uma fase posterior.
 
 ---
 

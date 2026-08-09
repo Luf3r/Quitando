@@ -365,6 +365,7 @@ Despesa original anulada -> motivo -> despesa substituta
 
 ## 13. Configurações, convites e memberships
 
+- grupos usam BRL, única moeda suportada no MVP; não há seletor, conversão ou taxa de câmbio na interface;
 - owner edita nome e convida uma conta já cadastrada informando o e-mail exato, sem autocomplete público;
 - a resposta de busca não expõe uma lista de usuários e o owner pode revogar convites pendentes;
 - convidado aceita ou recusa o próprio convite;

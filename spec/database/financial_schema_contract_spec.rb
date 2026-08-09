@@ -33,6 +33,20 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
       "created_at" => [ "timestamp(6) without time zone", false ],
       "updated_at" => [ "timestamp(6) without time zone", false ]
     },
+    "group_invitations" => {
+      "id" => [ "uuid", false ],
+      "group_id" => [ "uuid", false ],
+      "invited_user_id" => [ "uuid", false ],
+      "invited_by_user_id" => [ "uuid", false ],
+      "status" => [ "character varying", false ],
+      "expires_at" => [ "timestamp(6) without time zone", false ],
+      "accepted_at" => [ "timestamp(6) without time zone", true ],
+      "declined_at" => [ "timestamp(6) without time zone", true ],
+      "revoked_at" => [ "timestamp(6) without time zone", true ],
+      "expired_at" => [ "timestamp(6) without time zone", true ],
+      "created_at" => [ "timestamp(6) without time zone", false ],
+      "updated_at" => [ "timestamp(6) without time zone", false ]
+    },
     "expenses" => {
       "id" => [ "uuid", false ],
       "group_id" => [ "uuid", false ],
@@ -104,6 +118,11 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
       [ "group_id", "groups", "id" ],
       [ "user_id", "users", "id" ]
     ],
+    "group_invitations" => [
+      [ "group_id", "groups", "id" ],
+      [ "invited_by_user_id", "users", "id" ],
+      [ "invited_user_id", "users", "id" ]
+    ],
     "expenses" => [
       [ "created_by_user_id", "users", "id" ],
       [ "group_id", "groups", "id" ],
@@ -134,6 +153,7 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
     "users" => [ %w[email], %w[reset_password_token] ],
     "groups" => [],
     "memberships" => [ %w[group_id user_id], %w[group_id position] ],
+    "group_invitations" => [ %w[group_id invited_user_id] ],
     "expenses" => [ %w[replaces_expense_id] ],
     "expense_shares" => [ %w[expense_id user_id] ],
     "expense_description_revisions" => [],
@@ -147,8 +167,26 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
     Payment => :amount_cents
   }.freeze
 
+  it "persiste convites internos com auditoria exclusiva por estado" do
+    expect(connection.data_source_exists?("group_invitations")).to be(true)
+    expect(table_columns("group_invitations")).to eq(
+      "id" => [ "uuid", false ],
+      "group_id" => [ "uuid", false ],
+      "invited_user_id" => [ "uuid", false ],
+      "invited_by_user_id" => [ "uuid", false ],
+      "status" => [ "character varying", false ],
+      "expires_at" => [ "timestamp(6) without time zone", false ],
+      "accepted_at" => [ "timestamp(6) without time zone", true ],
+      "declined_at" => [ "timestamp(6) without time zone", true ],
+      "revoked_at" => [ "timestamp(6) without time zone", true ],
+      "expired_at" => [ "timestamp(6) without time zone", true ],
+      "created_at" => [ "timestamp(6) without time zone", false ],
+      "updated_at" => [ "timestamp(6) without time zone", false ]
+    )
+  end
+
   it "prova PK real em id, tipos, nullability e default UUID v7 no catálogo", :aggregate_failures do
-    expect(TABLE_COLUMNS.keys).to match_array(%w[users groups memberships expenses expense_shares expense_description_revisions payments financial_command_receipts])
+    expect(TABLE_COLUMNS.keys).to match_array(%w[users groups memberships group_invitations expenses expense_shares expense_description_revisions payments financial_command_receipts])
 
     TABLE_COLUMNS.each do |table_name, expected_columns|
       expect(primary_key_columns(table_name)).to eq([ "id" ]), table_name
@@ -158,7 +196,7 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
   end
 
   it "prova cada FK com coluna de origem e destino exatas", :aggregate_failures do
-    expect(FOREIGN_KEYS.keys).to match_array(%w[users groups memberships expenses expense_shares expense_description_revisions payments financial_command_receipts])
+    expect(FOREIGN_KEYS.keys).to match_array(%w[users groups memberships group_invitations expenses expense_shares expense_description_revisions payments financial_command_receipts])
 
     FOREIGN_KEYS.each do |table_name, expected_foreign_keys|
       expect(foreign_keys(table_name)).to eq(expected_foreign_keys), table_name
@@ -193,6 +231,7 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
       create(:user),
       create(:group),
       create(:membership),
+      create(:group_invitation),
       create(:expense),
       create(:expense_share),
       create(:payment)
@@ -265,6 +304,81 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
     same_group_other_user = insert_and_fetch(Membership, group_id: shared_group.id, user_id: other_user.id, role: "member", status: "active", position: 1)
 
     expect([ first.id, same_user_other_group.id, same_group_other_user.id ].uniq.size).to eq(3)
+  end
+
+  it "aceita cada estado de convite com somente sua auditoria de transição" do
+    group = create(:group)
+    invited_by_user = create(:user)
+
+    %w[pending accepted declined revoked expired].each do |status|
+      invitation = insert_and_fetch(
+        GroupInvitation,
+        **group_invitation_attributes(
+          group:,
+          invited_user: create(:user),
+          invited_by_user:,
+          status:
+        )
+      )
+
+      expect(invitation.status).to eq(status)
+      %w[accepted_at declined_at revoked_at expired_at].each do |column_name|
+        expectation = column_name == "#{status}_at" ? be_present : be_nil
+        expect(invitation.public_send(column_name)).to expectation
+      end
+    end
+  end
+
+  it "impede moeda não BRL, nome em branco e auditoria de convite incompatível", :aggregate_failures do
+    group = create(:group)
+    invited_user = create(:user)
+    invited_by_user = create(:user)
+
+    [ "", "   " ].each do |name|
+      expect_postgres_error(PG::CheckViolation) do
+        insert_direct(Group, name:, currency_code: "BRL", financial_state_version: 0)
+      end
+    end
+    expect_postgres_error(PG::CheckViolation) do
+      insert_direct(Group, name: "Casa em dólar", currency_code: "USD", financial_state_version: 0)
+    end
+
+    invalid_group_invitation_audit_cases(group:, invited_user:, invited_by_user:).each do |invalid_attributes|
+      expect_postgres_error(PG::CheckViolation) do
+        insert_direct(GroupInvitation, **invalid_attributes)
+      end
+    end
+  end
+
+  it "permite no máximo um convite pending por grupo e usuário, mantendo convites terminais" do
+    group = create(:group)
+    invited_user = create(:user)
+    invited_by_user = create(:user)
+    pending_attributes = group_invitation_attributes(group:, invited_user:, invited_by_user:, status: "pending")
+
+    insert_direct(GroupInvitation, **pending_attributes)
+    expect_postgres_error(PG::UniqueViolation) do
+      insert_direct(GroupInvitation, **pending_attributes)
+    end
+
+    accepted = group_invitation_attributes(group:, invited_user:, invited_by_user:, status: "accepted")
+    expect(insert_and_fetch(GroupInvitation, **accepted)).to be_accepted
+  end
+
+  it "mantém position única e permite reordená-la como constraint deferrable" do
+    group = create(:group)
+    first = create(:membership, group:, position: 0)
+    second = create(:membership, group:, position: 1)
+
+    expect(unique_constraint("memberships_group_position_unique")).to eq(deferrable: true, initially_deferred: false)
+
+    connection.transaction do
+      connection.execute("SET CONSTRAINTS memberships_group_position_unique DEFERRED")
+      first.update!(position: 1)
+      second.update!(position: 0)
+    end
+
+    expect([ first.reload.position, second.reload.position ]).to eq([ 1, 0 ])
   end
 
   it "aceita auditoria de Expense ausente ou completa, replacement e escopos de share", :aggregate_failures do
@@ -643,6 +757,29 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
     }
   end
 
+  def group_invitation_attributes(group:, invited_user:, invited_by_user:, status:)
+    transition_columns = %w[accepted_at declined_at revoked_at expired_at]
+    attributes = {
+      group_id: group.id,
+      invited_user_id: invited_user.id,
+      invited_by_user_id: invited_by_user.id,
+      status:,
+      expires_at: 7.days.from_now
+    }
+    attributes["#{status}_at".to_sym] = Time.current unless status == "pending"
+    attributes.slice(*attributes.keys, *transition_columns.map(&:to_sym))
+  end
+
+  def invalid_group_invitation_audit_cases(group:, invited_user:, invited_by_user:)
+    pending = group_invitation_attributes(group:, invited_user:, invited_by_user:, status: "pending")
+    accepted = group_invitation_attributes(group:, invited_user:, invited_by_user:, status: "accepted")
+    [
+      pending.merge(accepted_at: Time.current),
+      accepted.merge(accepted_at: nil),
+      accepted.merge(revoked_at: Time.current)
+    ]
+  end
+
   def confirmed_payment_attributes(attributes, confirmed_by_user_id)
     attributes.merge(status: "confirmed", confirmed_by_user_id:, confirmed_at: Time.current)
   end
@@ -746,6 +883,15 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
 
   def unique_index_columns(table_name)
     connection.indexes(table_name).select(&:unique).map(&:columns)
+  end
+
+  def unique_constraint(name)
+    row = connection.select_one(<<~SQL.squish)
+      SELECT condeferrable, condeferred
+      FROM pg_constraint
+      WHERE conname = #{connection.quote(name)}
+    SQL
+    { deferrable: row.fetch("condeferrable"), initially_deferred: row.fetch("condeferred") }
   end
 
   def trigger_names(table_name)

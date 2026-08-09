@@ -31,7 +31,7 @@ Consulte também o [índice da documentação](./00-index.md) e os [ADRs](./adr/
 
 ### 1.1 Grupo
 
-Contexto isolado no qual usuários compartilham despesas. Cada grupo usa uma única moeda no MVP.
+Contexto isolado no qual usuários compartilham despesas. Cada grupo usa BRL, a única moeda suportada no MVP.
 
 ### 1.2 Membership
 
@@ -213,7 +213,7 @@ Essa escolha reduz fricção em grupos colaborativos, mas torna o produto inadeq
 - o parser converte texto diretamente para centavos e rejeita entradas que não sejam texto; não aceita nem usa `float`;
 - despesas, shares e pagamentos têm valor maior que zero;
 - a soma das shares é exatamente o valor da despesa;
-- a moeda do fato é a moeda do grupo;
+- a moeda de todo fato é BRL;
 - arredondamento segue ordem determinística e visível.
 
 ### 5.2 Participação
@@ -293,7 +293,7 @@ created_at
 updated_at
 ```
 
-`currency_code` é imutável depois da primeira despesa ou pagamento.
+`currency_code` é sempre `BRL` no MVP e é imutável depois da primeira despesa ou pagamento.
 
 ### 6.2 `memberships`
 
@@ -311,7 +311,7 @@ updated_at
 Constraints:
 
 - `unique(group_id, user_id)`;
-- `unique(group_id, position)`;
+- `unique(group_id, position)` como constraint PostgreSQL `DEFERRABLE INITIALLY IMMEDIATE`, para permitir reordenação atômica;
 - `position >= 0` e `NOT NULL`;
 - ao menos um owner ativo por grupo não arquivado.
 
@@ -327,7 +327,9 @@ invited_by_user_id
 status        # pending, accepted, declined, revoked, expired
 expires_at
 accepted_at
+declined_at
 revoked_at
+expired_at
 created_at
 updated_at
 ```
@@ -337,6 +339,7 @@ Constraints:
 - apenas owner ativo cria ou revoga;
 - `invited_user_id` identifica uma conta já existente;
 - no máximo um convite `pending` por grupo e usuário;
+- `pending` não possui timestamp de transição; cada estado terminal possui somente seu timestamp correspondente (`accepted_at`, `declined_at`, `revoked_at` ou `expired_at`), protegido por `CHECK`;
 - não é criado convite para usuário que já possui membership ativo;
 - aceitar cria um membership ou reativa o existente, sempre dentro de transação;
 - o convidado só pode aceitar ou recusar o próprio convite.
