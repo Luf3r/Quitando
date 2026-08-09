@@ -21,7 +21,7 @@ RSpec.describe "Structure SQL normalization command" do
     end
   end
 
-  it "normalizes structure.sql after the CI test database preparation" do
+  it "does not mutate structure.sql while CI prepares the test database" do
     steps = []
     runner = Object.new
     runner.define_singleton_method(:step) { |name, command| steps << [ name, command ] }
@@ -34,7 +34,7 @@ RSpec.describe "Structure SQL normalization command" do
     expect(steps).to include(
       [
         "Setup: Test database",
-        "env RAILS_ENV=test DATABASE_URL=$TEST_DATABASE_URL bin/rails db:prepare && bin/normalize-structure-sql"
+        "env RAILS_ENV=test DATABASE_URL=$TEST_DATABASE_URL bin/rails db:prepare"
       ]
     )
   end
