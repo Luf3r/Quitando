@@ -36,7 +36,8 @@ Este arquivo resume decisões que precisam permanecer consistentes entre produto
 - Sugestões não são persistidas como fatos financeiros.
 - Reports existentes não são cancelados automaticamente quando novas despesas mudam o plano; eles permanecem declarações separadas na projeção.
 - Um pagamento no MVP só pode ser reportado a partir de uma sugestão atual e por valor positivo não superior ao sugerido.
-- Campos financeiros de uma despesa são corrigidos por anulação e substituição, não por sobrescrita.
+- Campos financeiros, autoria, data e vínculo de uma despesa são corrigidos por anulação e substituição, não por sobrescrita; shares e despesas são append-only, e uma original tem no máximo uma substituta direta.
+- A descrição pode ser editada separadamente por creator, pagador ou owner ativo quando o grupo não está arquivado, inclusive em despesa anulada; cada alteração deixa revisão append-only e não muda a versão financeira.
 - Qualquer membro ativo pode registrar despesa indicando outro pagador ativo; creator e pagador são auditados separadamente e o pagador recebe destaque contextual no aplicativo.
 - Quando creator e pagador diferem, a criação persistida publica `quitando.expense.created_by_third_party` após commit; o payload é mínimo e não cria notificação persistida. Falha de consumidor síncrono depois do commit é reportada operacionalmente sem reverter nem apresentar como falha a despesa já persistida; não há retry ou garantia de entrega nesta fase.
 - Membership inativo é reativado no mesmo registro, preservando histórico.
@@ -53,9 +54,9 @@ Este arquivo resume decisões que precisam permanecer consistentes entre produto
 ### Consistência
 
 - Comandos financeiros são revalidados dentro de transação e serializados por grupo.
-- `report`, `confirm` e `cancel` usam recibo com chave global e fingerprint canônico; retry idêntico retorna o mesmo pagamento no estado atual, sem novo efeito financeiro.
+- `report`, `confirm`, `cancel` e `expense_correct` usam o recibo unificado `financial_command_receipts`, com chave global e fingerprint canônico; retry idêntico retorna o resultado anterior sem novo efeito financeiro.
 - Reports e correções financeiras enviam a versão financeira esperada; criação append-only de despesa é serializada, mas não falha apenas porque outra criação ocorreu em paralelo.
-- Eventos de domínio de pagamento ocorrem depois do commit e nunca substituem a leitura por HTTP; broadcasts Turbo/Action Cable permanecem na Fase 12.
+- Eventos de domínio de pagamento e correção ocorrem depois do commit e nunca substituem a leitura por HTTP; `quitando.expense.corrected` carrega original, substituta, grupo, ator e versão. Broadcasts Turbo/Action Cable permanecem na Fase 12.
 - Edições históricas não apagam fatos silenciosamente; correções preservam ator, motivo e relação com o registro substituído.
 
 ### Arquitetura

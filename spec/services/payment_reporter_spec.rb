@@ -293,8 +293,7 @@ RSpec.describe "PaymentReporter post-commit events", :non_transactional do
 
     delete_payment_command_receipts_for_cleanup!(PaymentCommandReceipt.where(payment_id: Payment.where(group_id: group.id).select(:id)))
     Payment.where(group_id: group.id).delete_all
-    ExpenseShare.where(expense_id: Expense.where(group_id: group.id).select(:id)).delete_all
-    Expense.where(group_id: group.id).delete_all
+    delete_expense_history_for_cleanup!(Expense.where(group_id: group.id))
     Membership.where(group_id: group.id).delete_all
     Group.where(id: group.id).delete_all
     User.where(id: [ receiver, sender ].compact.map(&:id)).delete_all

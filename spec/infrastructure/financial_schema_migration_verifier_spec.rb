@@ -64,15 +64,17 @@ RSpec.describe "Financial schema migration verifier safety" do
 
             @fake_pid = 4_000
             @wait_attempts = Hash.new(0)
+            @commands = {}
 
             class << self
-              def spawn(_environment, *arguments)
+              def spawn(environment, *arguments)
                 options = arguments.last.is_a?(Hash) ? arguments.pop : {}
                 command = arguments.join(" ")
                 File.open(ENV.fetch("PROCESS_FAKE_LOG"), "a") do |log|
                   log.puts("SPAWN pgroup=#{options[:pgroup].inspect} #{command}")
                 end
                 @fake_pid += 1
+                @commands[@fake_pid] = [ environment, command ]
                 @fake_pid
               end
 
@@ -80,7 +82,9 @@ RSpec.describe "Financial schema migration verifier safety" do
                 @wait_attempts[pid] += 1
                 sleep 1 if ENV["SYSTEM_FAKE_TIMEOUT"] == "true" && @wait_attempts[pid] == 1
 
-                successful = ENV["SYSTEM_FAKE_FAILURE"] != "true"
+                environment, command = @commands.fetch(pid)
+                expected_phase_nine_down_failure = environment["FINANCIAL_MIGRATION_EXPECT_FAILURE"] == "true"
+                successful = ENV["SYSTEM_FAKE_FAILURE"] != "true" && !expected_phase_nine_down_failure
                 [ pid, FakeStatus.new(successful, successful ? 0 : 17) ]
               end
 

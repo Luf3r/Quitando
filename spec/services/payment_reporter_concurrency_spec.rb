@@ -78,8 +78,7 @@ RSpec.describe PaymentReporter, :non_transactional do
           expense_ids = Expense.where(group_id: group.id).pluck(:id)
           delete_payment_command_receipts_for_cleanup!(PaymentCommandReceipt.where(payment_id: payment_ids))
           Payment.where(id: payment_ids).delete_all
-          ExpenseShare.where(expense_id: expense_ids).delete_all
-          Expense.where(id: expense_ids).delete_all
+          delete_expense_history_for_cleanup!(Expense.where(id: expense_ids))
           Membership.where(group_id: group.id).delete_all
           Group.where(id: group.id).delete_all
         end
@@ -166,8 +165,7 @@ RSpec.describe PaymentReporter, :non_transactional do
         expense_ids = Expense.where(group_id: group.id).pluck(:id)
         delete_payment_command_receipts_for_cleanup!(PaymentCommandReceipt.where(payment_id: payment_ids))
         Payment.where(id: payment_ids).delete_all
-        ExpenseShare.where(expense_id: expense_ids).delete_all
-        Expense.where(id: expense_ids).delete_all
+        delete_expense_history_for_cleanup!(Expense.where(id: expense_ids))
         Membership.where(group_id: group.id).delete_all
         Group.where(id: group.id).delete_all
       end

@@ -1,7 +1,4 @@
-require "digest"
-require "json"
-
-class PaymentCommand
+class PaymentCommand < FinancialCommand
   class InvalidInput < ArgumentError; end
   class Forbidden < StandardError; end
   class NotFound < StandardError; end
@@ -26,33 +23,10 @@ class PaymentCommand
     end
   end
 
-  UUID_PATTERN = /\A[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/
-  UUID_V7_PATTERN = /\A[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/
-
   private
 
-  def validate_persisted_ids!(*ids)
-    raise InvalidInput, "identificadores inválidos" unless ids.all? { |id| id.is_a?(String) && UUID_V7_PATTERN.match?(id) }
-  end
-
-  def validate_idempotency_key!(key)
-    raise InvalidInput, "chave de idempotência inválida" unless key.is_a?(String) && UUID_PATTERN.match?(key)
-  end
-
-  def validate_expected_version!(version)
-    raise InvalidInput, "versão financeira inválida" unless version.is_a?(Integer) && version >= 0
-  end
-
-  def fingerprint(vector)
-    Digest::SHA256.hexdigest(JSON.generate(vector))
-  end
-
-  def active_member?(group, user_id)
-    Membership.where(group:, user_id:, status: :active).exists?
-  end
-
   def resolve_receipt!(key, request_fingerprint)
-    receipt = PaymentCommandReceipt.find_by(idempotency_key: key)
+    receipt = FinancialCommandReceipt.find_by(idempotency_key: key)
     return nil unless receipt
 
     raise IdempotencyConflict, "chave de idempotência reutilizada" unless receipt.request_fingerprint == request_fingerprint
@@ -78,6 +52,6 @@ class PaymentCommand
   end
 
   def global_receipt_key_violation?(error)
-    error.cause&.result&.error_field(PG::Result::PG_DIAG_CONSTRAINT_NAME) == "index_payment_command_receipts_on_idempotency_key"
+    error.cause&.result&.error_field(PG::Result::PG_DIAG_CONSTRAINT_NAME) == "index_financial_command_receipts_on_idempotency_key"
   end
 end

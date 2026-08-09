@@ -6,13 +6,13 @@ O Quitando ajuda grupos que já confiam uns nos outros a encerrar despesas compa
 
 ## Status
 
-O projeto está em construção. As **Fases 0 a 8** estão implementadas e verificadas. A **Fase 8 — Situação financeira derivada do grupo** acrescentou `GroupFinancialStatusResolver`, que recalcula `empty`, `open`, `awaiting_confirmation` e `settled` a partir de fatos persistidos, sem criar uma coluna de status concorrente. A **Fase 7 — Workflow de pagamentos** acrescentou os comandos `PaymentReporter`, `PaymentConfirmer` e `PaymentCanceller`, recibos de idempotência append-only, transições terminais e eventos de domínio pós-commit.
+O projeto está em construção. As **Fases 0 a 9** estão implementadas e verificadas. A **Fase 9 — Correção imutável de despesas** acrescentou `ExpenseCorrector`: ele anula a despesa original e cria sua substituta na mesma transação, com recibo financeiro global e eventos pós-commit. Também acrescentou revisões append-only para edição de descrição, sem alterar fatos financeiros, pagamentos ou versão financeira. A **Fase 8 — Situação financeira derivada do grupo** permanece baseada em `GroupFinancialStatusResolver`, sem coluna de status concorrente.
 
 A base integrada já oferece o bootstrap Rails, RSpec com exemplos reais, `bin/ci`, checagens de lint e segurança, Docker com PostgreSQL 18, Active Storage/Vips, Devise, Pundit, FactoryBot, parser monetário em centavos e locale `pt-BR`.
 
 Há uma jornada mínima de cadastro e os smoke tests da fundação. A criação transacional de despesas, os saldos oficial e projetado, o plano textual restante e o workflow de pagamentos existem no nível de serviço e podem ser demonstrados por console, mas ainda não há fluxo HTTP/UI para operá-los. Portanto, o estado atual ainda não constitui um MVP funcional.
 
-O trabalho é acompanhado no [GitHub Project — Quitando](https://github.com/users/Luf3r/projects/2). As [Fases 3](https://github.com/Luf3r/Quitando/issues/8), [4](https://github.com/Luf3r/Quitando/issues/9), [5](https://github.com/Luf3r/Quitando/issues/10), [6](https://github.com/Luf3r/Quitando/issues/11), [7](https://github.com/Luf3r/Quitando/issues/12) e [8](https://github.com/Luf3r/Quitando/issues/13), com suas subissues, estão em `Done`; a próxima etapa é a Fase 9. Status e campos do quadro devem refletir apenas trabalho realmente demonstrado; contratos e gates continuam definidos pela documentação do repositório.
+O trabalho é acompanhado no [GitHub Project — Quitando](https://github.com/users/Luf3r/projects/2). As [Fases 3](https://github.com/Luf3r/Quitando/issues/8), [4](https://github.com/Luf3r/Quitando/issues/9), [5](https://github.com/Luf3r/Quitando/issues/10), [6](https://github.com/Luf3r/Quitando/issues/11), [7](https://github.com/Luf3r/Quitando/issues/12), [8](https://github.com/Luf3r/Quitando/issues/13) e [9](https://github.com/Luf3r/Quitando/issues/14), com suas subissues, estão em `Done`; a próxima etapa é a Fase 10. Status e campos do quadro devem refletir apenas trabalho realmente demonstrado; contratos e gates continuam definidos pela documentação do repositório.
 
 ## Como funciona
 
@@ -90,7 +90,7 @@ docker compose run --rm web bin/ci
 
 `DATABASE_URL` aponta para desenvolvimento e `TEST_DATABASE_URL` para teste. A configuração de teste prioriza explicitamente `TEST_DATABASE_URL`, inclusive em comandos Rails executados com `RAILS_ENV=test`; não substitua essa variável por uma URL de desenvolvimento. Os dados do PostgreSQL 18 ficam em `/var/lib/postgresql/18/docker`, dentro do volume montado em `/var/lib/postgresql`; as gems usam outro volume Docker. `docker compose down` preserva os volumes; use `down -v` somente quando os dados locais puderem ser descartados.
 
-O schema canônico é [`db/structure.sql`](./db/structure.sql), pois ele preserva funções e triggers PostgreSQL, incluindo a proteção append-only dos recibos de pagamento. As imagens Docker e a CI instalam o cliente PostgreSQL 18 correspondente para carregar e regenerar esse arquivo.
+O schema canônico é [`db/structure.sql`](./db/structure.sql), pois ele preserva funções e triggers PostgreSQL, incluindo a proteção append-only dos recibos financeiros unificados, despesas, shares e revisões descritivas. As imagens Docker e a CI instalam o cliente PostgreSQL 18 correspondente para carregar e regenerar esse arquivo.
 
 Não reutilize diretamente um volume criado pelo PostgreSQL 17 com a imagem 18. Se os dados locais forem descartáveis, recrie o volume; se precisarem ser preservados, faça migração com `pg_upgrade` ou exportação e restauração antes de trocar a versão. Consulte a [orientação de `PGDATA` da imagem oficial](https://github.com/docker-library/docs/blob/master/postgres/README.md#pgdata).
 
