@@ -133,7 +133,7 @@ RSpec.describe ExpenseCreator do
         { type: :exact, shares: [ nil ] },
         { type: :exact, shares: [ { "user_id" => payer.id, "amount_text" => "2,00" } ] },
         { type: :exact, shares: [ { user_id: payer.id } ] },
-        { type: :exact, shares: [ { user_id: payer.id, amount_text: "valor-inválido" } ] },
+        { type: :exact, shares: [ { user_id: payer.id, amount_text: "valor-inválido" } ] }
       ]
 
       malformed_splits.each do |malformed_split|
