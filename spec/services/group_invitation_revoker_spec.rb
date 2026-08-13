@@ -26,5 +26,18 @@ RSpec.describe GroupInvitationRevoker do
 
       expect(invitation.reload).to be_pending
     end
+
+    it "expira pendência vencida antes de revogar e expõe a transição terminal" do
+      group = create(:group)
+      owner = create(:user)
+      create(:membership, group:, user: owner, role: :owner, position: 0)
+      invitation = create(:group_invitation, group:, invited_by_user: owner, expires_at: 1.minute.ago)
+
+      expect {
+        described_class.call(invitation_id: invitation.id, actor_user_id: owner.id)
+      }.to raise_error(GroupCommand::InvalidTransition, "convite não está pendente")
+
+      expect(invitation.reload).to be_expired
+    end
   end
 end

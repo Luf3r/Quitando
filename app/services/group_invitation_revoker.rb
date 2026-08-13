@@ -12,18 +12,23 @@ class GroupInvitationRevoker < GroupCommand
     validate_persisted_ids!(invitation_id, actor_user_id)
     group_id = GroupInvitation.where(id: invitation_id).pick(:group_id) || raise(NotFound, "convite não encontrado")
 
-    Group.transaction do
+    result = Group.transaction do
       group = Group.lock.find_by(id: group_id) || raise(NotFound, "grupo não encontrado")
       raise ArchivedGroup, "grupo arquivado" if group.archived_at?
       raise Forbidden, "membership owner ativa obrigatória" unless owner_active?(group)
 
       invitation = GroupInvitation.lock.find_by(id: invitation_id) || raise(NotFound, "convite não encontrado")
-      expire_if_needed!(invitation)
+      next :expired if expire_if_needed!(invitation)
+
       raise InvalidTransition, "convite não está pendente" unless invitation.pending?
 
       invitation.update!(status: :revoked, revoked_at: Time.current)
       invitation
     end
+
+    raise InvalidTransition, "convite não está pendente" if result == :expired
+
+    result
   end
 
   private
@@ -35,8 +40,9 @@ class GroupInvitationRevoker < GroupCommand
   end
 
   def expire_if_needed!(invitation)
-    return unless invitation.pending? && invitation.expires_at <= Time.current
+    return false unless invitation.pending? && invitation.expires_at <= Time.current
 
     invitation.update!(status: :expired, expired_at: Time.current)
+    true
   end
 end
