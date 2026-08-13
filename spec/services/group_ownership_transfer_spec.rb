@@ -18,5 +18,23 @@ RSpec.describe GroupOwnershipTransfer do
       expect(Membership.find_by(group:, user: other_owner)).to have_attributes(role: "owner", status: "active")
       expect(group.reload.financial_state_version).to eq(0)
     end
+
+    it "recusa alvo inativo e ator sem ownership ativa" do
+      group = create(:group)
+      owner = create(:user)
+      member = create(:user)
+      inactive_target = create(:user)
+      create(:membership, group:, user: owner, role: :owner, position: 0)
+      create(:membership, group:, user: member, role: :member, position: 1)
+      create(:membership, group:, user: inactive_target, role: :member, status: :inactive, position: 2)
+
+      expect {
+        described_class.call(group_id: group.id, actor_user_id: owner.id, new_owner_user_id: inactive_target.id)
+      }.to raise_error(GroupCommand::InvalidTransition, "novo owner deve estar ativo")
+
+      expect {
+        described_class.call(group_id: group.id, actor_user_id: member.id, new_owner_user_id: owner.id)
+      }.to raise_error(GroupCommand::Forbidden, "membership owner ativa obrigatória")
+    end
   end
 end
