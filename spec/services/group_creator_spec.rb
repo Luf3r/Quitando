@@ -1,5 +1,12 @@
 require "rails_helper"
 
+invalid_persisted_ids = {
+  "UUID v7 em maiúsculas" => "018F6D4E-06AC-7D62-8BD3-31A553F3A00B",
+  "UUID v7 com variante RFC inválida" => "018f6d4e-06ac-7d62-7bd3-31a553f3a00b",
+  "string malformada" => "não-é-um-uuid",
+  "valor que não é string" => 123
+}.freeze
+
 RSpec.describe GroupCreator do
   describe ".call" do
     it "cria grupo BRL e owner ativo na posição zero na mesma transação" do
@@ -13,12 +20,14 @@ RSpec.describe GroupCreator do
       )
     end
 
-    it "rejeita owner UUID v7 não canônico antes de abrir uma transação" do
-      expect(Group).not_to receive(:transaction)
+    invalid_persisted_ids.each do |invalid_id_description, invalid_id|
+      it "rejeita owner com #{invalid_id_description} antes de consultar usuários" do
+        expect(User).not_to receive(:find_by)
 
-      expect {
-        described_class.call(owner_user_id: SecureRandom.uuid, name: "Casa")
-      }.to raise_error(GroupCommand::InvalidInput, "identificadores inválidos")
+        expect {
+          described_class.call(owner_user_id: invalid_id, name: "Casa")
+        }.to raise_error(GroupCommand::InvalidInput, "identificadores inválidos")
+      end
     end
 
     it "rejeita nome ausente ou em branco antes de abrir uma transação" do
