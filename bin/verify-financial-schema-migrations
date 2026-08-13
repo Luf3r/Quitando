@@ -7,8 +7,9 @@ require "uri"
 require_relative "../lib/financial_migration_command_runner"
 
 TEMPORARY_DATABASE_PREFIX = "quitando_financial_schema_migrations".freeze
-FINANCIAL_MIGRATION_VERSIONS = %w[20260721160000 20260721161000 20260721165000 20260727120000].freeze
+FINANCIAL_MIGRATION_VERSIONS = %w[20260721160000 20260721161000 20260721165000 20260727120000 20260802150000].freeze
 MEMBERSHIP_POSITION_MIGRATION_VERSION = "20260727120000".freeze
+PHASE_NINE_MIGRATION_VERSION = "20260803170000".freeze
 COMMAND_TIMEOUT_SECONDS = Float(ENV.fetch("FINANCIAL_MIGRATION_COMMAND_TIMEOUT_SECONDS", "900"))
 COMMAND_TERMINATION_GRACE_SECONDS = Float(ENV.fetch("FINANCIAL_MIGRATION_TERMINATION_GRACE_SECONDS", "5"))
 DATABASE_TIMEOUT_SECONDS = Integer(ENV.fetch("FINANCIAL_MIGRATION_DATABASE_TIMEOUT_SECONDS", "30"), 10)
@@ -40,6 +41,151 @@ MEMBERSHIP_BACKFILL_ASSERTION = <<~'RUBY'.freeze
   ]
   actual = Membership.where(id: expected.map { |row| row.fetch(1) }).order(:group_id, :position).pluck(:group_id, :id, :position)
   abort "membership position backfill mismatch: #{actual.inspect}" unless actual == expected
+RUBY
+PAYMENT_COMMAND_RECEIPT_MIGRATION_ASSERTION = <<~'RUBY'.freeze
+  require Rails.root.join("db/migrate/20260802150000_create_payment_command_receipts")
+
+  connection = ApplicationRecord.connection
+  expected_lock_timeout = "7s"
+  connection.execute("SET lock_timeout = '#{expected_lock_timeout}'")
+  assert_lock_timeout = lambda do |operation|
+    actual_lock_timeout = connection.select_value("SHOW lock_timeout")
+    next if actual_lock_timeout == expected_lock_timeout
+
+    abort "lock_timeout was not restored after cutover receipt migration #{operation}: #{actual_lock_timeout.inspect}"
+  end
+
+  migration = CreatePaymentCommandReceipts.new
+  migration.migrate(:down)
+  assert_lock_timeout.call("down")
+
+  legacy_index = connection.indexes(:payments).find { |index| index.columns == [ "idempotency_key" ] }
+  unless legacy_index&.unique
+    abort "payments idempotency index expected unique after cutover down: #{legacy_index&.unique.inspect}"
+  end
+
+  timestamp = connection.quote(Time.current)
+  token = SecureRandom.hex(12)
+  from_user_id = connection.select_value(<<~SQL)
+    INSERT INTO users (id, email, encrypted_password, created_at, updated_at)
+    VALUES (uuidv7(), #{connection.quote("migration-from-#{token}@example.test")}, 'x', #{timestamp}, #{timestamp})
+    RETURNING id
+  SQL
+  to_user_id = connection.select_value(<<~SQL)
+    INSERT INTO users (id, email, encrypted_password, created_at, updated_at)
+    VALUES (uuidv7(), #{connection.quote("migration-to-#{token}@example.test")}, 'x', #{timestamp}, #{timestamp})
+    RETURNING id
+  SQL
+  group_id = connection.select_value(<<~SQL)
+    INSERT INTO groups (id, name, currency_code, financial_state_version, created_at, updated_at)
+    VALUES (uuidv7(), 'Receipt migration', 'BRL', 0, #{timestamp}, #{timestamp})
+    RETURNING id
+  SQL
+  backfilled_payment_id = connection.select_value(<<~SQL)
+    INSERT INTO payments (
+      id, group_id, from_user_id, to_user_id, amount_cents, status,
+      idempotency_key, request_fingerprint, source_financial_state_version,
+      reported_by_user_id, reported_at, created_at, updated_at
+    )
+    VALUES (
+      uuidv7(), #{connection.quote(group_id)}, #{connection.quote(from_user_id)}, #{connection.quote(to_user_id)}, 100, 'reported',
+      #{connection.quote(SecureRandom.uuid)}, 'cutover-backfill', 0,
+      #{connection.quote(from_user_id)}, #{timestamp}, #{timestamp}, #{timestamp}
+    )
+    RETURNING id
+  SQL
+
+  migration.migrate(:up)
+  assert_lock_timeout.call("up")
+  backfilled_count = connection.select_value(<<~SQL).to_i
+    SELECT COUNT(*)
+    FROM payment_command_receipts
+    WHERE payment_id = #{connection.quote(backfilled_payment_id)} AND command_type = 'report'
+  SQL
+  unless backfilled_count == 1
+    abort "cutover backfill expected exactly one report receipt, got #{backfilled_count}"
+  end
+
+  audit_index = connection.indexes(:payments).find { |index| index.columns == [ "idempotency_key" ] }
+  unless audit_index && !audit_index.unique
+    abort "payments idempotency audit index expected non-unique, got #{audit_index&.unique.inspect}"
+  end
+RUBY
+PAYMENT_COMMAND_RECEIPT_APPEND_ONLY_ASSERTION = <<~'RUBY'.freeze
+  connection = ApplicationRecord.connection
+  timestamp = connection.quote(Time.current)
+  token = SecureRandom.hex(12)
+  from_user_id = connection.select_value(<<~SQL)
+    INSERT INTO users (id, email, encrypted_password, created_at, updated_at)
+    VALUES (uuidv7(), #{connection.quote("receipt-from-#{token}@example.test")}, 'x', #{timestamp}, #{timestamp})
+    RETURNING id
+  SQL
+  to_user_id = connection.select_value(<<~SQL)
+    INSERT INTO users (id, email, encrypted_password, created_at, updated_at)
+    VALUES (uuidv7(), #{connection.quote("receipt-to-#{token}@example.test")}, 'x', #{timestamp}, #{timestamp})
+    RETURNING id
+  SQL
+  group_id = connection.select_value(<<~SQL)
+    INSERT INTO groups (id, name, currency_code, financial_state_version, created_at, updated_at)
+    VALUES (uuidv7(), 'Receipt trigger', 'BRL', 0, #{timestamp}, #{timestamp})
+    RETURNING id
+  SQL
+  payment_id = connection.select_value(<<~SQL)
+    INSERT INTO payments (
+      id, group_id, from_user_id, to_user_id, amount_cents, status,
+      idempotency_key, request_fingerprint, source_financial_state_version,
+      reported_by_user_id, reported_at, created_at, updated_at
+    )
+    VALUES (
+      uuidv7(), #{connection.quote(group_id)}, #{connection.quote(from_user_id)}, #{connection.quote(to_user_id)}, 100, 'reported',
+      uuidv7(), 'payment-fingerprint', 0,
+      #{connection.quote(from_user_id)}, #{timestamp}, #{timestamp}, #{timestamp}
+    )
+    RETURNING id
+  SQL
+  receipt_id = connection.select_value(<<~SQL)
+    INSERT INTO payment_command_receipts (
+      id, payment_id, command_type, idempotency_key, request_fingerprint, created_at, updated_at
+    )
+    VALUES (
+      uuidv7(), #{connection.quote(payment_id)}, 'report', uuidv7(), 'receipt-fingerprint', #{timestamp}, #{timestamp}
+    )
+    RETURNING id
+  SQL
+
+  [
+    "UPDATE payment_command_receipts SET request_fingerprint = 'changed' WHERE id = #{connection.quote(receipt_id)}",
+    "DELETE FROM payment_command_receipts WHERE id = #{connection.quote(receipt_id)}"
+  ].each do |statement|
+    begin
+      connection.execute(statement)
+      abort "payment command receipt mutation was accepted: #{statement}"
+    rescue ActiveRecord::StatementInvalid => error
+      sqlstate = error.cause&.result&.error_field(PG::Result::PG_DIAG_SQLSTATE)
+      abort "payment command receipt mutation expected SQLSTATE 55000, got #{sqlstate.inspect}" unless sqlstate == "55000"
+    end
+  end
+RUBY
+PHASE_NINE_RECEIPT_ASSERTION = <<~'RUBY'.freeze
+  connection = ApplicationRecord.connection
+  abort "financial command receipts table is missing" unless connection.data_source_exists?("financial_command_receipts")
+  abort "legacy payment command receipts table still exists" if connection.data_source_exists?("payment_command_receipts")
+
+  preserved_reports = connection.select_value("SELECT COUNT(*) FROM financial_command_receipts WHERE command_type = 'report'").to_i
+  abort "legacy payment receipts were not preserved by phase 9 migration" unless preserved_reports.positive?
+RUBY
+PHASE_NINE_DESCRIPTION_REVISION_FIXTURE = <<~'RUBY'.freeze
+  token = SecureRandom.hex(12)
+  user = User.create!(email: "phase-nine-revision-#{token}@example.test", password: "password-#{token}")
+  group = Group.create!(name: "Phase nine revision #{token}", currency_code: "BRL")
+  expense = Expense.create!(group:, created_by_user: user, paid_by_user: user, amount_cents: 100, description: "Antes", occurred_on: Date.current)
+  ExpenseDescriptionRevision.create!(expense:, actor_user: user, previous_description: "Antes", new_description: "Depois")
+RUBY
+PHASE_NINE_DESCRIPTION_REVISION_CLEANUP = <<~'RUBY'.freeze
+  connection = ApplicationRecord.connection
+  connection.execute("ALTER TABLE expense_description_revisions DISABLE TRIGGER expense_description_revisions_append_only")
+  ExpenseDescriptionRevision.delete_all
+  connection.execute("ALTER TABLE expense_description_revisions ENABLE TRIGGER expense_description_revisions_append_only")
 RUBY
 
 class CommandFailure < StandardError; end
@@ -103,6 +249,12 @@ rescue FinancialMigrationCommandRunner::CommandTimedOut => error
   raise CommandFailure, "#{error.message}: #{command.join(' ')}", cause: nil
 end
 
+def run_expect_failure!(*command, environment:)
+  puts "==> expected failure: #{command.join(' ')}"
+  status = COMMAND_RUNNER.call(*command, environment: environment.merge("FINANCIAL_MIGRATION_EXPECT_FAILURE" => "true"))
+  raise CommandFailure, "command unexpectedly succeeded: #{command.join(' ')}" if status.success?
+end
+
 source_uri = database_uri(ENV.fetch("TEST_DATABASE_URL"))
 temporary_database_name = validate_temporary_database_name!(
   "#{TEMPORARY_DATABASE_PREFIX}_#{Process.pid}_#{SecureRandom.hex(8)}"
@@ -123,7 +275,12 @@ begin
   execute_database_statement(maintenance_database_url, temporary_database_name, "CREATE DATABASE")
   database_created = true
 
-  run!("bin/rails", "db:migrate", environment: child_environment)
+  run!("bin/rails", "db:prepare", environment: child_environment)
+  run!(
+    "bin/rails", "db:migrate:down",
+    environment: child_environment.merge("VERSION" => PHASE_NINE_MIGRATION_VERSION)
+  )
+  run!("bin/rails", "runner", PAYMENT_COMMAND_RECEIPT_APPEND_ONLY_ASSERTION, environment: child_environment)
   run!(
     "bin/rails", "db:migrate:down",
     environment: child_environment.merge("VERSION" => MEMBERSHIP_POSITION_MIGRATION_VERSION)
@@ -143,6 +300,25 @@ begin
     run!("bin/rails", "db:migrate:up", environment: child_environment.merge("VERSION" => version))
   end
 
+  run!("bin/rails", "runner", PAYMENT_COMMAND_RECEIPT_MIGRATION_ASSERTION, environment: child_environment)
+  run!("bin/rails", "runner", PAYMENT_COMMAND_RECEIPT_APPEND_ONLY_ASSERTION, environment: child_environment)
+  run!(
+    "bin/rails", "db:migrate:up",
+    environment: child_environment.merge("VERSION" => PHASE_NINE_MIGRATION_VERSION)
+  )
+  run!("bin/rails", "runner", PHASE_NINE_RECEIPT_ASSERTION, environment: child_environment)
+  run!("bin/rails", "runner", PHASE_NINE_DESCRIPTION_REVISION_FIXTURE, environment: child_environment)
+  run_expect_failure!(
+    "bin/rails", "db:migrate:down",
+    environment: child_environment.merge("VERSION" => PHASE_NINE_MIGRATION_VERSION)
+  )
+  run!("bin/rails", "runner", PHASE_NINE_DESCRIPTION_REVISION_CLEANUP, environment: child_environment)
+  run!(
+    "bin/rails", "db:migrate:down",
+    environment: child_environment.merge("VERSION" => PHASE_NINE_MIGRATION_VERSION)
+  )
+  run!("bin/rails", "db:migrate:up", environment: child_environment.merge("VERSION" => PHASE_NINE_MIGRATION_VERSION))
+  run!("bin/rails", "runner", PHASE_NINE_RECEIPT_ASSERTION, environment: child_environment)
   run!(
     "bundle", "exec", "rspec", "spec/database/financial_schema_contract_spec.rb",
     environment: child_environment.merge("CI" => "true")

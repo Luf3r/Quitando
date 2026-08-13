@@ -57,6 +57,14 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
       "created_at" => [ "timestamp(6) without time zone", false ],
       "updated_at" => [ "timestamp(6) without time zone", false ]
     },
+    "expense_description_revisions" => {
+      "id" => [ "uuid", false ],
+      "expense_id" => [ "uuid", false ],
+      "actor_user_id" => [ "uuid", false ],
+      "previous_description" => [ "character varying", false ],
+      "new_description" => [ "character varying", false ],
+      "created_at" => [ "timestamp(6) without time zone", false ]
+    },
     "payments" => {
       "id" => [ "uuid", false ],
       "group_id" => [ "uuid", false ],
@@ -74,6 +82,16 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
       "cancelled_by_user_id" => [ "uuid", true ],
       "cancelled_at" => [ "timestamp(6) without time zone", true ],
       "cancellation_reason" => [ "character varying", true ],
+      "created_at" => [ "timestamp(6) without time zone", false ],
+      "updated_at" => [ "timestamp(6) without time zone", false ]
+    },
+    "financial_command_receipts" => {
+      "id" => [ "uuid", false ],
+      "payment_id" => [ "uuid", true ],
+      "expense_id" => [ "uuid", true ],
+      "command_type" => [ "character varying", false ],
+      "idempotency_key" => [ "uuid", false ],
+      "request_fingerprint" => [ "character varying", false ],
       "created_at" => [ "timestamp(6) without time zone", false ],
       "updated_at" => [ "timestamp(6) without time zone", false ]
     }
@@ -97,6 +115,10 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
       [ "expense_id", "expenses", "id" ],
       [ "user_id", "users", "id" ]
     ],
+    "expense_description_revisions" => [
+      [ "actor_user_id", "users", "id" ],
+      [ "expense_id", "expenses", "id" ]
+    ],
     "payments" => [
       [ "cancelled_by_user_id", "users", "id" ],
       [ "confirmed_by_user_id", "users", "id" ],
@@ -104,16 +126,19 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
       [ "group_id", "groups", "id" ],
       [ "reported_by_user_id", "users", "id" ],
       [ "to_user_id", "users", "id" ]
-    ]
+    ],
+    "financial_command_receipts" => [ [ "expense_id", "expenses", "id" ], [ "payment_id", "payments", "id" ] ]
   }.freeze
 
   UNIQUE_INDEXES = {
     "users" => [ %w[email], %w[reset_password_token] ],
     "groups" => [],
     "memberships" => [ %w[group_id user_id], %w[group_id position] ],
-    "expenses" => [],
+    "expenses" => [ %w[replaces_expense_id] ],
     "expense_shares" => [ %w[expense_id user_id] ],
-    "payments" => [ %w[idempotency_key] ]
+    "expense_description_revisions" => [],
+    "payments" => [],
+    "financial_command_receipts" => [ %w[idempotency_key], %w[payment_id command_type], %w[expense_id command_type] ]
   }.freeze
 
   MONEY_COLUMNS = {
@@ -123,7 +148,7 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
   }.freeze
 
   it "prova PK real em id, tipos, nullability e default UUID v7 no catálogo", :aggregate_failures do
-    expect(TABLE_COLUMNS.keys).to match_array(%w[users groups memberships expenses expense_shares payments])
+    expect(TABLE_COLUMNS.keys).to match_array(%w[users groups memberships expenses expense_shares expense_description_revisions payments financial_command_receipts])
 
     TABLE_COLUMNS.each do |table_name, expected_columns|
       expect(primary_key_columns(table_name)).to eq([ "id" ]), table_name
@@ -133,7 +158,7 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
   end
 
   it "prova cada FK com coluna de origem e destino exatas", :aggregate_failures do
-    expect(FOREIGN_KEYS.keys).to match_array(%w[users groups memberships expenses expense_shares payments])
+    expect(FOREIGN_KEYS.keys).to match_array(%w[users groups memberships expenses expense_shares expense_description_revisions payments financial_command_receipts])
 
     FOREIGN_KEYS.each do |table_name, expected_foreign_keys|
       expect(foreign_keys(table_name)).to eq(expected_foreign_keys), table_name
@@ -348,7 +373,6 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
 
   it "recusa enums, versões, self replacement e duplicidades estruturais", :aggregate_failures do
     group = create(:group)
-    other_group = create(:group)
     user = create(:user)
     other_user = create(:user)
     expense = create(:expense, group:, paid_by_user: user, created_by_user: user)
@@ -394,15 +418,11 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
       insert_direct(ExpenseShare, expense_id: expense.id, user_id: other_user.id, amount_owed_cents: 2, position: 1)
     end
 
+    payment_id = insert_direct(Payment, **payment_attributes(group:, from_user:, to_user:))
     idempotency_key = database_uuid
-    insert_direct(Payment, **payment_attributes(group:, from_user:, to_user:, idempotency_key:))
+    PaymentCommandReceipt.create!(payment_id:, command_type: :report, idempotency_key:, request_fingerprint: "payload")
     expect_postgres_error(PG::UniqueViolation) do
-      insert_direct(
-        Payment,
-        **payment_attributes(group: other_group, from_user:, to_user:, idempotency_key:).merge(
-          request_fingerprint: "payload-diferente"
-        )
-      )
+      PaymentCommandReceipt.create!(payment_id:, command_type: :confirm, idempotency_key:, request_fingerprint: "payload-diferente")
     end
   end
 
@@ -429,6 +449,89 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
         expect_postgres_error(PG::CheckViolation) do
           insert_direct(Payment, **invalid_attributes)
         end
+      end
+    end
+  end
+
+  it "expõe recibos financeiros unificados e guards append-only do histórico" do
+    expect(connection.data_source_exists?("financial_command_receipts")).to be(true)
+    expect(connection.columns("financial_command_receipts").map(&:name)).to include("payment_id", "expense_id", "command_type", "idempotency_key", "request_fingerprint")
+    expect(index_columns(:financial_command_receipts)).to include(%w[payment_id command_type], %w[expense_id command_type])
+    expect(connection.data_source_exists?("expense_description_revisions")).to be(true)
+    expect(trigger_names("expenses")).to include("expenses_history_guard")
+    expect(trigger_names("expense_shares")).to include("expense_shares_append_only")
+    expect(trigger_names("expense_description_revisions")).to include("expense_description_revisions_append_only")
+  end
+
+  it "impede no PostgreSQL a reescrita, remoção e reversão do histórico de despesas" do
+    group = create(:group)
+    creator = create(:user)
+    voider = create(:user)
+    participant = create(:user)
+    original = insert_and_fetch(Expense, **expense_attributes(group:, user: creator))
+    insert_direct(ExpenseShare, expense_id: original.id, user_id: participant.id, amount_owed_cents: 100, position: 0)
+    revision = ExpenseDescriptionRevision.create!(expense: original, actor_user: creator, previous_description: "Mercado", new_description: "Mercado editado")
+    replacement = insert_and_fetch(Expense, **expense_attributes(group:, user: creator).merge(description: "Substituta", replaces_expense_id: original.id))
+
+    expect_postgres_error(PG::ObjectNotInPrerequisiteState) { connection.execute("UPDATE expenses SET amount_cents = 200 WHERE id = #{connection.quote(original.id)}") }
+    expect_postgres_error(PG::ObjectNotInPrerequisiteState) { connection.execute("DELETE FROM expenses WHERE id = #{connection.quote(original.id)}") }
+    expect_postgres_error(PG::ObjectNotInPrerequisiteState) { connection.execute("UPDATE expense_shares SET amount_owed_cents = 200 WHERE expense_id = #{connection.quote(original.id)}") }
+    expect_postgres_error(PG::ObjectNotInPrerequisiteState) { connection.execute("UPDATE expense_description_revisions SET new_description = 'Reescrita' WHERE id = #{connection.quote(revision.id)}") }
+    expect_postgres_error(PG::UniqueViolation) do
+      insert_direct(Expense, **expense_attributes(group:, user: creator).merge(description: "Outra substituta", replaces_expense_id: original.id))
+    end
+
+    original.update!(voided_at: Time.current, voided_by_user_id: voider.id, void_reason: "Correção")
+    expect_postgres_error(PG::ObjectNotInPrerequisiteState) { connection.execute("UPDATE expenses SET void_reason = 'Revertida' WHERE id = #{connection.quote(original.id)}") }
+    expect(replacement.reload.replaces_expense_id).to eq(original.id)
+  end
+
+  it "exige no commit uma cadeia de substituição no mesmo grupo e revisão para editar descrição" do
+    group = create(:group)
+    other_group = create(:group)
+    creator = create(:user)
+    original = insert_and_fetch(Expense, **expense_attributes(group:, user: creator))
+
+    expect_postgres_error(PG::CheckViolation) do
+      connection.transaction(requires_new: true) do
+        insert_direct(Expense, **expense_attributes(group: other_group, user: creator).merge(replaces_expense_id: original.id))
+        connection.execute("SET CONSTRAINTS ALL IMMEDIATE")
+      end
+    end
+
+    expect_postgres_error(PG::CheckViolation) do
+      connection.transaction(requires_new: true) do
+        connection.execute("UPDATE expenses SET description = 'Sem revisão' WHERE id = #{connection.quote(original.id)}")
+        connection.execute("SET CONSTRAINTS ALL IMMEDIATE")
+      end
+    end
+  end
+
+  it "exige ator da correção, cronologia imutável e uma revisão nova por descrição" do
+    group = create(:group)
+    creator = create(:user)
+    other_user = create(:user)
+    original = insert_and_fetch(Expense, **expense_attributes(group:, user: creator))
+    original.update!(voided_at: Time.current, voided_by_user_id: creator.id, void_reason: "Correção")
+
+    expect_postgres_error(PG::CheckViolation) do
+      connection.transaction(requires_new: true) do
+        insert_direct(Expense, **expense_attributes(group:, user: other_user).merge(replaces_expense_id: original.id))
+        connection.execute("SET CONSTRAINTS ALL IMMEDIATE")
+      end
+    end
+    expect_postgres_error(PG::ObjectNotInPrerequisiteState) { connection.execute("UPDATE expenses SET created_at = created_at - interval '1 second' WHERE id = #{connection.quote(original.id)}") }
+
+    active = insert_and_fetch(Expense, **expense_attributes(group:, user: creator).merge(description: "A"))
+    ExpenseDescriptionRevision.create!(expense: active, actor_user: creator, previous_description: "A", new_description: "B")
+    active.update!(description: "B")
+    ExpenseDescriptionRevision.create!(expense: active, actor_user: creator, previous_description: "B", new_description: "A")
+    active.update!(description: "A")
+
+    expect_postgres_error(PG::CheckViolation) do
+      connection.transaction(requires_new: true) do
+        connection.execute("UPDATE expenses SET description = 'B' WHERE id = #{connection.quote(active.id)}")
+        connection.execute("SET CONSTRAINTS ALL IMMEDIATE")
       end
     end
   end
@@ -643,5 +746,14 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
 
   def unique_index_columns(table_name)
     connection.indexes(table_name).select(&:unique).map(&:columns)
+  end
+
+  def trigger_names(table_name)
+    connection.select_values(<<~SQL.squish)
+      SELECT triggers.tgname
+      FROM pg_trigger triggers
+      WHERE triggers.tgrelid = #{connection.quote(table_name)}::regclass
+        AND NOT triggers.tgisinternal
+    SQL
   end
 end

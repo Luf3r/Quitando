@@ -502,11 +502,14 @@ Implementar comandos financeiros seguros e concorrentes.
 - `PaymentReporter`;
 - `PaymentConfirmer`;
 - `PaymentCanceller`;
+- recibos imutáveis de comando para report, confirmação e cancelamento;
 - `request_fingerprint`;
 - idempotência;
 - lock/serialização por grupo;
 - checagem de `expected_financial_state_version` no report;
 - transições condicionais para confirmar e cancelar.
+
+Os comandos publicam somente eventos de domínio pós-commit (`quitando.payment.reported`, `quitando.payment.confirmed` e `quitando.payment.cancelled`). Esses eventos não são broadcasts Turbo/Action Cable; a entrega de interface em tempo real permanece na Fase 12. Falha de consumidor é reportada operacionalmente e não desfaz o comando já commitado.
 
 ### 10.3 Specs do reporter
 
@@ -566,6 +569,8 @@ despesa
 -> novo saldo oficial
 ```
 
+Gate demonstrado sobre o diff corrente: verificador de migrations, service specs incluindo contenção PostgreSQL observada, property test com controle negativo, lint e `bin/ci` passaram. A Fase 7 está concluída e libera a Fase 8.
+
 ---
 
 ## 11. Fase 8 — Situação financeira derivada do grupo
@@ -598,6 +603,8 @@ spec/services/group_financial_status_resolver_spec.rb
 
 Todos os estados do dashboard podem ser derivados de fatos persistidos, sem coluna de status financeiro mutável.
 
+Gate demonstrado sobre o diff corrente: matriz de estados e transições reais do workflow, propagação de inconsistência do ledger, verificação estrutural sem coluna de status, lint e `bin/ci` passaram. A Fase 8 está concluída e libera a Fase 9.
+
 ---
 
 ## 12. Fase 9 — Correção imutável de despesas
@@ -614,11 +621,18 @@ Corrigir fatos financeiros sem sobrescrever histórico.
 - `void_reason`, ator e `replaces_expense_id`;
 - edição separada para campos puramente descritivos;
 - versionamento de mudanças financeiras.
+- recibo financeiro unificado para pagamentos e correções, com chave global e fingerprint canônico;
+- guards PostgreSQL append-only para despesas, shares, recibos e revisões descritivas.
 
 ### 12.3 Specs
 
 ```text
 spec/services/expense_corrector_spec.rb
+spec/services/expense_corrector_concurrency_spec.rb
+spec/services/expense_description_editor_spec.rb
+spec/services/expense_description_editor_concurrency_spec.rb
+spec/database/financial_schema_contract_spec.rb
+spec/infrastructure/financial_schema_migration_verifier_spec.rb
 ```
 
 - valor, pagador e shares originais não são sobrescritos;
@@ -630,10 +644,15 @@ spec/services/expense_corrector_spec.rb
 - saldo oficial, projeção e plano são recalculados;
 - correção concorrente com report respeita lock e versão;
 - descrição pode ser alterada sem modificar versão financeira quando não afeta o ledger.
+- retry idêntico, conflito de payload e colisão global entre pagamento e correção;
+- concorrência entre correções em sessões PostgreSQL independentes;
+- eventos de correção somente depois do commit e preservação após falha do consumidor.
 
 ### 12.4 Gate de saída
 
 O histórico explica integralmente como o estado atual foi obtido.
+
+Gate demonstrado sobre o diff corrente: recibos financeiros unificados, guards PostgreSQL, correções e revisões descritivas, concorrência real, eventos pós-commit, verificador de migrations, lint e `bin/ci` passaram. A Fase 9 está concluída e libera a Fase 10.
 
 ---
 

@@ -64,15 +64,17 @@ RSpec.describe "Financial schema migration verifier safety" do
 
             @fake_pid = 4_000
             @wait_attempts = Hash.new(0)
+            @commands = {}
 
             class << self
-              def spawn(_environment, *arguments)
+              def spawn(environment, *arguments)
                 options = arguments.last.is_a?(Hash) ? arguments.pop : {}
                 command = arguments.join(" ")
                 File.open(ENV.fetch("PROCESS_FAKE_LOG"), "a") do |log|
                   log.puts("SPAWN pgroup=#{options[:pgroup].inspect} #{command}")
                 end
                 @fake_pid += 1
+                @commands[@fake_pid] = [ environment, command ]
                 @fake_pid
               end
 
@@ -80,7 +82,9 @@ RSpec.describe "Financial schema migration verifier safety" do
                 @wait_attempts[pid] += 1
                 sleep 1 if ENV["SYSTEM_FAKE_TIMEOUT"] == "true" && @wait_attempts[pid] == 1
 
-                successful = ENV["SYSTEM_FAKE_FAILURE"] != "true"
+                environment, command = @commands.fetch(pid)
+                expected_phase_nine_down_failure = environment["FINANCIAL_MIGRATION_EXPECT_FAILURE"] == "true"
+                successful = ENV["SYSTEM_FAKE_FAILURE"] != "true" && !expected_phase_nine_down_failure
                 [ pid, FakeStatus.new(successful, successful ? 0 : 17) ]
               end
 
@@ -159,6 +163,28 @@ RSpec.describe "Financial schema migration verifier safety" do
       )
       expect(orchestration.grep(/^SPAWN /)).not_to be_empty
       expect(orchestration.grep(/^SPAWN /)).to all(start_with("SPAWN pgroup=true "))
+    end
+  end
+
+  it "runs the payment command receipt SQLSTATE assertion before the structural RSpec suite" do
+    with_fake_migration_dependencies do |_stdout, _stderr, status, _statements, orchestration|
+      expect(status).to be_success
+      expect(orchestration).to include(a_string_including("payment command receipt mutation expected SQLSTATE 55000"))
+    end
+  end
+
+  it "runs the cutover backfill and final index assertions before the structural RSpec suite" do
+    with_fake_migration_dependencies do |_stdout, _stderr, status, _statements, orchestration|
+      expect(status).to be_success
+      expect(orchestration).to include(a_string_including("cutover backfill expected exactly one report receipt"))
+      expect(orchestration).to include(a_string_including("payments idempotency audit index expected non-unique"))
+    end
+  end
+
+  it "runs the migration lock timeout restoration assertion before the structural RSpec suite" do
+    with_fake_migration_dependencies do |_stdout, _stderr, status, _statements, orchestration|
+      expect(status).to be_success
+      expect(orchestration).to include(a_string_including("lock_timeout was not restored after cutover receipt migration"))
     end
   end
 

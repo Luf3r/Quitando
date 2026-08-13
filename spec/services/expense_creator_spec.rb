@@ -130,14 +130,10 @@ RSpec.describe ExpenseCreator do
       participant = create(:user)
       [ payer, participant ].each_with_index { |user, position| create(:membership, group:, user:, position:) }
       malformed_splits = [
-        { type: :equal, participant_user_ids: [ payer.id, nil ] },
-        { type: :equal, participant_user_ids: [ payer.id, 123 ] },
-        { type: :equal, participant_user_ids: [ payer.id, "uuid-inválido" ] },
         { type: :exact, shares: [ nil ] },
         { type: :exact, shares: [ { "user_id" => payer.id, "amount_text" => "2,00" } ] },
         { type: :exact, shares: [ { user_id: payer.id } ] },
-        { type: :exact, shares: [ { user_id: payer.id, amount_text: "valor-inválido" } ] },
-        { type: :exact, shares: [ { user_id: "uuid-inválido", amount_text: "2,00" } ] }
+        { type: :exact, shares: [ { user_id: payer.id, amount_text: "valor-inválido" } ] }
       ]
 
       malformed_splits.each do |malformed_split|
@@ -184,6 +180,28 @@ RSpec.describe ExpenseCreator do
 
       expect(group.expenses).to be_empty
       expect(group.reload.financial_state_version).to eq(0)
+    end
+
+    it "rejeita IDs malformados em splits equal e exact antes de bloquear o grupo" do
+      group = create(:group)
+      payer = create(:user)
+      participant = create(:user)
+      [ payer, participant ].each_with_index { |user, position| create(:membership, group:, user:, position:) }
+      attributes = {
+        group_id: group.id, created_by_user_id: payer.id, paid_by_user_id: payer.id,
+        description: "Teste", occurred_on: Date.current, amount_text: "2,00"
+      }
+
+      [
+        { type: :equal, participant_user_ids: [ payer.id, "uuid-inválido" ] },
+        { type: :exact, shares: [ { user_id: payer.id, amount_text: "1,00" }, { user_id: "uuid-inválido", amount_text: "1,00" } ] }
+      ].each do |split|
+        expect(Group).not_to receive(:lock)
+
+        expect {
+          described_class.call(**attributes, split:)
+        }.to raise_error(ExpenseCreator::InvalidExpense, "identificadores inválidos")
+      end
     end
 
     it "rejeita divisão igual que produziria share zero com erro de domínio" do

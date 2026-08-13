@@ -17,7 +17,8 @@ RSpec.describe Group do
     expect(contracts).to eq(
       memberships: { class_name: "Membership", foreign_key: "group_id", macro: :has_many, optional: nil },
       expenses: { class_name: "Expense", foreign_key: "group_id", macro: :has_many, optional: nil },
-      payments: { class_name: "Payment", foreign_key: "group_id", macro: :has_many, optional: nil }
+      payments: { class_name: "Payment", foreign_key: "group_id", macro: :has_many, optional: nil },
+      payment_command_receipts: { class_name: "PaymentCommandReceipt", foreign_key: "payment_id", macro: :has_many, optional: nil }
     )
   end
 
