@@ -188,6 +188,13 @@ RSpec.describe "Financial schema migration verifier safety" do
     end
   end
 
+  it "runs the phase 10 schema round-trip and lock timeout assertion before the structural RSpec suite" do
+    with_fake_migration_dependencies do |_stdout, _stderr, status, _statements, orchestration|
+      expect(status).to be_success
+      expect(orchestration).to include(a_string_including("lock_timeout was not restored after phase 10 group schema migration"))
+    end
+  end
+
   it "cleans up after a primary failure and preserves that failure", :aggregate_failures do
     with_fake_migration_dependencies("SYSTEM_FAKE_FAILURE" => "true") do |_stdout, stderr, status, statements|
       expect(status).not_to be_success

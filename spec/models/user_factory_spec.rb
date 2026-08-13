@@ -35,6 +35,8 @@ RSpec.describe "user factory" do
   it "expõe a matriz exaustiva de associações por papel persistido" do
     expected_contracts = {
       memberships: { class_name: "Membership", foreign_key: "user_id", macro: :has_many, optional: nil },
+      group_invitations_received: { class_name: "GroupInvitation", foreign_key: "invited_user_id", macro: :has_many, optional: nil },
+      group_invitations_sent: { class_name: "GroupInvitation", foreign_key: "invited_by_user_id", macro: :has_many, optional: nil },
       expenses_paid: { class_name: "Expense", foreign_key: "paid_by_user_id", macro: :has_many, optional: nil },
       expenses_created: { class_name: "Expense", foreign_key: "created_by_user_id", macro: :has_many, optional: nil },
       expenses_voided: { class_name: "Expense", foreign_key: "voided_by_user_id", macro: :has_many, optional: nil },

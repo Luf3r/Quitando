@@ -10,6 +10,7 @@ TEMPORARY_DATABASE_PREFIX = "quitando_financial_schema_migrations".freeze
 FINANCIAL_MIGRATION_VERSIONS = %w[20260721160000 20260721161000 20260721165000 20260727120000 20260802150000].freeze
 MEMBERSHIP_POSITION_MIGRATION_VERSION = "20260727120000".freeze
 PHASE_NINE_MIGRATION_VERSION = "20260803170000".freeze
+PHASE_TEN_MIGRATION_VERSION = "20260808210000".freeze
 COMMAND_TIMEOUT_SECONDS = Float(ENV.fetch("FINANCIAL_MIGRATION_COMMAND_TIMEOUT_SECONDS", "900"))
 COMMAND_TERMINATION_GRACE_SECONDS = Float(ENV.fetch("FINANCIAL_MIGRATION_TERMINATION_GRACE_SECONDS", "5"))
 DATABASE_TIMEOUT_SECONDS = Integer(ENV.fetch("FINANCIAL_MIGRATION_DATABASE_TIMEOUT_SECONDS", "30"), 10)
@@ -187,6 +188,37 @@ PHASE_NINE_DESCRIPTION_REVISION_CLEANUP = <<~'RUBY'.freeze
   ExpenseDescriptionRevision.delete_all
   connection.execute("ALTER TABLE expense_description_revisions ENABLE TRIGGER expense_description_revisions_append_only")
 RUBY
+PHASE_TEN_GROUP_SCHEMA_MIGRATION_ASSERTION = <<~'RUBY'.freeze
+  require Rails.root.join("db/migrate/20260808210000_add_group_invitations_and_group_contracts")
+
+  connection = ApplicationRecord.connection
+  expected_lock_timeout = "7s"
+  connection.execute("SET lock_timeout = '#{expected_lock_timeout}'")
+  assert_lock_timeout = lambda do |operation|
+    actual_lock_timeout = connection.select_value("SHOW lock_timeout")
+    next if actual_lock_timeout == expected_lock_timeout
+
+    abort "lock_timeout was not restored after phase 10 group schema migration #{operation}: #{actual_lock_timeout.inspect}"
+  end
+
+  migration = AddGroupInvitationsAndGroupContracts.new
+  migration.migrate(:down)
+  assert_lock_timeout.call("down")
+  abort "group invitations table survived phase 10 down" if connection.data_source_exists?("group_invitations")
+
+  migration.migrate(:up)
+  assert_lock_timeout.call("up")
+  abort "group invitations table is missing after phase 10 up" unless connection.data_source_exists?("group_invitations")
+
+  position_constraint = connection.select_one(<<~SQL)
+    SELECT condeferrable, condeferred
+    FROM pg_constraint
+    WHERE conname = 'memberships_group_position_unique'
+  SQL
+  unless position_constraint == { "condeferrable" => true, "condeferred" => false }
+    abort "membership position constraint must be deferrable initially immediate: #{position_constraint.inspect}"
+  end
+RUBY
 
 class CommandFailure < StandardError; end
 
@@ -278,6 +310,10 @@ begin
   run!("bin/rails", "db:prepare", environment: child_environment)
   run!(
     "bin/rails", "db:migrate:down",
+    environment: child_environment.merge("VERSION" => PHASE_TEN_MIGRATION_VERSION)
+  )
+  run!(
+    "bin/rails", "db:migrate:down",
     environment: child_environment.merge("VERSION" => PHASE_NINE_MIGRATION_VERSION)
   )
   run!("bin/rails", "runner", PAYMENT_COMMAND_RECEIPT_APPEND_ONLY_ASSERTION, environment: child_environment)
@@ -319,6 +355,11 @@ begin
   )
   run!("bin/rails", "db:migrate:up", environment: child_environment.merge("VERSION" => PHASE_NINE_MIGRATION_VERSION))
   run!("bin/rails", "runner", PHASE_NINE_RECEIPT_ASSERTION, environment: child_environment)
+  run!(
+    "bin/rails", "db:migrate:up",
+    environment: child_environment.merge("VERSION" => PHASE_TEN_MIGRATION_VERSION)
+  )
+  run!("bin/rails", "runner", PHASE_TEN_GROUP_SCHEMA_MIGRATION_ASSERTION, environment: child_environment)
   run!(
     "bundle", "exec", "rspec", "spec/database/financial_schema_contract_spec.rb",
     environment: child_environment.merge("CI" => "true")

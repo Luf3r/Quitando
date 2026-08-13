@@ -21,12 +21,12 @@ Este arquivo resume decisões que precisam permanecer consistentes entre produto
 - O produto resolve o **encerramento de despesas compartilhadas**, não apenas o cadastro de gastos.
 - O modo padrão reduz transferências, mas não promete o mínimo matemático absoluto.
 - O plano textual é a ferramenta operacional principal; o grafo é explicativo e demonstrativo.
-- O MVP trabalha com usuários autenticados, uma moeda por grupo, convites internos para contas existentes (`pending/accepted/declined/revoked/expired`) e pagamentos manuais declarados.
+- O MVP trabalha com usuários autenticados, BRL como única moeda (`groups.currency_code = 'BRL'`), convites internos para contas existentes (`pending/accepted/declined/revoked/expired`) e pagamentos manuais declarados.
 - O produto pressupõe grupos de confiança pré-existente; ele não é desenhado para desconhecidos ou relações adversariais no MVP.
 - A obrigação histórica pode apontar para uma pessoa e o plano líquido para outra; a interface deve explicar essa diferença sem chamar a sugestão de dívida bilateral.
 - Arquivamento só ocorre quando o grupo está vazio ou quitado, sem pendências ou convites abertos; o owner pode restaurá-lo sem alterar o ledger.
 - O roadmap funcional define o que entra no release; a ordem técnica prioriza algoritmo, ledger e comandos financeiros antes de HTTP reativo e visualização.
-- Após o MVP, a interface deve evoluir para suportar múltiplos idiomas; locale altera apresentação e linguagem, não as regras do ledger nem a moeda definida para o grupo.
+- Após o MVP, a interface deve evoluir para suportar múltiplos idiomas; locale altera apresentação e linguagem, não as regras do ledger nem a moeda BRL definida para o grupo no MVP.
 
 ### Domínio
 
