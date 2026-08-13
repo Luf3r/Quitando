@@ -56,3 +56,11 @@ Concluída. Impacto documental: **comportamento**.
 
 - A aceitação, recusa, revogação e expiração ainda não possuem commands nem autorização; isso é deliberadamente reservado às próximas tarefas da Fase 10.
 - Um rollback da migration descarta convites, como esperado para rollback de schema; não há comando de produção que o execute automaticamente.
+
+## Ajuste após revisão
+
+- A matriz exaustiva de associações de `User` agora inclui `group_invitations_received` e `group_invitations_sent`, com os FKs de convite corretos.
+- A matriz de violações diretas PostgreSQL agora cobre `group_id`, `invited_user_id`, `invited_by_user_id`, `status` e `expires_at` como obrigatórios, além das três FKs de `GroupInvitation` para UUIDs inexistentes.
+- `PROJECT.md` declara a Fase 10 em andamento, a subissue #80 em revisão e o gate ainda pendente; não promove a fase a concluída.
+- **Red:** controle negativo temporário trocou as causas esperadas das violações de `GroupInvitation`; `docker compose run --rm --no-deps web bundle exec rspec spec/database/financial_schema_contract_spec.rb:435 spec/database/financial_schema_contract_spec.rb:448` falhou com cinco `PG::NotNullViolation` e três `PG::ForeignKeyViolation` contra as expectativas invertidas.
+- **Green:** `docker compose run --rm --no-deps web bundle exec rspec spec/models/user_factory_spec.rb spec/database/financial_schema_contract_spec.rb` passou com **27 exemplos, 0 falhas**.

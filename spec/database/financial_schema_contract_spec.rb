@@ -795,6 +795,7 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
 
   def required_attribute_cases(group:, user:, other_user:, expense:)
     membership = { group_id: group.id, user_id: user.id, role: "member", status: "active", position: 0 }
+    invitation = group_invitation_attributes(group:, invited_user: user, invited_by_user: other_user, status: "pending")
     expense_data = expense_attributes(group:, user:)
     share = { expense_id: expense.id, user_id: user.id, amount_owed_cents: 100, position: 0 }
     payment = payment_attributes(group:, from_user: user, to_user: other_user)
@@ -806,6 +807,9 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
         [ Group, column_name, { name: "Casa", currency_code: "BRL", financial_state_version: 0 } ]
       end,
       *%i[group_id user_id role status position].map { |column_name| [ Membership, column_name, membership ] },
+      *%i[group_id invited_user_id invited_by_user_id status expires_at].map do |column_name|
+        [ GroupInvitation, column_name, invitation ]
+      end,
       *%i[group_id paid_by_user_id created_by_user_id amount_cents description occurred_on].map do |column_name|
         [ Expense, column_name, expense_data ]
       end,
@@ -820,10 +824,14 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
   def foreign_key_cases(group:, user:, expense:, from_user:, to_user:)
     missing_id = database_uuid
     payment = payment_attributes(group:, from_user:, to_user:)
+    invitation = group_invitation_attributes(group:, invited_user: user, invited_by_user: to_user, status: "pending")
 
     [
       [ Membership, { group_id: missing_id, user_id: user.id, role: "member", status: "active", position: 0 } ],
       [ Membership, { group_id: group.id, user_id: missing_id, role: "member", status: "active", position: 0 } ],
+      [ GroupInvitation, invitation.merge(group_id: missing_id) ],
+      [ GroupInvitation, invitation.merge(invited_user_id: missing_id) ],
+      [ GroupInvitation, invitation.merge(invited_by_user_id: missing_id) ],
       [ Expense, expense_attributes(group:, user:).merge(group_id: missing_id) ],
       [ Expense, expense_attributes(group:, user:).merge(paid_by_user_id: missing_id) ],
       [ Expense, expense_attributes(group:, user:).merge(created_by_user_id: missing_id) ],
