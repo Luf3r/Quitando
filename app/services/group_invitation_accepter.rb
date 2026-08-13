@@ -26,6 +26,8 @@ class GroupInvitationAccepter < GroupCommand
 
       membership = Membership.lock.find_by(group:, user_id: actor_user_id)
       membership = if membership
+        raise InvalidTransition, "membership já está ativa" if membership.active?
+
         membership.update!(status: :active)
         membership
       else

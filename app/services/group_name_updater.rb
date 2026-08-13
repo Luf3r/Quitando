@@ -14,7 +14,7 @@ class GroupNameUpdater < GroupCommand
     normalized_name = normalize_name!(name)
 
     Group.transaction do
-      group = Group.find_by(id: group_id) || raise(NotFound, "grupo não encontrado")
+      group = Group.lock.find_by(id: group_id) || raise(NotFound, "grupo não encontrado")
       raise ArchivedGroup, "grupo arquivado" if group.archived_at?
       raise Forbidden, "membership owner ativa obrigatória" unless owner_active?(group)
 

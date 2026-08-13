@@ -40,6 +40,22 @@ RSpec.describe GroupInvitationAccepter do
       expect(group.reload.financial_state_version).to eq(0)
     end
 
+    it "recusa convite pendente quando a membership já foi reativada" do
+      group = create(:group)
+      owner = create(:user)
+      invited_user = create(:user)
+      create(:membership, group:, user: owner, role: :owner, position: 0)
+      membership = create(:membership, group:, user: invited_user, status: :active, position: 1)
+      invitation = create(:group_invitation, group:, invited_user:, invited_by_user: owner, expires_at: 2.days.from_now)
+
+      expect {
+        described_class.call(invitation_id: invitation.id, actor_user_id: invited_user.id)
+      }.to raise_error(GroupCommand::InvalidTransition, "membership já está ativa")
+
+      expect(invitation.reload).to be_pending
+      expect(membership.reload).to be_active
+    end
+
     it "recusa ator diferente do convidado sem criar membership" do
       invitation = create(:group_invitation, expires_at: 2.days.from_now)
 
