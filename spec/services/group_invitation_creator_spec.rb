@@ -23,6 +23,20 @@ RSpec.describe GroupInvitationCreator do
         status: "pending"
       )
       expect(invitation.expires_at).to be_within(0.000001).of(expires_at)
+      expect(Membership.where(group:, user: invited_user, status: :active)).to be_empty
+    end
+
+    it "rejeita IDs inválidos antes de consultar o grupo" do
+      expect(Group).not_to receive(:lock)
+
+      expect {
+        described_class.call(
+          group_id: "018f6d4e-06ac-7d62-8bd3-31a553f3a00b",
+          actor_user_id: "018f6d4e-06ac-7d62-8bd3-31a553f3a00c",
+          invited_user_id: "não-é-um-uuid",
+          expires_at: 2.days.from_now
+        )
+      }.to raise_error(GroupCommand::InvalidInput, "identificadores inválidos")
     end
 
     it "expira pendência vencida sob o lock do grupo antes de criar novo convite" do
@@ -82,6 +96,35 @@ RSpec.describe GroupInvitationCreator do
           expires_at: 2.days.from_now
         )
       }.to raise_error(GroupCommand::InvalidTransition, "usuário já possui membership ativa")
+    end
+
+    it "recusa ator sem membership owner ativa" do
+      group = create(:group)
+      member = create(:user)
+
+      expect {
+        described_class.call(
+          group_id: group.id,
+          actor_user_id: member.id,
+          invited_user_id: create(:user).id,
+          expires_at: 2.days.from_now
+        )
+      }.to raise_error(GroupCommand::Forbidden, "membership owner ativa obrigatória")
+    end
+
+    it "expõe ausência tipada para conta convidada inexistente" do
+      group = create(:group)
+      owner = create(:user)
+      create(:membership, group:, user: owner, role: :owner, position: 0)
+
+      expect {
+        described_class.call(
+          group_id: group.id,
+          actor_user_id: owner.id,
+          invited_user_id: "018f6d4e-06ac-7d62-8bd3-31a553f3a00b",
+          expires_at: 2.days.from_now
+        )
+      }.to raise_error(GroupCommand::NotFound, "usuário não encontrado")
     end
 
     it "recusa vencimento ausente, passado ou não temporal antes de abrir transação" do
