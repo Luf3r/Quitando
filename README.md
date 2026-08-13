@@ -6,13 +6,13 @@ O Quitando ajuda grupos que já confiam uns nos outros a encerrar despesas compa
 
 ## Status
 
-O projeto está em construção. As **Fases 0 a 9** estão implementadas e verificadas; a **Fase 10 — Grupos, convites e ciclo de memberships** está na verificação integrada final. Ela acrescenta grupos com owner inicial, convites internos com transições auditáveis, reentrada no mesmo membership, saída segura, ownership, ordenação e arquivamento/restauração no nível de serviço. A Fase só será declarada concluída após o gate integrado.
+O projeto está em construção. As **Fases 0 a 10** estão implementadas e verificadas. A **Fase 10 — Grupos, convites e ciclo de memberships** acrescenta grupos com owner inicial, convites internos com transições auditáveis, reentrada no mesmo membership, saída segura, ownership, ordenação e arquivamento/restauração no nível de serviço.
 
 A base integrada já oferece o bootstrap Rails, RSpec com exemplos reais, `bin/ci`, checagens de lint e segurança, Docker com PostgreSQL 18, Active Storage/Vips, Devise, Pundit, FactoryBot, parser monetário em centavos e locale `pt-BR`.
 
 Há uma jornada mínima de cadastro e os smoke tests da fundação. A criação transacional de despesas, os saldos oficial e projetado, o plano textual restante e o workflow de pagamentos existem no nível de serviço e podem ser demonstrados por console, mas ainda não há fluxo HTTP/UI para operá-los. Portanto, o estado atual ainda não constitui um MVP funcional.
 
-O trabalho é acompanhado no [GitHub Project — Quitando](https://github.com/users/Luf3r/projects/2). As [Fases 3](https://github.com/Luf3r/Quitando/issues/8), [4](https://github.com/Luf3r/Quitando/issues/9), [5](https://github.com/Luf3r/Quitando/issues/10), [6](https://github.com/Luf3r/Quitando/issues/11), [7](https://github.com/Luf3r/Quitando/issues/12), [8](https://github.com/Luf3r/Quitando/issues/13) e [9](https://github.com/Luf3r/Quitando/issues/14), com suas subissues, estão em `Done`; a [Fase 10](https://github.com/Luf3r/Quitando/issues/15) está no gate integrado final. Status e campos do quadro devem refletir apenas trabalho realmente demonstrado; contratos e gates continuam definidos pela documentação do repositório.
+O trabalho é acompanhado no [GitHub Project — Quitando](https://github.com/users/Luf3r/projects/2). As [Fases 3](https://github.com/Luf3r/Quitando/issues/8), [4](https://github.com/Luf3r/Quitando/issues/9), [5](https://github.com/Luf3r/Quitando/issues/10), [6](https://github.com/Luf3r/Quitando/issues/11), [7](https://github.com/Luf3r/Quitando/issues/12), [8](https://github.com/Luf3r/Quitando/issues/13), [9](https://github.com/Luf3r/Quitando/issues/14) e [10](https://github.com/Luf3r/Quitando/issues/15), com suas subissues, estão em `Done`. Status e campos do quadro devem refletir apenas trabalho realmente demonstrado; contratos e gates continuam definidos pela documentação do repositório.
 
 ## Como funciona
 
