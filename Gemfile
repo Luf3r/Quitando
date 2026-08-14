@@ -25,6 +25,10 @@ gem "devise"
 # Authorize application actions; policies are introduced with the HTTP phase.
 gem "pundit"
 
+# Server-rendered UI foundation for the HTTP-first Phase 11.
+gem "view_component", "4.12.0"
+gem "tailwindcss-rails", "4.6.0"
+
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"
 

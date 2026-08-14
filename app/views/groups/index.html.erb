@@ -1,0 +1,24 @@
+<div class="space-y-8">
+  <div>
+    <h1 class="text-2xl font-semibold">Grupos</h1>
+    <p class="mt-1 text-slate-600">Crie um grupo ou abra um grupo do qual você participa.</p>
+  </div>
+
+  <section aria-labelledby="novo-grupo">
+    <h2 id="novo-grupo" class="text-lg font-medium">Novo grupo</h2>
+    <%= form_with url: groups_path, scope: :group, local: true, data: { turbo: false }, class: "mt-3 flex max-w-md gap-2" do |form| %>
+      <%= form.label :name, "Nome", class: "sr-only" %>
+      <%= form.text_field :name, required: true, class: "min-w-0 flex-1 rounded border-slate-300", placeholder: "Ex.: Apartamento" %>
+      <%= form.submit "Criar grupo", class: "rounded bg-slate-900 px-4 py-2 text-white" %>
+    <% end %>
+  </section>
+
+  <section aria-labelledby="seus-grupos">
+    <h2 id="seus-grupos" class="text-lg font-medium">Seus grupos</h2>
+  <ul class="mt-3 space-y-2">
+    <% @groups.each do |group| %>
+      <li><%= link_to group.name, group_path(group), class: "underline" %></li>
+    <% end %>
+  </ul>
+  </section>
+</div>

@@ -1,3 +1,6 @@
 pt-BR:
   app:
     name: Quitando
+  errors:
+    forbidden: "Você não tem permissão para realizar esta ação."
+    unprocessable_entity: "Não foi possível concluir esta ação. Revise os dados e tente novamente."

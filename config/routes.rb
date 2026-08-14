@@ -7,6 +7,8 @@ Rails.application.routes.draw do
 
   devise_for :users
   root "home#index"
+  resources :groups, only: %i[index create update]
+  get "groups/:id", to: "groups#show", constraints: CanonicalUuidV7RouteConstraint.new
 
   # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)
 end

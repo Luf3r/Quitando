@@ -251,9 +251,9 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 ## 11. Milestone atual
 
 - **Última fase concluída:** Fase 10 — Grupos, convites e ciclo de memberships.
-- **Fase atual:** Fase 11 — Requests, policies e HTML funcional, ainda não iniciada.
-- **Status atual:** o gate integrado da Fase 10 foi demonstrado; as subissues #80, #87 a #90 estão `Done` no GitHub Project.
-- **Trabalho executável atual:** preparar a decomposição da Fase 11 quando suas fontes normativas forem revisadas e a dependência operacional estiver `Ready`.
+- **Fase atual:** Fase 11 — Requests, policies e HTML funcional, em andamento.
+- **Status atual:** o gate integrado da Fase 10 foi demonstrado; o épico #16 está `In progress` e a fundação HTTP #105 está `Ready` no GitHub Project.
+- **Trabalho executável atual:** implementar a fundação HTTP, autenticação, policies, assets e fluxo de grupos da Fase 11.
 - **Gate integrado da Fase 0:** `bin/ci` executa localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação. O hardening adicional da PR #38 também foi aprovado nos checks remotos atuais.
 
 **Integrado e verificado até agora:**

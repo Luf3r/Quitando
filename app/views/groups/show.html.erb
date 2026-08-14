@@ -1,0 +1,17 @@
+<div class="space-y-8">
+  <div>
+    <%= link_to "Voltar aos grupos", groups_path, class: "text-sm underline" %>
+    <h1 class="mt-3 text-2xl font-semibold"><%= @group.name %></h1>
+  </div>
+
+  <% if policy(@group).update? %>
+    <section aria-labelledby="renomear-grupo">
+      <h2 id="renomear-grupo" class="text-lg font-medium">Renomear grupo</h2>
+      <%= form_with model: @group, local: true, data: { turbo: false }, class: "mt-3 flex max-w-md gap-2" do |form| %>
+        <%= form.label :name, "Nome", class: "sr-only" %>
+        <%= form.text_field :name, required: true, class: "min-w-0 flex-1 rounded border-slate-300" %>
+        <%= form.submit "Salvar nome", class: "rounded bg-slate-900 px-4 py-2 text-white" %>
+      <% end %>
+    </section>
+  <% end %>
+</div>
