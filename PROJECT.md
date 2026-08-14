@@ -250,10 +250,10 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 
 ## 11. Milestone atual
 
-- **Última fase concluída:** Fase 9 — Correção imutável de despesas.
-- **Status atual:** gate demonstrado com correção append-only, recibos financeiros globais, guards PostgreSQL, revisões descritivas auditáveis, serialização por grupo e eventos pós-commit.
-- **Próxima fase:** Fase 10 — Grupos, convites e ciclo de memberships.
-- **Trabalho executável atual:** a [Fase 9 — issue #14](https://github.com/Luf3r/Quitando/issues/14) e as subissues #73 a #77 estão `Done` no GitHub Project.
+- **Última fase concluída:** Fase 10 — Grupos, convites e ciclo de memberships.
+- **Fase atual:** Fase 11 — Requests, policies e HTML funcional, ainda não iniciada.
+- **Status atual:** o gate integrado da Fase 10 foi demonstrado; as subissues #80, #87 a #90 estão `Done` no GitHub Project.
+- **Trabalho executável atual:** preparar a decomposição da Fase 11 quando suas fontes normativas forem revisadas e a dependência operacional estiver `Ready`.
 - **Gate integrado da Fase 0:** `bin/ci` executa localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação. O hardening adicional da PR #38 também foi aprovado nos checks remotos atuais.
 
 **Integrado e verificado até agora:**
@@ -324,9 +324,11 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 - specs exercitam retry, colisões globais, rollback, eventos pós-commit, consumidores com falha e contenção real entre correções e reports em sessões PostgreSQL independentes;
 - `bin/verify-financial-schema-migrations`, o gate RSpec, RuboCop e `bin/ci` passaram sobre este diff.
 
-**Pendente antes de avançar no produto:**
+**Concluído e verificado na Fase 10:**
 
-- preparar o gate da Fase 10 — Grupos, convites e ciclo de memberships;
+- grupos surgem com owner ativo em BRL; convites internos têm ciclo auditável, expiração e concorrência verificadas;
+- aceite e reentrada preservam histórico; saída, ownership e reordenação respeitam autorização, saldos, pendências e locks;
+- arquivamento/restauração preservam fatos financeiros e concorrem corretamente com novas despesas;
 - avaliar uma spec de Active Storage variant real quando attachments entrarem no domínio, além da prova atual de processamento com `ruby-vips`.
 
 Atualize esta seção e o [GitHub Project](https://github.com/users/Luf3r/projects/2) sempre que a tarefa ativa, uma entrega verificável, pendência, fase ou gate mudar. O estado detalhado e os critérios de saída ficam no [roadmap de implementação](./docs/05-quitando-roadmap-implementacao.md).

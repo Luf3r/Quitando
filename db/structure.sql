@@ -192,6 +192,28 @@ CREATE TABLE public.financial_command_receipts (
 
 
 --
+-- Name: group_invitations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.group_invitations (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    group_id uuid NOT NULL,
+    invited_user_id uuid NOT NULL,
+    invited_by_user_id uuid NOT NULL,
+    status character varying NOT NULL,
+    expires_at timestamp(6) without time zone NOT NULL,
+    accepted_at timestamp(6) without time zone,
+    declined_at timestamp(6) without time zone,
+    revoked_at timestamp(6) without time zone,
+    expired_at timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT group_invitations_audit_metadata_matches_status CHECK (((((status)::text = 'pending'::text) AND (accepted_at IS NULL) AND (declined_at IS NULL) AND (revoked_at IS NULL) AND (expired_at IS NULL)) OR (((status)::text = 'accepted'::text) AND (accepted_at IS NOT NULL) AND (declined_at IS NULL) AND (revoked_at IS NULL) AND (expired_at IS NULL)) OR (((status)::text = 'declined'::text) AND (accepted_at IS NULL) AND (declined_at IS NOT NULL) AND (revoked_at IS NULL) AND (expired_at IS NULL)) OR (((status)::text = 'revoked'::text) AND (accepted_at IS NULL) AND (declined_at IS NULL) AND (revoked_at IS NOT NULL) AND (expired_at IS NULL)) OR (((status)::text = 'expired'::text) AND (accepted_at IS NULL) AND (declined_at IS NULL) AND (revoked_at IS NULL) AND (expired_at IS NOT NULL)))),
+    CONSTRAINT group_invitations_status_valid CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'accepted'::character varying, 'declined'::character varying, 'revoked'::character varying, 'expired'::character varying])::text[])))
+);
+
+
+--
 -- Name: groups; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -203,7 +225,9 @@ CREATE TABLE public.groups (
     archived_at timestamp(6) without time zone,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT groups_financial_state_version_nonnegative CHECK ((financial_state_version >= 0))
+    CONSTRAINT groups_currency_code_brl CHECK (((currency_code)::text = 'BRL'::text)),
+    CONSTRAINT groups_financial_state_version_nonnegative CHECK ((financial_state_version >= 0)),
+    CONSTRAINT groups_name_nonblank CHECK ((btrim((name)::text) <> ''::text))
 );
 
 
@@ -221,8 +245,8 @@ CREATE TABLE public.memberships (
     updated_at timestamp(6) without time zone NOT NULL,
     "position" integer NOT NULL,
     CONSTRAINT memberships_position_nonnegative CHECK (("position" >= 0)),
-    CONSTRAINT memberships_role_valid CHECK (((role)::text = ANY ((ARRAY['owner'::character varying, 'member'::character varying])::text[]))),
-    CONSTRAINT memberships_status_valid CHECK (((status)::text = ANY ((ARRAY['active'::character varying, 'inactive'::character varying])::text[])))
+    CONSTRAINT memberships_role_valid CHECK (((role)::text = ANY (ARRAY[('owner'::character varying)::text, ('member'::character varying)::text]))),
+    CONSTRAINT memberships_status_valid CHECK (((status)::text = ANY (ARRAY[('active'::character varying)::text, ('inactive'::character varying)::text])))
 );
 
 
@@ -253,7 +277,7 @@ CREATE TABLE public.payments (
     CONSTRAINT payments_audit_metadata_matches_status CHECK (((((status)::text = 'reported'::text) AND (confirmed_by_user_id IS NULL) AND (confirmed_at IS NULL) AND (cancelled_by_user_id IS NULL) AND (cancelled_at IS NULL) AND (cancellation_reason IS NULL)) OR (((status)::text = 'confirmed'::text) AND (confirmed_by_user_id IS NOT NULL) AND (confirmed_at IS NOT NULL) AND (cancelled_by_user_id IS NULL) AND (cancelled_at IS NULL) AND (cancellation_reason IS NULL)) OR (((status)::text = 'cancelled'::text) AND (confirmed_by_user_id IS NULL) AND (confirmed_at IS NULL) AND (cancelled_by_user_id IS NOT NULL) AND (cancelled_at IS NOT NULL) AND (cancellation_reason IS NOT NULL)))),
     CONSTRAINT payments_distinct_participants CHECK ((from_user_id <> to_user_id)),
     CONSTRAINT payments_source_version_nonnegative CHECK ((source_financial_state_version >= 0)),
-    CONSTRAINT payments_status_valid CHECK (((status)::text = ANY ((ARRAY['reported'::character varying, 'confirmed'::character varying, 'cancelled'::character varying])::text[])))
+    CONSTRAINT payments_status_valid CHECK (((status)::text = ANY (ARRAY[('reported'::character varying)::text, ('confirmed'::character varying)::text, ('cancelled'::character varying)::text])))
 );
 
 
@@ -315,11 +339,27 @@ ALTER TABLE ONLY public.expenses
 
 
 --
+-- Name: group_invitations group_invitations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.group_invitations
+    ADD CONSTRAINT group_invitations_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: groups groups_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.groups
     ADD CONSTRAINT groups_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: memberships memberships_group_position_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.memberships
+    ADD CONSTRAINT memberships_group_position_unique UNIQUE (group_id, "position") DEFERRABLE;
 
 
 --
@@ -447,10 +487,31 @@ CREATE UNIQUE INDEX index_financial_receipts_on_payment_and_type ON public.finan
 
 
 --
--- Name: index_memberships_on_group_id_and_position; Type: INDEX; Schema: public; Owner: -
+-- Name: index_group_invitations_on_group_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX index_memberships_on_group_id_and_position ON public.memberships USING btree (group_id, "position");
+CREATE INDEX index_group_invitations_on_group_id ON public.group_invitations USING btree (group_id);
+
+
+--
+-- Name: index_group_invitations_on_invited_by_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_group_invitations_on_invited_by_user_id ON public.group_invitations USING btree (invited_by_user_id);
+
+
+--
+-- Name: index_group_invitations_on_invited_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_group_invitations_on_invited_user_id ON public.group_invitations USING btree (invited_user_id);
+
+
+--
+-- Name: index_group_invitations_one_pending_per_user; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_group_invitations_one_pending_per_user ON public.group_invitations USING btree (group_id, invited_user_id) WHERE ((status)::text = 'pending'::text);
 
 
 --
@@ -626,6 +687,14 @@ ALTER TABLE ONLY public.financial_command_receipts
 
 
 --
+-- Name: group_invitations fk_rails_3b04febee3; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.group_invitations
+    ADD CONSTRAINT fk_rails_3b04febee3 FOREIGN KEY (invited_user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: payments fk_rails_59e66e9b2e; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -671,6 +740,14 @@ ALTER TABLE ONLY public.payments
 
 ALTER TABLE ONLY public.expenses
     ADD CONSTRAINT fk_rails_812c7bde5c FOREIGN KEY (paid_by_user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: group_invitations fk_rails_832316b679; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.group_invitations
+    ADD CONSTRAINT fk_rails_832316b679 FOREIGN KEY (invited_by_user_id) REFERENCES public.users(id);
 
 
 --
@@ -746,12 +823,21 @@ ALTER TABLE ONLY public.payments
 
 
 --
+-- Name: group_invitations fk_rails_f27a784b15; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.group_invitations
+    ADD CONSTRAINT fk_rails_f27a784b15 FOREIGN KEY (group_id) REFERENCES public.groups(id);
+
+
+--
 -- PostgreSQL database dump complete
 --
 
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260808210000'),
 ('20260803170000'),
 ('20260802150000'),
 ('20260727120000'),
@@ -759,3 +845,4 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20260721161000'),
 ('20260721160000'),
 ('20260716180000');
+
