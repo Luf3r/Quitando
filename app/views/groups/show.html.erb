@@ -14,4 +14,26 @@
       <% end %>
     </section>
   <% end %>
+
+  <% if policy(@group).invite? %>
+    <section aria-labelledby="convidar-pessoa">
+      <h2 id="convidar-pessoa" class="text-lg font-medium">Convidar pessoa</h2>
+      <%= form_with url: group_invitations_path(@group), scope: :invitation, local: true, data: { turbo: false }, class: "mt-3 flex max-w-md gap-2" do |form| %>
+        <%= form.label :email, "E-mail", class: "sr-only" %>
+        <%= form.email_field :email, required: true, class: "min-w-0 flex-1 rounded border-slate-300", placeholder: "pessoa@exemplo.com" %>
+        <%= form.submit "Enviar convite", class: "rounded bg-slate-900 px-4 py-2 text-white" %>
+      <% end %>
+
+      <% if @pending_invitations.any? %>
+        <ul class="mt-4 space-y-2">
+          <% @pending_invitations.each do |invitation| %>
+            <li class="flex items-center justify-between gap-3">
+              <span><%= invitation.invited_user.email %></span>
+              <%= button_to "Revogar convite", "/groups/#{@group.id}/invitations/#{invitation.id}/revoke", method: :post, data: { turbo: false }, class: "text-sm underline" %>
+            </li>
+          <% end %>
+        </ul>
+      <% end %>
+    </section>
+  <% end %>
 </div>

@@ -18,6 +18,7 @@ class GroupsController < ApplicationController
   def show
     @group = policy_scope(Group).find(params[:id])
     authorize @group
+    @pending_invitations = @group.group_invitations.pending.includes(:invited_user) if policy(@group).invite?
   end
 
   def update

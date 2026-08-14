@@ -15,6 +15,8 @@ class GroupPolicy < Struct.new(:user, :group)
     user.present? && group.memberships.where(user_id: user.id, role: :owner, status: :active).exists?
   end
 
+  alias_method :invite?, :update?
+
   class Scope < Struct.new(:user, :scope)
     def resolve
       scope.joins(:memberships)

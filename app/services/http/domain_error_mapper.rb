@@ -4,7 +4,7 @@ module Http
 
     def self.call(error)
       case error
-      when GroupCommand::InvalidInput, GroupCommand::ArchivedGroup
+      when GroupCommand::InvalidInput, GroupCommand::ArchivedGroup, GroupCommand::InvalidTransition
         ErrorResponse.new(status: :unprocessable_entity, i18n_key: "errors.unprocessable_entity", field: :name)
       else
         raise error

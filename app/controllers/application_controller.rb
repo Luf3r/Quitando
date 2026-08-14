@@ -2,7 +2,7 @@ class ApplicationController < ActionController::Base
   include Pundit::Authorization
 
   rescue_from Pundit::NotAuthorizedError, with: :render_forbidden
-  rescue_from GroupCommand::InvalidInput, GroupCommand::ArchivedGroup, with: :render_domain_error
+  rescue_from GroupCommand::InvalidInput, GroupCommand::ArchivedGroup, GroupCommand::InvalidTransition, with: :render_domain_error
   rescue_from ActionController::ParameterMissing, with: :render_unprocessable_entity
 
   # Only allow modern browsers supporting webp images, web push, badges, import maps, CSS nesting, and CSS :has.

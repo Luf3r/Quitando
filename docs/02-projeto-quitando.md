@@ -344,7 +344,7 @@ Validam autorização, versão financeira, transições de estado, valor permiti
 
 ### `GroupCreator` e serviços de convite
 
-Criam o owner inicial, registram convites internos e criam ou reativam membership apenas depois da aceitação.
+Criam o owner inicial, registram convites internos com validade fixa de sete dias e criam ou reativam membership apenas depois da aceitação. No instante de `expires_at`, o convite já está vencido.
 
 ### `GroupFinancialStatusResolver`
 
