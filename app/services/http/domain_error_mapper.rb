@@ -10,6 +10,10 @@ module Http
         ErrorResponse.new(status: :unprocessable_entity, i18n_key: "errors.unprocessable_entity", field: :expense)
       when ExpenseCorrector::StaleFinancialState, ExpenseCorrector::IdempotencyConflict
         ErrorResponse.new(status: :conflict, i18n_key: "errors.conflict", field: :financial_state_version)
+      when PaymentCommand::InvalidInput, PaymentCommand::ArchivedGroup, PaymentCommand::SuggestionUnavailable, PaymentCommand::InvalidTransition
+        ErrorResponse.new(status: :unprocessable_entity, i18n_key: "errors.unprocessable_entity", field: :payment)
+      when PaymentCommand::StaleFinancialState, PaymentCommand::IdempotencyConflict
+        ErrorResponse.new(status: :conflict, i18n_key: "errors.conflict", field: :financial_state_version)
       else
         raise error
       end

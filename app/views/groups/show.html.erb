@@ -20,7 +20,19 @@
     <h3 class="mt-4 font-medium">Plano líquido</h3>
     <p>Esta sugestão compensa os saldos do grupo e reduz transferências; não é um pagamento realizado.</p>
     <% if @dashboard.settlement_plan.any? %>
-      <ul><% @dashboard.settlement_plan.each do |transfer| %><li><%= transfer.from_user_id %> paga <%= render MoneyComponent.new(cents: transfer.amount_cents, currency_code: @group.currency_code) %> para <%= transfer.to_user_id %></li><% end %></ul>
+      <ul><% @dashboard.settlement_plan.each do |transfer| %><li><%= transfer.from_user_id %> paga <%= render MoneyComponent.new(cents: transfer.amount_cents, currency_code: @group.currency_code) %> para <%= transfer.to_user_id %>
+        <% if transfer.from_user_id == current_user.id %>
+          <%= form_with url: group_payments_path(@group), scope: :payment, local: true, data: { turbo: false }, class: "mt-2 flex gap-2" do |form| %>
+            <%= form.hidden_field :from_user_id, value: transfer.from_user_id %>
+            <%= form.hidden_field :to_user_id, value: transfer.to_user_id %>
+            <%= form.hidden_field :expected_financial_state_version, value: @group.financial_state_version %>
+            <%= form.hidden_field :idempotency_key, value: SecureRandom.uuid %>
+            <%= form.label :amount_text, "Valor", class: "sr-only" %>
+            <%= form.text_field :amount_text, value: MoneyFormatter.call(cents: transfer.amount_cents, currency_code: @group.currency_code).delete_prefix("R$ "), required: true, inputmode: "decimal", class: "rounded border-slate-300" %>
+            <%= form.submit "Reportar pagamento", class: "rounded bg-slate-900 px-3 py-1 text-white" %>
+          <% end %>
+        <% end %>
+      </li><% end %></ul>
     <% else %>
       <p>Não há transferências sugeridas.</p>
     <% end %>

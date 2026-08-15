@@ -3,9 +3,12 @@ class ApplicationController < ActionController::Base
 
   rescue_from Pundit::NotAuthorizedError, with: :render_forbidden
   rescue_from ExpenseDescriptionEditor::Forbidden, ExpenseCorrector::Forbidden, with: :render_forbidden
+  rescue_from PaymentCommand::Forbidden, with: :render_forbidden
   rescue_from GroupCommand::InvalidInput, GroupCommand::ArchivedGroup, GroupCommand::InvalidTransition, ExpenseCreator::InvalidExpense,
               ExpenseCorrector::InvalidExpense, ExpenseCorrector::ArchivedGroup, ExpenseCorrector::StaleFinancialState,
               ExpenseCorrector::IdempotencyConflict, ExpenseDescriptionEditor::InvalidInput, ExpenseDescriptionEditor::ArchivedGroup,
+              PaymentCommand::InvalidInput, PaymentCommand::ArchivedGroup, PaymentCommand::SuggestionUnavailable,
+              PaymentCommand::InvalidTransition, PaymentCommand::StaleFinancialState, PaymentCommand::IdempotencyConflict,
               with: :render_domain_error
   rescue_from ActionController::ParameterMissing, with: :render_unprocessable_entity
 
