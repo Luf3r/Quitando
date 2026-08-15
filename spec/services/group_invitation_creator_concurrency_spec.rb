@@ -74,8 +74,7 @@ RSpec.describe GroupInvitationCreator, :non_transactional do
     described_class.call(
       group_id: group.id,
       actor_user_id: owner.id,
-      invited_user_id: invited_user.id,
-      expires_at: 2.days.from_now
+      invited_user_id: invited_user.id
     )
   end
 

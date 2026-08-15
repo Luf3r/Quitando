@@ -18,7 +18,24 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body>
-    <%= yield %>
+  <body class="min-h-screen bg-slate-50 text-slate-950">
+    <header class="border-b border-slate-200 bg-white">
+      <div class="mx-auto flex max-w-4xl items-center justify-between px-4 py-4">
+        <%= link_to t("app.name"), root_path, class: "font-semibold tracking-tight" %>
+        <% if user_signed_in? %>
+          <nav aria-label="Navegação principal" class="flex items-center gap-4">
+            <%= link_to "Grupos", groups_path, class: "text-sm underline" %>
+            <%= link_to "Convites", invitations_path, class: "text-sm underline" %>
+            <%= button_to "Sair", destroy_user_session_path, method: :delete, class: "text-sm underline" %>
+          </nav>
+        <% end %>
+      </div>
+    </header>
+    <main class="mx-auto w-full max-w-4xl px-4 py-8">
+      <% if flash[:alert].present? %>
+        <%= render AlertComponent.new(message: flash[:alert]) %>
+      <% end %>
+      <%= yield %>
+    </main>
   </body>
 </html>

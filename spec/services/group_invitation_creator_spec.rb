@@ -1,20 +1,17 @@
 require "rails_helper"
 
 RSpec.describe GroupInvitationCreator do
+  include ActiveSupport::Testing::TimeHelpers
+
   describe ".call" do
     it "cria convite pending para uma conta sem membership ativa" do
       group = create(:group)
       owner = create(:user)
       invited_user = create(:user)
       create(:membership, group:, user: owner, role: :owner, position: 0)
-      expires_at = 2.days.from_now
-
-      invitation = described_class.call(
-        group_id: group.id,
-        actor_user_id: owner.id,
-        invited_user_id: invited_user.id,
-        expires_at:
-      )
+      invitation = travel_to(Time.zone.parse("2026-08-14 12:00:00")) do
+        described_class.call(group_id: group.id, actor_user_id: owner.id, invited_user_id: invited_user.id)
+      end
 
       expect(invitation).to have_attributes(
         group_id: group.id,
@@ -22,7 +19,7 @@ RSpec.describe GroupInvitationCreator do
         invited_by_user_id: owner.id,
         status: "pending"
       )
-      expect(invitation.expires_at).to be_within(0.000001).of(expires_at)
+      expect(invitation.expires_at).to eq(Time.zone.parse("2026-08-21 12:00:00"))
       expect(Membership.where(group:, user: invited_user, status: :active)).to be_empty
     end
 
@@ -33,8 +30,7 @@ RSpec.describe GroupInvitationCreator do
         described_class.call(
           group_id: "018f6d4e-06ac-7d62-8bd3-31a553f3a00b",
           actor_user_id: "018f6d4e-06ac-7d62-8bd3-31a553f3a00c",
-          invited_user_id: "não-é-um-uuid",
-          expires_at: 2.days.from_now
+          invited_user_id: "não-é-um-uuid"
         )
       }.to raise_error(GroupCommand::InvalidInput, "identificadores inválidos")
     end
@@ -55,8 +51,7 @@ RSpec.describe GroupInvitationCreator do
       invitation = described_class.call(
         group_id: group.id,
         actor_user_id: owner.id,
-        invited_user_id: invited_user.id,
-        expires_at: 2.days.from_now
+        invited_user_id: invited_user.id
       )
 
       expect(expired_pending.reload).to be_expired
@@ -75,8 +70,7 @@ RSpec.describe GroupInvitationCreator do
         described_class.call(
           group_id: group.id,
           actor_user_id: owner.id,
-          invited_user_id: invited_user.id,
-          expires_at: 3.days.from_now
+          invited_user_id: invited_user.id
         )
       }.to raise_error(GroupCommand::InvalidTransition, "convite pendente já existe")
     end
@@ -92,8 +86,7 @@ RSpec.describe GroupInvitationCreator do
         described_class.call(
           group_id: group.id,
           actor_user_id: owner.id,
-          invited_user_id: invited_user.id,
-          expires_at: 2.days.from_now
+          invited_user_id: invited_user.id
         )
       }.to raise_error(GroupCommand::InvalidTransition, "usuário já possui membership ativa")
     end
@@ -106,8 +99,7 @@ RSpec.describe GroupInvitationCreator do
         described_class.call(
           group_id: group.id,
           actor_user_id: member.id,
-          invited_user_id: create(:user).id,
-          expires_at: 2.days.from_now
+          invited_user_id: create(:user).id
         )
       }.to raise_error(GroupCommand::Forbidden, "membership owner ativa obrigatória")
     end
@@ -121,23 +113,20 @@ RSpec.describe GroupInvitationCreator do
         described_class.call(
           group_id: group.id,
           actor_user_id: owner.id,
-          invited_user_id: "018f6d4e-06ac-7d62-8bd3-31a553f3a00b",
-          expires_at: 2.days.from_now
+          invited_user_id: "018f6d4e-06ac-7d62-8bd3-31a553f3a00b"
         )
       }.to raise_error(GroupCommand::NotFound, "usuário não encontrado")
     end
 
-    it "recusa vencimento ausente, passado ou não temporal antes de abrir transação" do
-      owner_id = "018f6d4e-06ac-7d62-8bd3-31a553f3a00b"
-      invited_user_id = "018f6d4e-06ac-7d62-8bd3-31a553f3a00c"
-
-      [ nil, 1, Time.current, 1.minute.ago ].each do |expires_at|
-        expect(Group).not_to receive(:transaction)
-
-        expect {
-          described_class.call(group_id: owner_id, actor_user_id: owner_id, invited_user_id:, expires_at:)
-        }.to raise_error(GroupCommand::InvalidInput, "vencimento inválido")
-      end
+    it "não aceita vencimento fornecido pelo chamador" do
+      expect {
+        described_class.call(
+          group_id: "018f6d4e-06ac-7d62-8bd3-31a553f3a00b",
+          actor_user_id: "018f6d4e-06ac-7d62-8bd3-31a553f3a00c",
+          invited_user_id: "018f6d4e-06ac-7d62-8bd3-31a553f3a00d",
+          expires_at: 1.year.from_now
+        )
+      }.to raise_error(ArgumentError, /expires_at/)
     end
   end
 end

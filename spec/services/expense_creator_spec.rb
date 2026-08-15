@@ -360,14 +360,18 @@ RSpec.describe ExpenseCreator do
       [ payer, participant ].each_with_index { |user, position| create(:membership, group:, user:, position:) }
       connection = ApplicationRecord.connection
       constraint = "expense_shares_reject_test"
+      rejected_amount_cents = ExpenseShare.maximum(:amount_owed_cents).to_i + 1
+      rejected_amount_text = "#{rejected_amount_cents / 100},#{format("%02d", rejected_amount_cents % 100)}"
+      total_amount_cents = rejected_amount_cents + 100
+      total_amount_text = "#{total_amount_cents / 100},#{format("%02d", total_amount_cents % 100)}"
       events = []
       subscriber = ActiveSupport::Notifications.subscribe("quitando.expense.created_by_third_party") { |event| events << event.payload }
-      connection.add_check_constraint(:expense_shares, "amount_owed_cents <> 100", name: constraint)
+      connection.add_check_constraint(:expense_shares, "amount_owed_cents <> #{rejected_amount_cents}", name: constraint)
 
       expect do
         described_class.call(group_id: group.id, created_by_user_id: payer.id, paid_by_user_id: payer.id,
-          description: "Teste", occurred_on: Date.current, amount_text: "2,00",
-          split: { type: :exact, shares: [ { user_id: payer.id, amount_text: "1,00" }, { user_id: participant.id, amount_text: "1,00" } ] })
+          description: "Teste", occurred_on: Date.current, amount_text: total_amount_text,
+          split: { type: :exact, shares: [ { user_id: payer.id, amount_text: rejected_amount_text }, { user_id: participant.id, amount_text: "1,00" } ] })
       end.to raise_error(ActiveRecord::StatementInvalid)
 
       expect(group.expenses).to be_empty
