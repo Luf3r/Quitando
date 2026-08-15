@@ -5,10 +5,11 @@ class InvitationsController < ApplicationController
 
   def index
     authorize GroupInvitation, :index?
-    GroupInvitation.where(status: :pending).where(expires_at: ..Time.current).find_each do |invitation|
+    visible_invitations = policy_scope(GroupInvitation)
+    visible_invitations.where(expires_at: ..Time.current).find_each do |invitation|
       GroupInvitationExpirer.call(invitation_id: invitation.id)
     end
-    @invitations = policy_scope(GroupInvitation).includes(:group, :invited_by_user)
+    @invitations = visible_invitations.includes(:group, :invited_by_user)
   end
 
   def accept

@@ -1,6 +1,10 @@
 require "rails_helper"
 
 RSpec.describe ExpenseCorrectionForm do
+  it "trata campos ausentes como formulário inválido" do
+    expect(described_class.new).not_to be_valid
+  end
+
   it "produz o comando de correção com versão financeira inteira" do
     form = described_class.new(
       reason: "Valor correto",

@@ -6,13 +6,15 @@
   <h2 class="text-lg font-medium">Divisão</h2>
   <ul><% @expense.expense_shares.each do |share| %><li><%= share.user.email %>: <%= render MoneyComponent.new(cents: share.amount_owed_cents, currency_code: @expense.group.currency_code) %></li><% end %></ul>
   <% if @expense.replaces_expense %>
-    <p>Esta despesa substitui <%= @expense.replaces_expense.description %>.</p>
+    <p>Esta despesa substitui <%= link_to @expense.replaces_expense.description, group_expense_path(@expense.group, @expense.replaces_expense), class: "underline" %>.</p>
   <% end %>
   <% if @expense.replacement_expenses.any? %>
-    <p>Esta despesa foi anulada e substituída por <%= @expense.replacement_expenses.first.description %>.</p>
+    <% @expense.replacement_expenses.each do |replacement| %>
+      <p>Esta despesa foi anulada e substituída por <%= link_to replacement.description, group_expense_path(@expense.group, replacement), class: "underline" %>.</p>
+    <% end %>
   <% end %>
 
-  <% if policy(@expense).update_description? %>
+  <% if policy(@expense).update_description? && !@expense.group.archived_at? %>
     <section aria-labelledby="editar-descricao" class="mt-6">
       <h2 id="editar-descricao" class="text-lg font-medium">Editar descrição</h2>
       <%= form_with url: "/groups/#{@expense.group_id}/expenses/#{@expense.id}/description", scope: :expense, method: :patch, local: true, data: { turbo: false }, class: "mt-3 flex max-w-md gap-2" do |form| %>
@@ -23,8 +25,11 @@
     </section>
   <% end %>
 
-  <% if policy(@expense).correct? && !@expense.voided_at? %>
+  <% if policy(@expense).correct? && !@expense.voided_at? && !@expense.group.archived_at? %>
     <% correction = @correction_form %>
+    <% memberships = @expense.group.memberships.active.includes(:user).order(:position) %>
+    <% equal_participants = correction&.split_type == "equal" ? correction.participant_user_ids : @expense.expense_shares.map(&:user_id) %>
+    <% exact_shares = (correction&.split_type == "exact" ? correction.shares : @expense.expense_shares.map { |share| { user_id: share.user_id, amount_text: MoneyFormatter.call(cents: share.amount_owed_cents, currency_code: @expense.group.currency_code).delete_prefix("R$ ") } }).index_by { |share| share[:user_id].to_s } %>
     <section aria-labelledby="corrigir-despesa" class="mt-6">
       <h2 id="corrigir-despesa" class="text-lg font-medium">Corrigir despesa</h2>
       <p>Uma correção anula esta despesa e registra uma substituta.</p>
@@ -32,14 +37,24 @@
         <div><%= form.label :reason, "Motivo" %><%= form.text_field :reason, value: correction&.reason, required: true, class: "block w-full rounded border-slate-300" %></div>
         <div><%= form.label :description, "Descrição" %><%= form.text_field :description, value: correction&.description || @expense.description, required: true, class: "block w-full rounded border-slate-300" %></div>
         <div><%= form.label :amount_text, "Valor (R$)" %><%= form.text_field :amount_text, value: correction&.amount_text || MoneyFormatter.call(cents: @expense.amount_cents, currency_code: @expense.group.currency_code).delete_prefix("R$ "), required: true, inputmode: "decimal", class: "block rounded border-slate-300" %></div>
-        <div><%= form.label :paid_by_user_id, "Pago por" %><%= form.select :paid_by_user_id, @expense.group.memberships.active.includes(:user).order(:position).map { |membership| [ membership.user.email, membership.user_id ] }, { selected: correction&.paid_by_user_id || @expense.paid_by_user_id }, class: "rounded border-slate-300" %></div>
+        <div><%= form.label :paid_by_user_id, "Pago por" %><%= form.select :paid_by_user_id, memberships.map { |membership| [ membership.user.email, membership.user_id ] }, { selected: correction&.paid_by_user_id || @expense.paid_by_user_id }, class: "rounded border-slate-300" %></div>
         <%= form.hidden_field :split_type, value: "equal" %>
-        <% @expense.group.memberships.active.order(:position).each do |membership| %>
-          <%= hidden_field_tag "correction[participant_user_ids][]", membership.user_id %>
-        <% end %>
+        <fieldset><legend>Dividir igualmente entre</legend><% memberships.each do |membership| %><label class="block"><%= check_box_tag "correction[participant_user_ids][]", membership.user_id, equal_participants.include?(membership.user_id) %> <%= membership.user.email %></label><% end %></fieldset>
         <%= form.hidden_field :expected_financial_state_version, value: @current_financial_state_version || @expense.group.financial_state_version %>
         <%= form.hidden_field :idempotency_key, value: correction&.idempotency_key || SecureRandom.uuid %>
         <%= form.submit "Registrar correção", class: "rounded bg-slate-900 px-4 py-2 text-white" %>
+      <% end %>
+      <h3 class="mt-6 font-medium">Correção com divisão exata</h3>
+      <%= form_with url: "/groups/#{@expense.group_id}/expenses/#{@expense.id}/correct", scope: :correction, local: true, data: { turbo: false }, class: "mt-3 space-y-3" do |form| %>
+        <div><%= form.label :reason, "Motivo" %><%= form.text_field :reason, value: correction&.reason, required: true, class: "block w-full rounded border-slate-300" %></div>
+        <div><%= form.label :description, "Descrição" %><%= form.text_field :description, value: correction&.description || @expense.description, required: true, class: "block w-full rounded border-slate-300" %></div>
+        <div><%= form.label :amount_text, "Valor (R$)" %><%= form.text_field :amount_text, value: correction&.amount_text || MoneyFormatter.call(cents: @expense.amount_cents, currency_code: @expense.group.currency_code).delete_prefix("R$ "), required: true, inputmode: "decimal", class: "block rounded border-slate-300" %></div>
+        <div><%= form.label :paid_by_user_id, "Pago por" %><%= form.select :paid_by_user_id, memberships.map { |membership| [ membership.user.email, membership.user_id ] }, { selected: correction&.paid_by_user_id || @expense.paid_by_user_id }, class: "rounded border-slate-300" %></div>
+        <%= form.hidden_field :split_type, value: "exact" %>
+        <fieldset><legend>Shares</legend><% memberships.each_with_index do |membership, index| %><label class="block"><%= membership.user.email %><%= hidden_field_tag "correction[shares][#{index}][user_id]", membership.user_id %><%= text_field_tag "correction[shares][#{index}][amount_text]", exact_shares[membership.user_id.to_s]&.fetch(:amount_text, nil), inputmode: "decimal", class: "ml-2 rounded border-slate-300" %></label><% end %></fieldset>
+        <%= form.hidden_field :expected_financial_state_version, value: @current_financial_state_version || @expense.group.financial_state_version %>
+        <%= form.hidden_field :idempotency_key, value: correction&.idempotency_key || SecureRandom.uuid %>
+        <%= form.submit "Registrar correção exata", class: "rounded bg-slate-900 px-4 py-2 text-white" %>
       <% end %>
       <% if @dashboard %><p class="mt-3">Plano líquido: a sugestão atual compensa os saldos do grupo e reduz transferências.</p><% end %>
     </section>

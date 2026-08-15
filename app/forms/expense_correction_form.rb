@@ -1,7 +1,7 @@
 class ExpenseCorrectionForm < ExpenseForm
   attr_reader :reason, :expected_financial_state_version, :idempotency_key
 
-  def initialize(reason:, expected_financial_state_version:, idempotency_key:, **expense_attributes)
+  def initialize(reason: nil, expected_financial_state_version: nil, idempotency_key: nil, **expense_attributes)
     @reason = reason
     @expected_financial_state_version = expected_financial_state_version
     @idempotency_key = idempotency_key

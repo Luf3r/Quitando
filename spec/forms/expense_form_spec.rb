@@ -1,6 +1,10 @@
 require "rails_helper"
 
 RSpec.describe ExpenseForm do
+  it "trata campos ausentes como formulário inválido" do
+    expect(described_class.new).not_to be_valid
+  end
+
   it "produz o payload de divisão igual sem converter dinheiro para float" do
     form = described_class.new(
       description: "Mercado",

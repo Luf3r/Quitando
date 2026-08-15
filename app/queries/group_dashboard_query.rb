@@ -1,5 +1,5 @@
 class GroupDashboardQuery
-  Snapshot = Data.define(:official_balances, :projected_balances, :pending_payments, :settlement_plan, :memberships, :status)
+  Snapshot = Data.define(:official_balances, :projected_balances, :pending_payments, :settlement_plan, :memberships, :participant_emails, :status)
 
   def self.call(group:, viewer:)
     new(group:, viewer:).call
@@ -21,6 +21,7 @@ class GroupDashboardQuery
       pending_payments:,
       settlement_plan: DebtSimplifier.new(projected_balances).call,
       memberships: group.memberships.active.includes(:user).order(:position).to_a,
+      participant_emails: group.memberships.includes(:user).index_by(&:user_id).transform_values { |membership| membership.user.email },
       status: GroupFinancialStatusResolver.call(group)
     )
   end

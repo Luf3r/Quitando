@@ -20,7 +20,7 @@ class GroupsController < ApplicationController
     authorize @group
     @dashboard = GroupDashboardQuery.call(group: @group, viewer: current_user)
     @history_entries = GroupHistoryQuery.call(group: @group)
-    @pending_invitations = @group.group_invitations.pending.includes(:invited_user) if policy(@group).invite?
+    @pending_invitations = @group.group_invitations.pending.where(expires_at: Time.current..).includes(:invited_user) if policy(@group).invite?
   end
 
   def update

@@ -23,7 +23,11 @@
       <div class="mx-auto flex max-w-4xl items-center justify-between px-4 py-4">
         <%= link_to t("app.name"), root_path, class: "font-semibold tracking-tight" %>
         <% if user_signed_in? %>
-          <%= button_to "Sair", destroy_user_session_path, method: :delete, class: "text-sm underline" %>
+          <nav aria-label="Navegação principal" class="flex items-center gap-4">
+            <%= link_to "Grupos", groups_path, class: "text-sm underline" %>
+            <%= link_to "Convites", invitations_path, class: "text-sm underline" %>
+            <%= button_to "Sair", destroy_user_session_path, method: :delete, class: "text-sm underline" %>
+          </nav>
         <% end %>
       </div>
     </header>

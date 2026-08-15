@@ -26,7 +26,8 @@ class ApplicationController < ActionController::Base
 
   def render_domain_error(error)
     response = Http::DomainErrorMapper.call(error)
-    render plain: t(response.i18n_key), status: response.status
+    message = [ t(response.i18n_key), error.message.presence ].compact.join(" ")
+    render plain: message, status: response.status
   end
 
   def render_unprocessable_entity

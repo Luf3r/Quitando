@@ -60,7 +60,7 @@ class ExpensesController < ApplicationController
     authorize @group, :create_expense?
     @dashboard = GroupDashboardQuery.call(group: @group, viewer: current_user)
     @history_entries = GroupHistoryQuery.call(group: @group)
-    @pending_invitations = @group.group_invitations.pending.includes(:invited_user) if policy(@group).invite?
+    @pending_invitations = @group.group_invitations.pending.where(expires_at: Time.current..).includes(:invited_user) if policy(@group).invite?
     @expense_form = ExpenseForm.new(**expense_params.to_h.symbolize_keys)
     flash.now[:alert] = error.message
     render "groups/show", status: :unprocessable_entity

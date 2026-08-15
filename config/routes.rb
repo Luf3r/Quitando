@@ -7,24 +7,35 @@ Rails.application.routes.draw do
 
   devise_for :users
   root "home#index"
+  uuid_v7 = ->(*parameter_names) { CanonicalUuidV7RouteConstraint.new(*parameter_names) }
+
   resources :invitations, only: :index
   post "invitations/:id/accept", to: "invitations#accept", constraints: CanonicalUuidV7RouteConstraint.new
   post "invitations/:id/decline", to: "invitations#decline", constraints: CanonicalUuidV7RouteConstraint.new
-  resources :groups, only: %i[index create update] do
-    post :archive
-    post :restore
-    post "memberships/:id/deactivate", to: "memberships#deactivate"
-    post "memberships/:id/reactivate", to: "memberships#reactivate"
-    post "memberships/:id/transfer_ownership", to: "memberships#transfer_ownership"
-    patch "memberships/order", to: "memberships#order"
-    resources :expenses, only: %i[create show]
-    patch "expenses/:id/description", to: "expenses#update_description"
-    post "expenses/:id/correct", to: "expenses#correct"
-    resources :payments, only: %i[create show]
-    post "payments/:id/confirm", to: "payments#confirm"
-    post "payments/:id/cancel", to: "payments#cancel"
+  resources :groups, only: %i[index create]
+  resources :groups, only: :update, constraints: uuid_v7.call(:id)
+
+  scope "groups/:group_id", as: "group", constraints: { group_id: CanonicalUuidV7RouteConstraint::ROUTE_PATTERN } do
+    post :archive, to: "groups#archive", as: :archive
+    post :restore, to: "groups#restore", as: :restore
+
+    post "memberships/:id/deactivate", to: "memberships#deactivate", constraints: uuid_v7.call(:id)
+    post "memberships/:id/reactivate", to: "memberships#reactivate", constraints: uuid_v7.call(:id)
+    post "memberships/:id/transfer_ownership", to: "memberships#transfer_ownership", constraints: uuid_v7.call(:id)
+    patch "memberships/order", to: "memberships#order", as: :memberships_order
+
+    resources :expenses, only: :create
+    resources :expenses, only: :show, constraints: uuid_v7.call(:id)
+    patch "expenses/:id/description", to: "expenses#update_description", constraints: uuid_v7.call(:id)
+    post "expenses/:id/correct", to: "expenses#correct", constraints: uuid_v7.call(:id)
+
+    resources :payments, only: :create
+    resources :payments, only: :show, constraints: uuid_v7.call(:id)
+    post "payments/:id/confirm", to: "payments#confirm", constraints: uuid_v7.call(:id)
+    post "payments/:id/cancel", to: "payments#cancel", constraints: uuid_v7.call(:id)
+
     resources :invitations, only: :create, controller: "group_invitations"
-    post "invitations/:id/revoke", to: "group_invitations#revoke", constraints: CanonicalUuidV7RouteConstraint.new
+    post "invitations/:id/revoke", to: "group_invitations#revoke", constraints: uuid_v7.call(:id)
   end
   get "groups/:id", to: "groups#show", constraints: CanonicalUuidV7RouteConstraint.new
 

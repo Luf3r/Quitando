@@ -1,7 +1,7 @@
 class ExpenseForm
   attr_reader :description, :occurred_on, :amount_text, :paid_by_user_id, :split_type, :participant_user_ids, :shares
 
-  def initialize(description:, occurred_on:, amount_text:, paid_by_user_id:, split_type:, participant_user_ids: [], shares: [])
+  def initialize(description: nil, occurred_on: nil, amount_text: nil, paid_by_user_id: nil, split_type: nil, participant_user_ids: [], shares: [])
     @description = description
     @occurred_on = occurred_on
     @amount_text = amount_text

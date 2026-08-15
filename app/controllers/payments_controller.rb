@@ -61,7 +61,8 @@ class PaymentsController < ApplicationController
     authorize @group, :show?
     @dashboard = GroupDashboardQuery.call(group: @group, viewer: current_user)
     @history_entries = GroupHistoryQuery.call(group: @group)
-    @pending_invitations = @group.group_invitations.pending.includes(:invited_user) if policy(@group).invite?
+    @pending_invitations = @group.group_invitations.pending.where(expires_at: Time.current..).includes(:invited_user) if policy(@group).invite?
+    @payment_conflict = payment_params.to_h.symbolize_keys
     flash.now[:alert] = error.message
     render "groups/show", status: Http::DomainErrorMapper.call(error).status
   end
