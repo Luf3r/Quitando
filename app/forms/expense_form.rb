@@ -28,7 +28,7 @@ class ExpenseForm
   private
 
   def parsed_date
-    @parsed_date ||= Date.iso8601(occurred_on)
+    @parsed_date ||= occurred_on.is_a?(Date) ? occurred_on : Date.iso8601(occurred_on)
   rescue ArgumentError, TypeError
     nil
   end

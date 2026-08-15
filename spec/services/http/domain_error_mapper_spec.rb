@@ -8,6 +8,12 @@ RSpec.describe Http::DomainErrorMapper do
       expect(response).to have_attributes(status: :unprocessable_entity, i18n_key: "errors.unprocessable_entity", field: :name)
     end
 
+    it "mapeia versão financeira obsoleta para 409" do
+      response = described_class.call(ExpenseCorrector::StaleFinancialState.new("estado financeiro desatualizado"))
+
+      expect(response).to have_attributes(status: :conflict, i18n_key: "errors.conflict", field: :financial_state_version)
+    end
+
     it "relança exceções que não pertencem ao contrato HTTP" do
       error = RuntimeError.new("ledger indisponível")
 

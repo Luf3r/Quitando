@@ -4,3 +4,4 @@ pt-BR:
   errors:
     forbidden: "Você não tem permissão para realizar esta ação."
     unprocessable_entity: "Não foi possível concluir esta ação. Revise os dados e tente novamente."
+    conflict: "O estado financeiro foi alterado. Atualize a página e revise o plano atual antes de tentar novamente."
