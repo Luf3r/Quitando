@@ -473,7 +473,7 @@ pending -> revoked
 pending -> expired
 ```
 
-Convite aceito, recusado, revogado ou expirado é terminal. O convidado recusa o próprio convite; o owner revoga. Ao tentar listar ou aceitar um convite após `expires_at`, o sistema o marca como `expired` de forma idempotente; um job de limpeza é opcional. Um novo convite pode ser criado posteriormente se ainda não houver membership ativo.
+Convite aceito, recusado, revogado ou expirado é terminal. A criação fixa `expires_at` em `Time.current + 7.days`; no instante exato de `expires_at`, o convite já está vencido. O convidado recusa o próprio convite; o owner revoga. Ao tentar listar ou aceitar um convite vencido, o sistema o marca como `expired` de forma idempotente; um job de limpeza é opcional. Um novo convite pode ser criado posteriormente se ainda não houver membership ativo.
 
 ### 7.4 Expense
 

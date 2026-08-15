@@ -99,7 +99,7 @@ Evitar “dívida com Ana” quando o sistema possui apenas saldo líquido e uma
 
 ## 5. Lista de grupos
 
-Antes dos cards, a página apresenta convites pendentes recebidos, com ações de aceitar ou recusar. Aceitar cria ou reativa o membership; recusar encerra apenas o convite; o convite, sozinho, não concede acesso ao grupo.
+Antes dos cards, a página apresenta convites pendentes recebidos, com ações de aceitar ou recusar. O convite vale sete dias e, no instante do vencimento, deixa de aparecer como pendente. Aceitar cria ou reativa o membership; recusar encerra apenas o convite; o convite, sozinho, não concede acesso ao grupo.
 
 Cada card apresenta:
 

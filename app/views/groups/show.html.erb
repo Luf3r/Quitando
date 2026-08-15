@@ -1,0 +1,177 @@
+<div class="space-y-8">
+  <div>
+    <%= link_to "Voltar aos grupos", groups_path, class: "text-sm underline" %>
+    <h1 class="mt-3 text-2xl font-semibold"><%= @group.name %></h1>
+  </div>
+
+  <section aria-labelledby="resumo-financeiro">
+    <h2 id="resumo-financeiro" class="text-lg font-medium">Resumo financeiro</h2>
+    <p><%= render StatusBadgeComponent.new(status: @dashboard.status) %></p>
+    <ul class="mt-3 space-y-2">
+      <% @dashboard.official_balances.each do |user_id, cents| %>
+        <li>Saldo oficial (<%= @dashboard.participant_emails.fetch(user_id) %>): <%= render MoneyComponent.new(cents:, currency_code: @group.currency_code) %></li>
+      <% end %>
+      <% @dashboard.projected_balances.each do |user_id, cents| %>
+        <li>Saldo projetado (<%= @dashboard.participant_emails.fetch(user_id) %>): <%= render MoneyComponent.new(cents:, currency_code: @group.currency_code) %></li>
+      <% end %>
+    </ul>
+    <h3 class="mt-4 font-medium">Pendências</h3>
+    <p><%= @dashboard.pending_payments.size %> pagamento(s) reportado(s).</p>
+    <h3 class="mt-4 font-medium">Plano líquido</h3>
+    <p>Esta sugestão compensa os saldos do grupo e reduz transferências; não é um pagamento realizado.</p>
+    <% if @dashboard.settlement_plan.any? %>
+      <ul><% @dashboard.settlement_plan.each do |transfer| %><li><%= @dashboard.participant_emails.fetch(transfer.from_user_id) %> paga <%= render MoneyComponent.new(cents: transfer.amount_cents, currency_code: @group.currency_code) %> para <%= @dashboard.participant_emails.fetch(transfer.to_user_id) %>
+        <% if transfer.from_user_id == current_user.id && !@group.archived_at? %>
+          <%= form_with url: group_payments_path(@group), scope: :payment, local: true, data: { turbo: false }, class: "mt-2 flex gap-2" do |form| %>
+            <%= form.hidden_field :from_user_id, value: transfer.from_user_id %>
+            <%= form.hidden_field :to_user_id, value: transfer.to_user_id %>
+            <%= form.hidden_field :expected_financial_state_version, value: @group.financial_state_version %>
+            <%= form.hidden_field :idempotency_key, value: SecureRandom.uuid %>
+            <%= form.label :amount_text, "Valor", class: "sr-only" %>
+            <%= form.text_field :amount_text, value: MoneyFormatter.call(cents: transfer.amount_cents, currency_code: @group.currency_code).delete_prefix("R$ "), required: true, inputmode: "decimal", class: "rounded border-slate-300" %>
+            <%= form.submit "Reportar pagamento", class: "rounded bg-slate-900 px-3 py-1 text-white" %>
+          <% end %>
+        <% end %>
+      </li><% end %></ul>
+    <% else %>
+      <p>Não há transferências sugeridas.</p>
+    <% end %>
+  </section>
+
+  <% if @payment_conflict %>
+    <section id="conflito-pagamento" aria-labelledby="conflito-pagamento-titulo" class="rounded border border-amber-300 bg-amber-50 p-4">
+      <h2 id="conflito-pagamento-titulo" class="text-lg font-medium">Pagamento não registrado</h2>
+      <p>As contas foram atualizadas por outra pessoa. Revise o novo plano antes de continuar.</p>
+      <dl class="mt-3 space-y-1">
+        <div><dt class="inline font-medium">Origem:</dt> <dd class="inline"><%= @dashboard.participant_emails.fetch(@payment_conflict.fetch(:from_user_id), "Participante indisponível") %></dd></div>
+        <div><dt class="inline font-medium">Destino:</dt> <dd class="inline"><%= @dashboard.participant_emails.fetch(@payment_conflict.fetch(:to_user_id), "Participante indisponível") %></dd></div>
+        <div><dt class="inline font-medium">Valor informado:</dt> <dd class="inline"><%= @payment_conflict.fetch(:amount_text) %></dd></div>
+      </dl>
+    </section>
+  <% end %>
+
+  <section aria-labelledby="membros">
+    <h2 id="membros" class="text-lg font-medium">Membros ativos</h2>
+    <ul><% @dashboard.memberships.each do |membership| %><li class="mt-2"><%= membership.user.email %>
+      <% if !@group.archived_at? && policy(membership).deactivate? %>
+        <%= button_to membership.user_id == current_user.id ? "Sair do grupo" : "Inativar membro", "/groups/#{@group.id}/memberships/#{membership.id}/deactivate", method: :post, data: { turbo: false }, class: "ml-2 text-sm underline" %>
+      <% end %>
+      <% if !@group.archived_at? && policy(membership).transfer_ownership? && membership.user_id != current_user.id %>
+        <%= button_to "Transferir ownership", "/groups/#{@group.id}/memberships/#{membership.id}/transfer_ownership", method: :post, data: { turbo: false }, class: "ml-2 text-sm underline" %>
+      <% end %>
+    </li><% end %></ul>
+    <% if policy(@group).update? && !@group.archived_at? %>
+      <% inactive_memberships = @group.memberships.inactive.includes(:user).order(:position) %>
+      <% if inactive_memberships.any? %>
+        <h3 class="mt-4 font-medium">Membros inativos</h3>
+        <ul><% inactive_memberships.each do |membership| %><li><%= membership.user.email %> <%= button_to "Reativar", "/groups/#{@group.id}/memberships/#{membership.id}/reactivate", method: :post, data: { turbo: false }, class: "ml-2 text-sm underline" %></li><% end %></ul>
+      <% end %>
+      <% if @dashboard.memberships.many? %>
+        <section aria-labelledby="ordenar-membros" class="mt-4">
+          <h3 id="ordenar-membros" class="font-medium">Ordenar membros</h3>
+          <p class="text-sm text-slate-600">Escolha um membro para cada posição e salve a ordem completa.</p>
+          <%= form_with url: group_memberships_order_path(@group), scope: :membership, method: :patch, local: true, data: { turbo: false }, class: "mt-2 space-y-2" do |form| %>
+            <% @dashboard.memberships.each_with_index do |membership, index| %>
+              <div>
+                <%= form.label "ids_#{index}", "Posição #{index + 1}" %>
+                <%= select_tag "membership[ids][]", options_for_select(@dashboard.memberships.map { |candidate| [ candidate.user.email, candidate.id ] }, membership.id), id: "membership_ids_#{index}", class: "ml-2 rounded border-slate-300" %>
+              </div>
+            <% end %>
+            <%= form.submit "Salvar ordem", class: "rounded border px-3 py-1" %>
+          <% end %>
+        </section>
+      <% end %>
+    <% end %>
+  </section>
+
+  <% unless @group.archived_at? %>
+  <section aria-labelledby="nova-despesa">
+    <h2 id="nova-despesa" class="text-lg font-medium">Nova despesa</h2>
+    <%= form_with url: group_expenses_path(@group), scope: :expense, local: true, data: { turbo: false }, class: "mt-3 space-y-3" do |form| %>
+      <div><%= form.label :description, "Descrição" %><%= form.text_field :description, value: @expense_form&.description, required: true, class: "block w-full rounded border-slate-300" %></div>
+      <div><%= form.label :occurred_on, "Data" %><%= form.date_field :occurred_on, value: @expense_form&.occurred_on.presence || Date.current.iso8601, required: true, class: "block rounded border-slate-300" %></div>
+      <div><%= form.label :amount_text, "Valor (R$)" %><%= form.text_field :amount_text, value: @expense_form&.amount_text, required: true, inputmode: "decimal", class: "block rounded border-slate-300" %></div>
+      <div><%= form.label :paid_by_user_id, "Pago por" %><%= form.select :paid_by_user_id, @dashboard.memberships.map { |membership| [ membership.user.email, membership.user_id ] }, { selected: @expense_form&.paid_by_user_id }, class: "rounded border-slate-300" %></div>
+      <%= form.hidden_field :split_type, value: "equal" %>
+      <% equal_participants = @expense_form&.split_type == "equal" ? @expense_form.participant_user_ids : @dashboard.memberships.map(&:user_id) %>
+      <fieldset><legend>Dividir igualmente entre</legend><% @dashboard.memberships.each do |membership| %><label class="block"><%= check_box_tag "expense[participant_user_ids][]", membership.user_id, equal_participants.include?(membership.user_id) %> <%= membership.user.email %></label><% end %></fieldset>
+      <%= form.submit "Registrar despesa", class: "rounded bg-slate-900 px-4 py-2 text-white" %>
+    <% end %>
+
+    <h3 class="mt-6 font-medium">Divisão exata</h3>
+    <%= form_with url: group_expenses_path(@group), scope: :expense, local: true, data: { turbo: false }, class: "mt-3 space-y-3" do |form| %>
+      <div><%= form.label :description, "Descrição" %><%= form.text_field :description, value: @expense_form&.description, required: true, class: "block w-full rounded border-slate-300" %></div>
+      <div><%= form.label :occurred_on, "Data" %><%= form.date_field :occurred_on, value: @expense_form&.occurred_on.presence || Date.current.iso8601, required: true, class: "block rounded border-slate-300" %></div>
+      <div><%= form.label :amount_text, "Valor total (R$)" %><%= form.text_field :amount_text, value: @expense_form&.amount_text, required: true, inputmode: "decimal", class: "block rounded border-slate-300" %></div>
+      <div><%= form.label :paid_by_user_id, "Pago por" %><%= form.select :paid_by_user_id, @dashboard.memberships.map { |membership| [ membership.user.email, membership.user_id ] }, { selected: @expense_form&.paid_by_user_id }, class: "rounded border-slate-300" %></div>
+      <%= form.hidden_field :split_type, value: "exact" %>
+      <% exact_shares = @expense_form&.shares&.index_by { |share| share[:user_id].to_s } || {} %>
+      <fieldset><legend>Shares</legend><% @dashboard.memberships.each_with_index do |membership, index| %><label class="block"><%= membership.user.email %><%= hidden_field_tag "expense[shares][#{index}][user_id]", membership.user_id %><%= text_field_tag "expense[shares][#{index}][amount_text]", exact_shares[membership.user_id.to_s]&.fetch(:amount_text, nil), inputmode: "decimal", class: "ml-2 rounded border-slate-300" %></label><% end %></fieldset>
+      <%= form.submit "Registrar divisão exata", class: "rounded bg-slate-900 px-4 py-2 text-white" %>
+    <% end %>
+  </section>
+  <% end %>
+
+  <section aria-labelledby="historico">
+    <h2 id="historico" class="text-lg font-medium">Histórico</h2>
+    <% if @history_entries.any? %>
+      <ul class="mt-3 space-y-2">
+        <% @history_entries.each do |entry| %>
+          <% if entry.kind == :expense %>
+            <% expense = entry.record %>
+            <li><%= link_to expense.description, group_expense_path(@group, expense), class: "underline" %> — <%= render MoneyComponent.new(cents: expense.amount_cents, currency_code: @group.currency_code) %>; pago por <%= expense.paid_by_user.email %>, registrado por <%= expense.created_by_user.email %>. <% if expense.created_by_user_id != expense.paid_by_user_id %><strong>Destaque: registrada por outra pessoa.</strong> <% end %><% if entry.cycles.include?(:voided) %>Despesa anulada.<% expense.replacement_expenses.each do |replacement| %> Substituída por <%= link_to replacement.description, group_expense_path(@group, replacement), class: "underline" %>.<% end %><% end %><% if entry.cycles.include?(:replacement) %> Substitui uma despesa anterior. <%= link_to expense.replaces_expense.description, group_expense_path(@group, expense.replaces_expense), class: "underline" %>.<% end %></li>
+          <% else %>
+            <% payment = entry.record %>
+            <li><%= link_to "Pagamento #{payment.status}", group_payment_path(@group, payment), class: "underline" %>: <%= payment.from_user.email %> para <%= payment.to_user.email %>, <%= render MoneyComponent.new(cents: payment.amount_cents, currency_code: @group.currency_code) %>.</li>
+          <% end %>
+        <% end %>
+      </ul>
+    <% else %>
+      <p>Não há fatos financeiros registrados.</p>
+    <% end %>
+  </section>
+
+  <% if policy(@group).update? %>
+    <section aria-labelledby="configuracoes-grupo">
+      <h2 id="configuracoes-grupo" class="text-lg font-medium">Configurações do grupo</h2>
+      <% if @group.archived_at? %>
+        <%= button_to "Restaurar grupo", group_restore_path(@group), method: :post, data: { turbo: false }, class: "rounded bg-slate-900 px-4 py-2 text-white" %>
+      <% else %>
+        <%= button_to "Arquivar grupo", group_archive_path(@group), method: :post, data: { turbo: false }, class: "rounded border px-4 py-2" %>
+      <% end %>
+    </section>
+
+    <% unless @group.archived_at? %>
+    <section aria-labelledby="renomear-grupo">
+      <h2 id="renomear-grupo" class="text-lg font-medium">Renomear grupo</h2>
+      <%= form_with model: @group, local: true, data: { turbo: false }, class: "mt-3 flex max-w-md gap-2" do |form| %>
+        <%= form.label :name, "Nome", class: "sr-only" %>
+        <%= form.text_field :name, required: true, class: "min-w-0 flex-1 rounded border-slate-300" %>
+        <%= form.submit "Salvar nome", class: "rounded bg-slate-900 px-4 py-2 text-white" %>
+      <% end %>
+    </section>
+    <% end %>
+  <% end %>
+
+  <% if policy(@group).invite? && !@group.archived_at? %>
+    <section aria-labelledby="convidar-pessoa">
+      <h2 id="convidar-pessoa" class="text-lg font-medium">Convidar pessoa</h2>
+      <%= form_with url: group_invitations_path(@group), scope: :invitation, local: true, data: { turbo: false }, class: "mt-3 flex max-w-md gap-2" do |form| %>
+        <%= form.label :email, "E-mail", class: "sr-only" %>
+        <%= form.email_field :email, required: true, class: "min-w-0 flex-1 rounded border-slate-300", placeholder: "pessoa@exemplo.com" %>
+        <%= form.submit "Enviar convite", class: "rounded bg-slate-900 px-4 py-2 text-white" %>
+      <% end %>
+
+      <% if @pending_invitations.any? %>
+        <ul class="mt-4 space-y-2">
+          <% @pending_invitations.each do |invitation| %>
+            <li class="flex items-center justify-between gap-3">
+              <span><%= invitation.invited_user.email %></span>
+              <%= button_to "Revogar convite", "/groups/#{@group.id}/invitations/#{invitation.id}/revoke", method: :post, data: { turbo: false }, class: "text-sm underline" %>
+            </li>
+          <% end %>
+        </ul>
+      <% end %>
+    </section>
+  <% end %>
+</div>

@@ -1,0 +1,19 @@
+<div class="space-y-4">
+  <%= link_to "Voltar ao grupo", group_path(@payment.group), class: "text-sm underline" %>
+  <h1 class="text-2xl font-semibold">Pagamento <%= @payment.status %></h1>
+  <p><%= @payment.from_user.email %> para <%= @payment.to_user.email %>: <%= render MoneyComponent.new(cents: @payment.amount_cents, currency_code: @payment.group.currency_code) %></p>
+  <p>Reportado por <%= @payment.reported_by_user.email %>.</p>
+  <% if @payment.reported? && !@payment.group.archived_at? && @payment.to_user_id == current_user.id %>
+    <%= button_to "Confirmar pagamento", "/groups/#{@payment.group_id}/payments/#{@payment.id}/confirm", params: { payment: { idempotency_key: SecureRandom.uuid } }, data: { turbo: false }, class: "rounded bg-slate-900 px-3 py-1 text-white" %>
+  <% end %>
+  <% if @payment.reported? && !@payment.group.archived_at? && [ @payment.from_user_id, @payment.to_user_id ].include?(current_user.id) %>
+    <%= form_with url: "/groups/#{@payment.group_id}/payments/#{@payment.id}/cancel", scope: :payment, local: true, data: { turbo: false }, class: "space-y-2" do |form| %>
+      <%= form.label :reason, "Motivo do cancelamento" %>
+      <%= form.text_field :reason, required: true, class: "rounded border-slate-300" %>
+      <%= form.hidden_field :idempotency_key, value: SecureRandom.uuid %>
+      <%= form.submit "Cancelar pagamento", class: "rounded border px-3 py-1" %>
+    <% end %>
+  <% elsif @payment.confirmed? || @payment.cancelled? %>
+    <p>Este pagamento é terminal e não pode ser alterado no MVP.</p>
+  <% end %>
+</div>

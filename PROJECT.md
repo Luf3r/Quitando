@@ -250,10 +250,10 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 
 ## 11. Milestone atual
 
-- **Última fase concluída:** Fase 10 — Grupos, convites e ciclo de memberships.
-- **Fase atual:** Fase 11 — Requests, policies e HTML funcional, ainda não iniciada.
-- **Status atual:** o gate integrado da Fase 10 foi demonstrado; as subissues #80, #87 a #90 estão `Done` no GitHub Project.
-- **Trabalho executável atual:** preparar a decomposição da Fase 11 quando suas fontes normativas forem revisadas e a dependência operacional estiver `Ready`.
+- **Última fase concluída:** Fase 11 — Requests, policies e HTML funcional.
+- **Fase atual:** Fase 12 — Turbo Streams e Action Cable, ainda não iniciada.
+- **Status atual:** o gate integrado da Fase 11 foi demonstrado; o épico #16 e suas subissues estão prontos para `Done` no GitHub Project.
+- **Trabalho executável atual:** preparar a Fase 12 sem substituir a reconciliação por HTTP já verificada.
 - **Gate integrado da Fase 0:** `bin/ci` executa localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação. O hardening adicional da PR #38 também foi aprovado nos checks remotos atuais.
 
 **Integrado e verificado até agora:**
@@ -330,6 +330,14 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 - aceite e reentrada preservam histórico; saída, ownership e reordenação respeitam autorização, saldos, pendências e locks;
 - arquivamento/restauração preservam fatos financeiros e concorrem corretamente com novas despesas;
 - avaliar uma spec de Active Storage variant real quando attachments entrarem no domínio, além da prova atual de processamento com `ruby-vips`.
+
+**Concluído e verificado na Fase 11:**
+
+- autenticação Devise, Pundit, escopos de policy e constraints de UUID v7 protegem as rotas HTML; recursos fora do escopo retornam `404`, permissões insuficientes retornam `403` e erros de domínio preservam `422` ou `409` conforme o contrato;
+- grupos, convites internos, dashboard, histórico, despesas, correções, pagamentos e memberships funcionam por formulários e redirects HTTP convencionais, sem dependência de JavaScript, Turbo Streams, WebSocket ou grafo;
+- formulários preservam entradas inválidas, parsing monetário usa centavos inteiros e as ações financeiras mantêm idempotência, versão e estado atual visíveis em conflitos;
+- a jornada Rack::Test cobre Ana, Bruno e Carla desde o convite até `settled`, incluindo pagador e creator distintos, plano líquido e confirmação pelo destino;
+- `bin/rails tailwindcss:build`, `bin/verify-financial-schema-migrations`, `bin/rubocop`, `bin/ci`, `bin/verify-production-image` e `git diff --check` foram executados com sucesso sobre o diff final.
 
 Atualize esta seção e o [GitHub Project](https://github.com/users/Luf3r/projects/2) sempre que a tarefa ativa, uma entrega verificável, pendência, fase ou gate mudar. O estado detalhado e os critérios de saída ficam no [roadmap de implementação](./docs/05-quitando-roadmap-implementacao.md).
 
