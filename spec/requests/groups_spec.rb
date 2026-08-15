@@ -50,6 +50,8 @@ RSpec.describe "Groups" do
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Apartamento")
+      expect(response.body).to include("Saldo oficial")
+      expect(response.body).to include("Plano líquido")
     end
 
     it "não encontra grupo de outro usuário" do

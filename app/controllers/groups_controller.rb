@@ -18,6 +18,8 @@ class GroupsController < ApplicationController
   def show
     @group = policy_scope(Group).find(params[:id])
     authorize @group
+    @dashboard = GroupDashboardQuery.call(group: @group, viewer: current_user)
+    @history_entries = GroupHistoryQuery.call(group: @group)
     @pending_invitations = @group.group_invitations.pending.includes(:invited_user) if policy(@group).invite?
   end
 

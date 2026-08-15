@@ -4,6 +4,52 @@
     <h1 class="mt-3 text-2xl font-semibold"><%= @group.name %></h1>
   </div>
 
+  <section aria-labelledby="resumo-financeiro">
+    <h2 id="resumo-financeiro" class="text-lg font-medium">Resumo financeiro</h2>
+    <p><%= render StatusBadgeComponent.new(status: @dashboard.status) %></p>
+    <ul class="mt-3 space-y-2">
+      <% @dashboard.official_balances.each do |user_id, cents| %>
+        <li>Saldo oficial (<%= user_id %>): <%= render MoneyComponent.new(cents:, currency_code: @group.currency_code) %></li>
+      <% end %>
+      <% @dashboard.projected_balances.each do |user_id, cents| %>
+        <li>Saldo projetado (<%= user_id %>): <%= render MoneyComponent.new(cents:, currency_code: @group.currency_code) %></li>
+      <% end %>
+    </ul>
+    <h3 class="mt-4 font-medium">Pendências</h3>
+    <p><%= @dashboard.pending_payments.size %> pagamento(s) reportado(s).</p>
+    <h3 class="mt-4 font-medium">Plano líquido</h3>
+    <p>Esta sugestão compensa os saldos do grupo e reduz transferências; não é um pagamento realizado.</p>
+    <% if @dashboard.settlement_plan.any? %>
+      <ul><% @dashboard.settlement_plan.each do |transfer| %><li><%= transfer.from_user_id %> paga <%= render MoneyComponent.new(cents: transfer.amount_cents, currency_code: @group.currency_code) %> para <%= transfer.to_user_id %></li><% end %></ul>
+    <% else %>
+      <p>Não há transferências sugeridas.</p>
+    <% end %>
+  </section>
+
+  <section aria-labelledby="membros">
+    <h2 id="membros" class="text-lg font-medium">Membros ativos</h2>
+    <ul><% @dashboard.memberships.each do |membership| %><li><%= membership.user.email %></li><% end %></ul>
+  </section>
+
+  <section aria-labelledby="historico">
+    <h2 id="historico" class="text-lg font-medium">Histórico</h2>
+    <% if @history_entries.any? %>
+      <ul class="mt-3 space-y-2">
+        <% @history_entries.each do |entry| %>
+          <% if entry.kind == :expense %>
+            <% expense = entry.record %>
+            <li><%= expense.description %> — <%= render MoneyComponent.new(cents: expense.amount_cents, currency_code: @group.currency_code) %>; pago por <%= expense.paid_by_user.email %>, registrado por <%= expense.created_by_user.email %>.</li>
+          <% else %>
+            <% payment = entry.record %>
+            <li>Pagamento <%= payment.status %>: <%= payment.from_user.email %> para <%= payment.to_user.email %>, <%= render MoneyComponent.new(cents: payment.amount_cents, currency_code: @group.currency_code) %>.</li>
+          <% end %>
+        <% end %>
+      </ul>
+    <% else %>
+      <p>Não há fatos financeiros registrados.</p>
+    <% end %>
+  </section>
+
   <% if policy(@group).update? %>
     <section aria-labelledby="renomear-grupo">
       <h2 id="renomear-grupo" class="text-lg font-medium">Renomear grupo</h2>
