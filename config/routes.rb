@@ -11,6 +11,12 @@ Rails.application.routes.draw do
   post "invitations/:id/accept", to: "invitations#accept", constraints: CanonicalUuidV7RouteConstraint.new
   post "invitations/:id/decline", to: "invitations#decline", constraints: CanonicalUuidV7RouteConstraint.new
   resources :groups, only: %i[index create update] do
+    post :archive
+    post :restore
+    post "memberships/:id/deactivate", to: "memberships#deactivate"
+    post "memberships/:id/reactivate", to: "memberships#reactivate"
+    post "memberships/:id/transfer_ownership", to: "memberships#transfer_ownership"
+    patch "memberships/order", to: "memberships#order"
     resources :expenses, only: %i[create show]
     patch "expenses/:id/description", to: "expenses#update_description"
     post "expenses/:id/correct", to: "expenses#correct"

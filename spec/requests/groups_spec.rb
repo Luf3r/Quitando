@@ -132,4 +132,32 @@ RSpec.describe "Groups" do
       expect(group.reload.name).to eq("Apartamento")
     end
   end
+
+  describe "POST /groups/:id/archive" do
+    it "arquiva grupo empty por owner e restaura por POST" do
+      owner = create(:user, email: "ana@example.com")
+      group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
+
+      post user_session_path, params: { user: { email: owner.email, password: owner.password } }
+      post "/groups/#{group.id}/archive"
+
+      expect(response).to have_http_status(:see_other)
+      expect(group.reload.archived_at).to be_present
+
+      post "/groups/#{group.id}/restore"
+
+      expect(response).to have_http_status(:see_other)
+      expect(group.reload.archived_at).to be_nil
+    end
+  end
+
+  it "mostra controles de arquivamento ao owner" do
+    owner = create(:user, email: "ana@example.com")
+    group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
+
+    post user_session_path, params: { user: { email: owner.email, password: owner.password } }
+    get "/groups/#{group.id}"
+
+    expect(response.body).to include("Arquivar grupo")
+  end
 end

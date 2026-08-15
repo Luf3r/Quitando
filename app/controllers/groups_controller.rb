@@ -31,6 +31,20 @@ class GroupsController < ApplicationController
     redirect_to group_path(@group), status: :see_other
   end
 
+  def archive
+    @group = policy_scope(Group).find(params[:group_id])
+    authorize @group, :update?
+    GroupArchiver.call(group_id: @group.id, actor_user_id: current_user.id)
+    redirect_to group_path(@group), status: :see_other
+  end
+
+  def restore
+    @group = policy_scope(Group).find(params[:group_id])
+    authorize @group, :update?
+    GroupRestorer.call(group_id: @group.id, actor_user_id: current_user.id)
+    redirect_to group_path(@group), status: :see_other
+  end
+
   private
 
   def group_params
