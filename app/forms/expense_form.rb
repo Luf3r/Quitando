@@ -1,7 +1,7 @@
 class ExpenseForm
   attr_reader :description, :occurred_on, :amount_text, :paid_by_user_id, :split_type, :participant_user_ids, :shares
 
-  def initialize(description:, occurred_on:, amount_text:, paid_by_user_id:, split_type:, participant_user_ids:, shares: [])
+  def initialize(description:, occurred_on:, amount_text:, paid_by_user_id:, split_type:, participant_user_ids: [], shares: [])
     @description = description
     @occurred_on = occurred_on
     @amount_text = amount_text
@@ -10,6 +10,7 @@ class ExpenseForm
     @participant_user_ids = Array(participant_user_ids)
     raw_shares = shares.is_a?(Hash) ? shares.values : Array(shares)
     @shares = raw_shares.map { |share| share.respond_to?(:to_h) ? share.to_h.symbolize_keys : share }
+                        .reject { |share| share.is_a?(Hash) && share[:amount_text].blank? }
   end
 
   def valid?

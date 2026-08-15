@@ -76,7 +76,7 @@
       <div><%= form.label :amount_text, "Valor total (R$)" %><%= form.text_field :amount_text, required: true, inputmode: "decimal", class: "block rounded border-slate-300" %></div>
       <div><%= form.label :paid_by_user_id, "Pago por" %><%= form.select :paid_by_user_id, @dashboard.memberships.map { |membership| [ membership.user.email, membership.user_id ] }, {}, class: "rounded border-slate-300" %></div>
       <%= form.hidden_field :split_type, value: "exact" %>
-      <fieldset><legend>Shares</legend><% @dashboard.memberships.each_with_index do |membership, index| %><label class="block"><%= membership.user.email %><%= hidden_field_tag "expense[shares][#{index}][user_id]", membership.user_id %><%= text_field_tag "expense[shares][#{index}][amount_text]", nil, required: true, inputmode: "decimal", class: "ml-2 rounded border-slate-300" %></label><% end %></fieldset>
+      <fieldset><legend>Shares</legend><% @dashboard.memberships.each_with_index do |membership, index| %><label class="block"><%= membership.user.email %><%= hidden_field_tag "expense[shares][#{index}][user_id]", membership.user_id %><%= text_field_tag "expense[shares][#{index}][amount_text]", nil, inputmode: "decimal", class: "ml-2 rounded border-slate-300" %></label><% end %></fieldset>
       <%= form.submit "Registrar divisão exata", class: "rounded bg-slate-900 px-4 py-2 text-white" %>
     <% end %>
   </section>
