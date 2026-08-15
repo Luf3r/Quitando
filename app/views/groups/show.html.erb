@@ -31,6 +31,30 @@
     <ul><% @dashboard.memberships.each do |membership| %><li><%= membership.user.email %></li><% end %></ul>
   </section>
 
+  <section aria-labelledby="nova-despesa">
+    <h2 id="nova-despesa" class="text-lg font-medium">Nova despesa</h2>
+    <%= form_with url: group_expenses_path(@group), scope: :expense, local: true, data: { turbo: false }, class: "mt-3 space-y-3" do |form| %>
+      <div><%= form.label :description, "Descrição" %><%= form.text_field :description, value: @expense_form&.description, required: true, class: "block w-full rounded border-slate-300" %></div>
+      <div><%= form.label :occurred_on, "Data" %><%= form.date_field :occurred_on, value: Date.current.iso8601, required: true, class: "block rounded border-slate-300" %></div>
+      <div><%= form.label :amount_text, "Valor (R$)" %><%= form.text_field :amount_text, value: @expense_form&.amount_text, required: true, inputmode: "decimal", class: "block rounded border-slate-300" %></div>
+      <div><%= form.label :paid_by_user_id, "Pago por" %><%= form.select :paid_by_user_id, @dashboard.memberships.map { |membership| [ membership.user.email, membership.user_id ] }, {}, class: "rounded border-slate-300" %></div>
+      <%= form.hidden_field :split_type, value: "equal" %>
+      <fieldset><legend>Dividir igualmente entre</legend><% @dashboard.memberships.each do |membership| %><label class="block"><%= check_box_tag "expense[participant_user_ids][]", membership.user_id, true %> <%= membership.user.email %></label><% end %></fieldset>
+      <%= form.submit "Registrar despesa", class: "rounded bg-slate-900 px-4 py-2 text-white" %>
+    <% end %>
+
+    <h3 class="mt-6 font-medium">Divisão exata</h3>
+    <%= form_with url: group_expenses_path(@group), scope: :expense, local: true, data: { turbo: false }, class: "mt-3 space-y-3" do |form| %>
+      <div><%= form.label :description, "Descrição" %><%= form.text_field :description, required: true, class: "block w-full rounded border-slate-300" %></div>
+      <div><%= form.label :occurred_on, "Data" %><%= form.date_field :occurred_on, value: Date.current.iso8601, required: true, class: "block rounded border-slate-300" %></div>
+      <div><%= form.label :amount_text, "Valor total (R$)" %><%= form.text_field :amount_text, required: true, inputmode: "decimal", class: "block rounded border-slate-300" %></div>
+      <div><%= form.label :paid_by_user_id, "Pago por" %><%= form.select :paid_by_user_id, @dashboard.memberships.map { |membership| [ membership.user.email, membership.user_id ] }, {}, class: "rounded border-slate-300" %></div>
+      <%= form.hidden_field :split_type, value: "exact" %>
+      <fieldset><legend>Shares</legend><% @dashboard.memberships.each_with_index do |membership, index| %><label class="block"><%= membership.user.email %><%= hidden_field_tag "expense[shares][#{index}][user_id]", membership.user_id %><%= text_field_tag "expense[shares][#{index}][amount_text]", nil, required: true, inputmode: "decimal", class: "ml-2 rounded border-slate-300" %></label><% end %></fieldset>
+      <%= form.submit "Registrar divisão exata", class: "rounded bg-slate-900 px-4 py-2 text-white" %>
+    <% end %>
+  </section>
+
   <section aria-labelledby="historico">
     <h2 id="historico" class="text-lg font-medium">Histórico</h2>
     <% if @history_entries.any? %>

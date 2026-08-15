@@ -17,6 +17,8 @@ class GroupPolicy < Struct.new(:user, :group)
 
   alias_method :invite?, :update?
 
+  alias_method :create_expense?, :show?
+
   class Scope < Struct.new(:user, :scope)
     def resolve
       scope.joins(:memberships)

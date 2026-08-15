@@ -1,0 +1,8 @@
+<div class="space-y-4">
+  <%= link_to "Voltar ao grupo", group_path(@expense.group), class: "text-sm underline" %>
+  <h1 class="text-2xl font-semibold"><%= @expense.description %></h1>
+  <p><%= render MoneyComponent.new(cents: @expense.amount_cents, currency_code: @expense.group.currency_code) %></p>
+  <p>pago por <%= @expense.paid_by_user.email %>, registrado por <%= @expense.created_by_user.email %></p>
+  <h2 class="text-lg font-medium">Divisão</h2>
+  <ul><% @expense.expense_shares.each do |share| %><li><%= share.user.email %>: <%= render MoneyComponent.new(cents: share.amount_owed_cents, currency_code: @expense.group.currency_code) %></li><% end %></ul>
+</div>
