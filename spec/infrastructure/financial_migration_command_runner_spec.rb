@@ -4,7 +4,7 @@ require "tmpdir"
 require Rails.root.join("lib/financial_migration_command_runner")
 
 RSpec.describe FinancialMigrationCommandRunner do
-  it "limits the final wait after KILL and preserves the original timeout" do
+  it "surfaces an unconfirmed termination after bounded TERM and KILL waits" do
     pid = 4_242
     runner = described_class.new(timeout_seconds: 0.02, termination_grace_seconds: 0.02)
     allow(Process).to receive(:spawn).and_return(pid)
@@ -16,7 +16,10 @@ RSpec.describe FinancialMigrationCommandRunner do
 
     expect do
       runner.call("uninterruptible-command", environment: {})
-    end.to raise_error(described_class::CommandTimedOut, "command timed out after 0.02s")
+    end.to raise_error(
+      described_class::TerminationUnconfirmed,
+      "command timed out after 0.02s; process termination was not confirmed"
+    )
 
     elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started_at
     expect(elapsed).to be < 0.25

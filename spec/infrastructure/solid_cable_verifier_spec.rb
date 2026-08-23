@@ -71,6 +71,7 @@ RSpec.describe "Solid Cable verifier safety" do
               def wait2(pid)
                 @wait_attempts[pid] += 1
                 sleep 1 if ENV["SOLID_CABLE_COMMAND_TIMEOUT"] == "true" && @wait_attempts[pid] == 1
+                sleep 1 if ENV["SOLID_CABLE_UNCONFIRMED_TERMINATION"] == "true"
 
                 successful = ENV["SOLID_CABLE_COMMAND_FAILURE"] != "true"
                 [ pid, FakeStatus.new(successful, successful ? 0 : 17) ]
@@ -153,6 +154,21 @@ RSpec.describe "Solid Cable verifier safety" do
       expect(stderr).to include("command timed out")
       expect(process).to include(a_string_starting_with("KILL TERM -"))
       expect(statements.grep(/^DROP DATABASE/)).not_to be_empty
+    end
+  end
+
+  it "retains the temporary database when process termination remains unconfirmed" do
+    with_fake_dependencies(
+      "SOLID_CABLE_UNCONFIRMED_TERMINATION" => "true",
+      "SOLID_CABLE_COMMAND_TIMEOUT_SECONDS" => "0.01",
+      "SOLID_CABLE_COMMAND_TERMINATION_GRACE_SECONDS" => "0.01"
+    ) do |stdout, stderr, status, statements, process|
+      expect(status).not_to be_success
+      expect(stderr).to include("process termination was not confirmed")
+      expect(stdout).to include("Retained temporary Solid Cable database")
+      expect(statements.grep(/^DROP DATABASE/)).to be_empty
+      expect(process).to include(a_string_starting_with("KILL TERM -"))
+      expect(process).to include(a_string_starting_with("KILL KILL -"))
     end
   end
 

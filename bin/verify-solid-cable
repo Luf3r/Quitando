@@ -47,9 +47,14 @@ RUBY
 class CommandFailure < StandardError
   attr_reader :exitstatus
 
-  def initialize(exitstatus, command)
+  def initialize(exitstatus, command, termination_unconfirmed: false)
     @exitstatus = exitstatus
+    @termination_unconfirmed = termination_unconfirmed
     super("command failed with exit #{exitstatus}: #{command.join(' ')}")
+  end
+
+  def termination_unconfirmed?
+    @termination_unconfirmed
   end
 end
 
@@ -107,6 +112,8 @@ def run!(*command, environment:)
   return if status.success?
 
   raise CommandFailure.new(status.exitstatus, command)
+rescue FinancialMigrationCommandRunner::TerminationUnconfirmed => error
+  raise CommandFailure.new(1, command, termination_unconfirmed: true), error.message, cause: nil
 rescue FinancialMigrationCommandRunner::CommandTimedOut => error
   raise CommandFailure.new(1, command), error.message, cause: nil
 end
@@ -146,12 +153,16 @@ rescue StandardError => error
   warn error.message
 ensure
   if database_created
-    begin
-      execute_database_statement(admin_database_url, temporary_database_name, "DROP DATABASE IF EXISTS")
-      puts "Removed temporary Solid Cable database: #{temporary_database_name}"
-    rescue StandardError => cleanup_error
-      warn cleanup_error.message
-      exitstatus = 1 unless primary_error
+    if primary_error&.termination_unconfirmed?
+      puts "Retained temporary Solid Cable database: #{temporary_database_name}; process termination was not confirmed"
+    else
+      begin
+        execute_database_statement(admin_database_url, temporary_database_name, "DROP DATABASE IF EXISTS")
+        puts "Removed temporary Solid Cable database: #{temporary_database_name}"
+      rescue StandardError => cleanup_error
+        warn cleanup_error.message
+        exitstatus = 1 unless primary_error
+      end
     end
   end
 end
