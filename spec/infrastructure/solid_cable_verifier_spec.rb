@@ -56,6 +56,7 @@ RSpec.describe "Solid Cable verifier safety" do
             @fake_pid = 8_000
             @commands = {}
             @wait_attempts = Hash.new(0)
+            @released_groups = {}
 
             class << self
               def spawn(environment, *arguments)
@@ -79,6 +80,12 @@ RSpec.describe "Solid Cable verifier safety" do
 
               def kill(signal, pid)
                 File.open(ENV.fetch("SOLID_CABLE_PROCESS_LOG"), "a") { |log| log.puts("KILL #{signal} #{pid}") }
+                raise Errno::ESRCH if signal == 0 && @released_groups[pid]
+
+                if %w[TERM KILL].include?(signal) && pid.negative? && ENV["SOLID_CABLE_UNCONFIRMED_TERMINATION"] != "true"
+                  @released_groups[pid] = true
+                end
+
                 1
               end
             end
