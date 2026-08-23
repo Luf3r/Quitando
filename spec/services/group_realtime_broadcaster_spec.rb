@@ -11,7 +11,7 @@ RSpec.describe GroupRealtimeBroadcaster do
 
     expect(ActionCable.server).to have_received(:broadcast).with(
       payload[:group_id],
-      hash_including("content" => include("O estado do grupo foi atualizado.", 'action="refresh"', 'request-id="request-123"'))
+      include("O estado do grupo foi atualizado.", 'action="refresh"', 'request-id="request-123"')
     )
   end
 

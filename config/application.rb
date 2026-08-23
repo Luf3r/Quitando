@@ -19,6 +19,7 @@ module Quitando
 
     config.i18n.available_locales = [ :"pt-BR" ]
     config.i18n.default_locale = :"pt-BR"
+    config.x.group_realtime_broadcaster_subscriber = nil
 
     config.generators do |generators|
       generators.orm :active_record, primary_key_type: :uuid

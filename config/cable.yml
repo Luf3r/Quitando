@@ -6,7 +6,9 @@ development:
   adapter: async
 
 test:
-  adapter: test
+  # System specs exercise the browser WebSocket against the in-process Cable server.
+  # The async adapter keeps that integration real without requiring a second service.
+  adapter: async
 
 production:
   adapter: solid_cable

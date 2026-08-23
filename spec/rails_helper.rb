@@ -7,6 +7,7 @@ require "rspec/rails"
 require "factory_bot_rails"
 require_relative "spec_helper"
 require_relative "support/payment_command_receipt_cleanup"
+require_relative "support/system_browser"
 
 begin
   ActiveRecord::Migration.maintain_test_schema!

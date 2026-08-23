@@ -8,7 +8,7 @@ class GroupRealtimeBroadcaster
       request_id = Turbo.current_request_id if Turbo.respond_to?(:current_request_id)
       content = [ notice_stream(notice), refresh_stream(request_id) ].join
 
-      ActionCable.server.broadcast(payload.fetch(:group_id), "content" => content)
+      ActionCable.server.broadcast(payload.fetch(:group_id), content)
     rescue StandardError => error
       Rails.error.report(
         error,

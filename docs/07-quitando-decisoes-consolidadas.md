@@ -56,7 +56,7 @@ Este arquivo resume decisões que precisam permanecer consistentes entre produto
 - Comandos financeiros são revalidados dentro de transação e serializados por grupo.
 - `report`, `confirm`, `cancel` e `expense_correct` usam o recibo unificado `financial_command_receipts`, com chave global e fingerprint canônico; retry idêntico retorna o resultado anterior sem novo efeito financeiro.
 - Reports e correções financeiras enviam a versão financeira esperada; criação append-only de despesa é serializada, mas não falha apenas porque outra criação ocorreu em paralelo.
-- Eventos de domínio de pagamento e correção ocorrem depois do commit e nunca substituem a leitura por HTTP; `quitando.expense.corrected` carrega original, substituta, grupo, ator e versão. Broadcasts Turbo/Action Cable permanecem na Fase 12.
+- Eventos de domínio de pagamento e correção ocorrem depois do commit e nunca substituem a leitura por HTTP; `quitando.expense.corrected` carrega original, substituta, grupo, ator e versão. A Fase 12 usa `quitando.group.state_changed` pós-commit para aviso seguro e refresh Turbo/Action Cable em stream de grupo assinado; queda ou rejeição do Cable é visível e o reload HTTP reconcilia o estado.
 - Edições históricas não apagam fatos silenciosamente; correções preservam ator, motivo e relação com o registro substituído.
 
 ### Arquitetura
