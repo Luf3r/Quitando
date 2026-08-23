@@ -1,0 +1,6 @@
+<%= turbo_frame_tag "group_dialog" do %>
+  <section aria-labelledby="nova-despesa-dialogo" class="p-5">
+    <div class="flex items-center justify-between gap-4"><h1 id="nova-despesa-dialogo" class="text-xl font-semibold">Nova despesa</h1><button type="button" data-action="group-dialog#close" class="text-sm underline">Fechar</button></div>
+    <%= render "expenses/form", group: @group, dashboard: @dashboard, expense_form: @expense_form %>
+  </section>
+<% end %>

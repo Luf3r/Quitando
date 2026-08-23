@@ -1,0 +1,9 @@
+<%= render "groups/realtime_shell", group: @group %>
+
+<main class="mx-auto max-w-3xl space-y-4">
+  <%= link_to "Voltar à despesa", group_expense_path(@group, @expense), class: "text-sm underline" %>
+  <h1 class="text-2xl font-semibold">Corrigir despesa</h1>
+  <p>Uma correção anula esta despesa e registra uma substituta.</p>
+  <%= render "groups/financial_summary", group: @group, dashboard: @dashboard if @dashboard %>
+  <%= render "expenses/correction_form", group: @group, expense: @expense, correction_form: @correction_form, current_financial_state_version: @current_financial_state_version %>
+</main>
