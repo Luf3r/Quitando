@@ -57,6 +57,13 @@ class ExpenseCorrector
       FinancialCommandReceipt.create!(expense: replacement, command_type: :expense_correct, idempotency_key:, request_fingerprint:)
       group.increment!(:financial_state_version)
       schedule_corrected_event(original:, replacement:, group:)
+      GroupStateChanged.publish(
+        group_id: group.id,
+        actor_user_id:,
+        change_type: :expense_corrected,
+        subject_user_id: paid_by_user_id,
+        financial_state_version: group.financial_state_version
+      )
       replacement
     end
   rescue MoneyParser::InvalidAmount => error

@@ -19,6 +19,7 @@ class GroupNameUpdater < GroupCommand
       raise Forbidden, "membership owner ativa obrigatória" unless owner_active?(group)
 
       group.update!(name: normalized_name)
+      publish_group_state_changed(group:, actor_user_id:, change_type: :group_renamed)
       group
     end
   end

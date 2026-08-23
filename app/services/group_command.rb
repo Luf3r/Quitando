@@ -21,4 +21,13 @@ class GroupCommand
 
     normalized_name
   end
+
+  def publish_group_state_changed(group:, actor_user_id:, change_type:, subject_user_id: nil)
+    GroupStateChanged.publish(
+      group_id: group.id,
+      actor_user_id:,
+      change_type:,
+      subject_user_id:
+    )
+  end
 end

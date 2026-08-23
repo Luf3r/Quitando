@@ -40,6 +40,7 @@ class GroupInvitationAccepter < GroupCommand
         )
       end
       invitation.update!(status: :accepted, accepted_at: Time.current)
+      publish_group_state_changed(group:, actor_user_id:, change_type: :invitation_accepted, subject_user_id: actor_user_id)
       Result.new(invitation, membership)
     end
 

@@ -26,7 +26,9 @@ class MembershipOrderer < GroupCommand
       Membership.connection.execute("SET CONSTRAINTS memberships_group_position_unique DEFERRED")
       membership_ids.each_with_index { |membership_id, position| memberships.find { |membership| membership.id == membership_id }.update!(position:) }
       memberships_by_id = memberships.index_by(&:id)
-      membership_ids.map { |membership_id| memberships_by_id.fetch(membership_id).reload }
+      ordered = membership_ids.map { |membership_id| memberships_by_id.fetch(membership_id).reload }
+      publish_group_state_changed(group:, actor_user_id:, change_type: :membership_reordered)
+      ordered
     end
   end
 

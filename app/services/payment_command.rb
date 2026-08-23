@@ -49,6 +49,13 @@ class PaymentCommand < FinancialCommand
     rescue StandardError => error
       Rails.error.report(error, handled: true, severity: :error, context: { payment_id: payment.id, group_id: payment.group_id }, source: event_name)
     end
+    GroupStateChanged.publish(
+      group_id: payment.group_id,
+      actor_user_id:,
+      change_type: event_name.delete_prefix("quitando.").tr(".", "_").to_sym,
+      subject_user_id: payment.to_user_id,
+      financial_state_version:
+    )
   end
 
   def global_receipt_key_violation?(error)

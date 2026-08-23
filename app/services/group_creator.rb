@@ -16,6 +16,7 @@ class GroupCreator < GroupCommand
       owner = User.find_by(id: owner_user_id) || raise(NotFound, "usuário não encontrado")
       group = Group.create!(name: normalized_name, currency_code: "BRL")
       Membership.create!(group:, user: owner, role: :owner, status: :active, position: 0)
+      publish_group_state_changed(group:, actor_user_id: owner_user_id, change_type: :group_created, subject_user_id: owner_user_id)
       group
     end
   end
