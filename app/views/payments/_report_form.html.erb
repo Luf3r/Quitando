@@ -1,0 +1,11 @@
+<% form_values = payment_form.stringify_keys %>
+
+<%= form_with url: group_payments_path(group), scope: :payment, class: "mt-4 space-y-3", data: { turbo_frame: "group_dialog", turbo_stream: true } do |form| %>
+  <%= form.hidden_field :from_user_id, value: form_values.fetch("from_user_id") %>
+  <%= form.hidden_field :to_user_id, value: form_values.fetch("to_user_id") %>
+  <%= form.hidden_field :expected_financial_state_version, value: form_values.fetch("expected_financial_state_version") %>
+  <%= form.hidden_field :idempotency_key, value: form_values.fetch("idempotency_key") %>
+  <div><%= form.label :amount_text, "Valor (R$)" %><%= form.text_field :amount_text, value: form_values.fetch("amount_text"), required: true, autofocus: true, inputmode: "decimal", class: "block rounded border-slate-300" %></div>
+  <p class="text-sm text-slate-700">Isto registra uma declaração manual; o saldo oficial muda após a confirmação de quem recebe.</p>
+  <%= form.submit "Marcar como enviado", class: "rounded bg-slate-900 px-4 py-2 text-white" %>
+<% end %>

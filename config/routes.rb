@@ -30,7 +30,7 @@ Rails.application.routes.draw do
     patch "expenses/:id/description", to: "expenses#update_description", constraints: uuid_v7.call(:id)
     post "expenses/:id/correct", to: "expenses#correct", constraints: uuid_v7.call(:id)
 
-    resources :payments, only: :create
+    resources :payments, only: %i[new create]
     resources :payments, only: :show, constraints: uuid_v7.call(:id)
     post "payments/:id/confirm", to: "payments#confirm", constraints: uuid_v7.call(:id)
     post "payments/:id/cancel", to: "payments#cancel", constraints: uuid_v7.call(:id)
