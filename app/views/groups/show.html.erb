@@ -24,7 +24,7 @@
     <h2 id="membros" class="text-lg font-medium">Membros ativos</h2>
     <ul><% @dashboard.memberships.each do |membership| %><li class="mt-2"><%= membership.user.email %>
       <% if !@group.archived_at? && policy(membership).deactivate? %>
-        <%= button_to membership.user_id == current_user.id ? "Sair do grupo" : "Inativar membro", "/groups/#{@group.id}/memberships/#{membership.id}/deactivate", method: :post, form: { data: { turbo_stream: true } }, class: "ml-2 text-sm underline" %>
+        <%= button_to membership.user_id == current_user.id ? "Sair do grupo" : "Inativar membro", "/groups/#{@group.id}/memberships/#{membership.id}/deactivate", method: :post, form: { data: { turbo_stream: membership.user_id != current_user.id } }, class: "ml-2 text-sm underline" %>
       <% end %>
       <% if !@group.archived_at? && policy(membership).transfer_ownership? && membership.user_id != current_user.id %>
         <%= button_to "Transferir ownership", "/groups/#{@group.id}/memberships/#{membership.id}/transfer_ownership", method: :post, form: { data: { turbo_stream: true } }, class: "ml-2 text-sm underline" %>
