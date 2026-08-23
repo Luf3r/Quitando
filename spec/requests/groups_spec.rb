@@ -48,6 +48,16 @@ RSpec.describe "Groups" do
       expect(response).to redirect_to("/groups")
       expect(group.memberships.find_by(user: user)).to have_attributes(role: "owner", status: "active")
     end
+
+    it "responde com refresh Turbo Stream depois de criar o grupo" do
+      user = create(:user, email: "ana@example.com")
+
+      post user_session_path, params: { user: { email: user.email, password: user.password } }
+      post "/groups", params: { group: { name: "Apartamento" } }, headers: { "Accept" => Mime[:turbo_stream].to_s }
+
+      expect(response.media_type).to eq(Mime[:turbo_stream])
+      expect(response.body).to include('action="refresh"')
+    end
   end
 
   describe "GET /groups/:id" do
@@ -161,6 +171,18 @@ RSpec.describe "Groups" do
       expect(group.reload.name).to eq("Apartamento novo")
     end
 
+    it "responde com refresh Turbo Stream depois de renomear" do
+      owner = create(:user, email: "ana@example.com")
+      group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
+
+      post user_session_path, params: { user: { email: owner.email, password: owner.password } }
+      patch "/groups/#{group.id}", params: { group: { name: "Apartamento novo" } }, headers: { "Accept" => Mime[:turbo_stream].to_s }
+
+      expect(response.media_type).to eq(Mime[:turbo_stream])
+      expect(response.body).to include('action="refresh"')
+      expect(group.reload.name).to eq("Apartamento novo")
+    end
+
     it "recusa membro ativo que não é owner" do
       owner = create(:user, email: "ana@example.com")
       member = create(:user, email: "bia@example.com")
@@ -213,6 +235,24 @@ RSpec.describe "Groups" do
       post "/groups/#{group.id}/restore"
 
       expect(response).to have_http_status(:see_other)
+      expect(group.reload.archived_at).to be_nil
+    end
+
+    it "responde com refresh Turbo Stream ao arquivar e restaurar" do
+      owner = create(:user, email: "ana@example.com")
+      group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
+
+      post user_session_path, params: { user: { email: owner.email, password: owner.password } }
+      post "/groups/#{group.id}/archive", headers: { "Accept" => Mime[:turbo_stream].to_s }
+
+      expect(response.media_type).to eq(Mime[:turbo_stream])
+      expect(response.body).to include('action="refresh"')
+      expect(group.reload.archived_at).to be_present
+
+      post "/groups/#{group.id}/restore", headers: { "Accept" => Mime[:turbo_stream].to_s }
+
+      expect(response.media_type).to eq(Mime[:turbo_stream])
+      expect(response.body).to include('action="refresh"')
       expect(group.reload.archived_at).to be_nil
     end
   end

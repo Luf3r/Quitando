@@ -12,7 +12,7 @@ class GroupsController < ApplicationController
     authorize Group, :create?
     GroupCreator.call(owner_user_id: current_user.id, name: group_params[:name])
 
-    redirect_to groups_path, status: :see_other
+    respond_with_refresh(location: groups_path)
   end
 
   def show
@@ -28,21 +28,21 @@ class GroupsController < ApplicationController
     authorize @group
 
     GroupNameUpdater.call(group_id: @group.id, actor_user_id: current_user.id, name: group_params[:name])
-    redirect_to group_path(@group), status: :see_other
+    respond_with_refresh(location: group_path(@group))
   end
 
   def archive
     @group = policy_scope(Group).find(params[:group_id])
     authorize @group, :update?
     GroupArchiver.call(group_id: @group.id, actor_user_id: current_user.id)
-    redirect_to group_path(@group), status: :see_other
+    respond_with_refresh(location: group_path(@group))
   end
 
   def restore
     @group = policy_scope(Group).find(params[:group_id])
     authorize @group, :update?
     GroupRestorer.call(group_id: @group.id, actor_user_id: current_user.id)
-    redirect_to group_path(@group), status: :see_other
+    respond_with_refresh(location: group_path(@group))
   end
 
   private

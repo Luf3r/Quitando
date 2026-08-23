@@ -16,13 +16,13 @@ class InvitationsController < ApplicationController
     invitation = GroupInvitation.where(invited_user_id: current_user.id).find(params[:id])
     authorize invitation, :accept?
     GroupInvitationAccepter.call(invitation_id: invitation.id, actor_user_id: current_user.id)
-    redirect_to group_path(invitation.group_id), status: :see_other
+    respond_with_refresh(location: group_path(invitation.group_id))
   end
 
   def decline
     invitation = GroupInvitation.where(invited_user_id: current_user.id).find(params[:id])
     authorize invitation, :decline?
     GroupInvitationDecliner.call(invitation_id: invitation.id, actor_user_id: current_user.id)
-    redirect_to invitations_path, status: :see_other
+    respond_with_refresh(location: invitations_path)
   end
 end
