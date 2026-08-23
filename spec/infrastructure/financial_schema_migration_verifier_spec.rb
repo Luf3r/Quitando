@@ -65,6 +65,7 @@ RSpec.describe "Financial schema migration verifier safety" do
             @fake_pid = 4_000
             @wait_attempts = Hash.new(0)
             @commands = {}
+            @released_groups = {}
 
             class << self
               def spawn(environment, *arguments)
@@ -81,6 +82,7 @@ RSpec.describe "Financial schema migration verifier safety" do
               def wait2(pid)
                 @wait_attempts[pid] += 1
                 sleep 1 if ENV["SYSTEM_FAKE_TIMEOUT"] == "true" && @wait_attempts[pid] == 1
+                sleep 1 if ENV["SYSTEM_FAKE_UNCONFIRMED_TERMINATION"] == "true"
 
                 environment, command = @commands.fetch(pid)
                 expected_phase_nine_down_failure = environment["FINANCIAL_MIGRATION_EXPECT_FAILURE"] == "true"
@@ -90,6 +92,12 @@ RSpec.describe "Financial schema migration verifier safety" do
 
               def kill(signal, pid)
                 File.open(ENV.fetch("PROCESS_FAKE_LOG"), "a") { |log| log.puts("KILL #{signal} #{pid}") }
+                raise Errno::ESRCH if signal == 0 && @released_groups[pid]
+
+                if %w[TERM KILL].include?(signal) && pid.negative? && ENV["SYSTEM_FAKE_UNCONFIRMED_TERMINATION"] != "true"
+                  @released_groups[pid] = true
+                end
+
                 1
               end
             end
@@ -213,7 +221,21 @@ RSpec.describe "Financial schema migration verifier safety" do
       expect(statements.map { |statement| statement.split.first }).to eq(%w[CREATE DROP])
       expect(stderr).to include("command timed out")
       expect(orchestration.grep(/^SPAWN /)).to all(start_with("SPAWN pgroup=true "))
-      expect(orchestration.grep(/^KILL /)).to eq([ "KILL TERM -4001" ])
+      expect(orchestration.grep(/^KILL /)).to include("KILL TERM -4001", "KILL 0 -4001")
+    end
+  end
+
+  it "retains the temporary database when process termination remains unconfirmed", :aggregate_failures do
+    with_fake_migration_dependencies(
+      "SYSTEM_FAKE_UNCONFIRMED_TERMINATION" => "true",
+      "FINANCIAL_MIGRATION_COMMAND_TIMEOUT_SECONDS" => "0.01",
+      "FINANCIAL_MIGRATION_TERMINATION_GRACE_SECONDS" => "0.01"
+    ) do |stdout, stderr, status, statements, orchestration|
+      expect(status).not_to be_success
+      expect(stdout).to include("Retained temporary database")
+      expect(stderr).to include("process termination was not confirmed")
+      expect(statements.map { |statement| statement.split.first }).to eq([ "CREATE" ])
+      expect(orchestration).to include("KILL TERM -4001", "KILL KILL -4001")
     end
   end
 
