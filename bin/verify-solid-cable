@@ -1,0 +1,159 @@
+#!/usr/bin/env ruby
+
+require "bundler/setup"
+require "pg"
+require "securerandom"
+require "uri"
+require_relative "../lib/financial_migration_command_runner"
+
+TEMPORARY_DATABASE_PREFIX = "quitando_solid_cable".freeze
+COMMAND_TIMEOUT_SECONDS = Float(ENV.fetch("SOLID_CABLE_COMMAND_TIMEOUT_SECONDS", "120"))
+COMMAND_TERMINATION_GRACE_SECONDS = Float(ENV.fetch("SOLID_CABLE_COMMAND_TERMINATION_GRACE_SECONDS", "5"))
+DATABASE_TIMEOUT_SECONDS = Integer(ENV.fetch("SOLID_CABLE_DATABASE_TIMEOUT_SECONDS", "30"), 10)
+SOLID_CABLE_ASSERTION = <<~'RUBY'.freeze
+  require "json"
+  require "timeout"
+
+  timeout_seconds = Float(ENV.fetch("SOLID_CABLE_CONSUME_TIMEOUT_SECONDS", "15"))
+  abort "Solid Cable consume timeout must be positive" unless timeout_seconds.positive?
+
+  ActiveRecord::Base.establish_connection(ENV.fetch("CABLE_DATABASE_URL"))
+  load Rails.root.join("db/cable_schema.rb")
+
+  pubsub = nil
+  subscriber = nil
+  stream_name = "verify-solid-cable-#{SecureRandom.hex(12)}"
+  expected_payload = { "kind" => "solid-cable-verification", "token" => SecureRandom.hex(12) }
+  received_payloads = Queue.new
+  begin
+    pubsub = ActionCable.server.pubsub
+    subscriber = ->(payload) { received_payloads << payload }
+
+    pubsub.subscribe(stream_name, subscriber)
+    ActionCable.server.broadcast(stream_name, expected_payload)
+
+    delivered_payload = Timeout.timeout(timeout_seconds) { received_payloads.pop }
+    actual_payload = JSON.parse(delivered_payload)
+    abort "Solid Cable delivered an unexpected payload" unless actual_payload == expected_payload
+
+    persisted_message = SolidCable::Message.where(channel: stream_name).order(:id).last
+    abort "Solid Cable did not persist the published message" unless persisted_message
+  ensure
+    pubsub&.unsubscribe(stream_name, subscriber)
+    pubsub&.shutdown
+  end
+RUBY
+
+class CommandFailure < StandardError
+  attr_reader :exitstatus
+
+  def initialize(exitstatus, command)
+    @exitstatus = exitstatus
+    super("command failed with exit #{exitstatus}: #{command.join(' ')}")
+  end
+end
+
+unless COMMAND_TIMEOUT_SECONDS.positive? && COMMAND_TERMINATION_GRACE_SECONDS.positive? && DATABASE_TIMEOUT_SECONDS.positive?
+  raise ArgumentError, "Solid Cable verifier timeouts must be positive"
+end
+
+COMMAND_RUNNER = FinancialMigrationCommandRunner.new(
+  timeout_seconds: COMMAND_TIMEOUT_SECONDS,
+  termination_grace_seconds: COMMAND_TERMINATION_GRACE_SECONDS
+).freeze
+
+def database_uri(raw_url)
+  begin
+    uri = URI.parse(raw_url)
+    query_parameters = URI.decode_www_form(uri.query.to_s)
+  rescue URI::InvalidURIError, ArgumentError
+    raise ArgumentError, "TEST_DATABASE_URL is invalid", cause: nil
+  end
+
+  if query_parameters.any? { |key, _value| key == "dbname" }
+    raise ArgumentError, "TEST_DATABASE_URL must not contain a dbname query parameter"
+  end
+
+  unless %w[postgres postgresql].include?(uri.scheme) && uri.path&.match?(%r{\A/[^/]+\z})
+    raise ArgumentError, "TEST_DATABASE_URL must be a PostgreSQL URL with a database name"
+  end
+
+  uri
+end
+
+def replace_database_name(uri, database_name)
+  uri.dup.tap { |copy| copy.path = "/#{database_name}" }.to_s
+end
+
+def validate_temporary_database_name!(database_name)
+  pattern = /\A#{TEMPORARY_DATABASE_PREFIX}_#{Process.pid}_[0-9a-f]+\z/
+  return database_name if database_name.match?(pattern)
+
+  raise ArgumentError, "refusing unsafe temporary database name: #{database_name.inspect}"
+end
+
+def execute_database_statement(connection_url, database_name, statement)
+  validate_temporary_database_name!(database_name)
+
+  PG.connect(connection_url, connect_timeout: DATABASE_TIMEOUT_SECONDS) do |connection|
+    connection.exec("SET statement_timeout = '#{DATABASE_TIMEOUT_SECONDS}s'")
+    connection.exec("#{statement} #{connection.escape_identifier(database_name)}")
+  end
+end
+
+def run!(*command, environment:)
+  puts "==> #{command.join(' ')}"
+  status = COMMAND_RUNNER.call(*command, environment:)
+  return if status.success?
+
+  raise CommandFailure.new(status.exitstatus, command)
+rescue FinancialMigrationCommandRunner::CommandTimedOut => error
+  raise CommandFailure.new(1, command), error.message, cause: nil
+end
+
+raw_test_database_url = ENV.fetch("TEST_DATABASE_URL")
+uri = database_uri(raw_test_database_url)
+temporary_database_name = "#{TEMPORARY_DATABASE_PREFIX}_#{Process.pid}_#{SecureRandom.hex(12)}"
+validate_temporary_database_name!(temporary_database_name)
+admin_database_url = replace_database_name(uri, "postgres")
+temporary_database_url = replace_database_name(uri, temporary_database_name)
+database_created = false
+primary_error = nil
+exitstatus = 0
+
+begin
+  execute_database_statement(admin_database_url, temporary_database_name, "CREATE DATABASE")
+  database_created = true
+  puts "Temporary Solid Cable database: #{temporary_database_name}"
+
+  run!(
+    "bin/rails",
+    "runner",
+    SOLID_CABLE_ASSERTION,
+    environment: {
+      "CABLE_DATABASE_URL" => temporary_database_url,
+      "RAILS_ENV" => "production",
+      "SECRET_KEY_BASE" => SecureRandom.hex(64)
+    }
+  )
+rescue CommandFailure => error
+  primary_error = error
+  exitstatus = error.exitstatus
+  warn error.message
+rescue StandardError => error
+  primary_error = error
+  exitstatus = 1
+  warn error.message
+ensure
+  if database_created
+    begin
+      execute_database_statement(admin_database_url, temporary_database_name, "DROP DATABASE IF EXISTS")
+      puts "Removed temporary Solid Cable database: #{temporary_database_name}"
+    rescue StandardError => cleanup_error
+      warn cleanup_error.message
+      exitstatus = 1 unless primary_error
+    end
+  end
+end
+
+exit exitstatus
