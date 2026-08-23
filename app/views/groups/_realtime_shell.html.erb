@@ -1,0 +1,11 @@
+<% turbo_refreshes_with method: :morph, scroll: :preserve %>
+
+<div id="group_realtime_shell" data-controller="group-realtime-status">
+  <%= turbo_stream_from group.id, channel: GroupsChannel.name %>
+
+  <div id="group_remote_notice" data-turbo-permanent aria-live="polite" aria-atomic="true"></div>
+
+  <dialog id="group_dialog_shell" data-controller="group-dialog" data-turbo-permanent class="m-auto w-full max-w-3xl rounded-lg border border-slate-300 p-0 shadow-xl backdrop:bg-slate-900/40 max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:top-auto max-md:max-w-none max-md:rounded-b-none">
+    <turbo-frame id="group_dialog" data-turbo-permanent></turbo-frame>
+  </dialog>
+</div>

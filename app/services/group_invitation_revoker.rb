@@ -23,6 +23,7 @@ class GroupInvitationRevoker < GroupCommand
       raise InvalidTransition, "convite não está pendente" unless invitation.pending?
 
       invitation.update!(status: :revoked, revoked_at: Time.current)
+      publish_group_state_changed(group:, actor_user_id:, change_type: :invitation_revoked, subject_user_id: invitation.invited_user_id)
       invitation
     end
 

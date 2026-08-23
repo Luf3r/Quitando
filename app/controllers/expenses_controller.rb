@@ -5,6 +5,15 @@ class ExpensesController < ApplicationController
   rescue_from ExpenseCorrector::InvalidExpense, ExpenseCorrector::ArchivedGroup, ExpenseCorrector::StaleFinancialState,
               ExpenseCorrector::IdempotencyConflict, with: :render_correction_error
 
+  def new
+    @group = policy_scope(Group).find(params[:group_id])
+    authorize @group, :create_expense?
+    @dashboard = GroupDashboardQuery.call(group: @group, viewer: current_user)
+    @expense_form = ExpenseForm.new
+
+    render_dialog_or_page(:new)
+  end
+
   def create
     group = policy_scope(Group).find(params[:group_id])
     authorize group, :create_expense?
@@ -12,13 +21,27 @@ class ExpensesController < ApplicationController
     raise ExpenseCreator::InvalidExpense, "despesa inválida" unless form.valid?
 
     ExpenseCreator.call(**form.command_attributes.merge(group_id: group.id, created_by_user_id: current_user.id))
-    redirect_to group_path(group), status: :see_other
+    respond_to do |format|
+      format.html { redirect_to group_path(group), status: :see_other }
+      format.turbo_stream { render turbo_stream: successful_dialog_stream }
+    end
   end
 
   def show
     group = policy_scope(Group).find(params[:group_id])
     authorize group, :show?
     load_expense_detail(group)
+  end
+
+  def correction
+    @group = policy_scope(Group).find(params[:group_id])
+    authorize @group, :create_expense?
+    load_expense_detail(@group)
+    authorize @expense, :correct?
+    @correction_form = ExpenseCorrectionForm.new
+    @current_financial_state_version = @group.financial_state_version
+
+    render_dialog_or_page(:correction)
   end
 
   def update_description
@@ -39,7 +62,10 @@ class ExpensesController < ApplicationController
     raise ExpenseCorrector::InvalidExpense, "correção inválida" unless @correction_form.valid?
 
     replacement = ExpenseCorrector.call(**@correction_form.command_attributes.merge(group_id: group.id, expense_id: expense.id, actor_user_id: current_user.id))
-    redirect_to group_expense_path(group, replacement), status: :see_other
+    respond_to do |format|
+      format.html { redirect_to group_expense_path(group, replacement), status: :see_other }
+      format.turbo_stream { render turbo_stream: successful_dialog_stream }
+    end
   end
 
   private
@@ -63,7 +89,11 @@ class ExpensesController < ApplicationController
     @pending_invitations = @group.group_invitations.pending.where(expires_at: Time.current..).includes(:invited_user) if policy(@group).invite?
     @expense_form = ExpenseForm.new(**expense_params.to_h.symbolize_keys)
     flash.now[:alert] = error.message
-    render "groups/show", status: :unprocessable_entity
+    if turbo_frame_request?
+      render :new_dialog, formats: :html, status: :unprocessable_entity, layout: false
+    else
+      render :new, status: :unprocessable_entity
+    end
   end
 
   def render_correction_error(error)
@@ -73,7 +103,25 @@ class ExpensesController < ApplicationController
     @dashboard = GroupDashboardQuery.call(group:, viewer: current_user)
     @current_financial_state_version = group.financial_state_version
     flash.now[:alert] = error.message
-    render :show, status: Http::DomainErrorMapper.call(error).status
+    if turbo_frame_request?
+      @group = group
+      render :correction_dialog, formats: :html, status: Http::DomainErrorMapper.call(error).status, layout: false
+    else
+      @group = group
+      render :correction, status: Http::DomainErrorMapper.call(error).status
+    end
+  end
+
+  def render_dialog_or_page(template)
+    if turbo_frame_request?
+      render "#{template}_dialog", layout: false
+    else
+      render template
+    end
+  end
+
+  def successful_dialog_stream
+    turbo_stream.update("group_dialog", "") + %(<turbo-stream action="refresh"></turbo-stream>).html_safe
   end
 
   def load_expense_detail(group)

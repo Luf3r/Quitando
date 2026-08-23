@@ -24,12 +24,13 @@ Rails.application.routes.draw do
     post "memberships/:id/transfer_ownership", to: "memberships#transfer_ownership", constraints: uuid_v7.call(:id)
     patch "memberships/order", to: "memberships#order", as: :memberships_order
 
-    resources :expenses, only: :create
+    resources :expenses, only: %i[new create]
     resources :expenses, only: :show, constraints: uuid_v7.call(:id)
+    get "expenses/:id/correction", to: "expenses#correction", as: :expense_correction, constraints: uuid_v7.call(:id)
     patch "expenses/:id/description", to: "expenses#update_description", constraints: uuid_v7.call(:id)
     post "expenses/:id/correct", to: "expenses#correct", constraints: uuid_v7.call(:id)
 
-    resources :payments, only: :create
+    resources :payments, only: %i[new create]
     resources :payments, only: :show, constraints: uuid_v7.call(:id)
     post "payments/:id/confirm", to: "payments#confirm", constraints: uuid_v7.call(:id)
     post "payments/:id/cancel", to: "payments#cancel", constraints: uuid_v7.call(:id)

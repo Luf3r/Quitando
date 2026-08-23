@@ -22,7 +22,9 @@ class GroupInvitationCreator < GroupCommand
       raise InvalidTransition, "usuário já possui membership ativa" if Membership.where(group:, user: invited_user, status: :active).exists?
       raise InvalidTransition, "convite pendente já existe" if GroupInvitation.where(group:, invited_user:, status: :pending).exists?
 
-      GroupInvitation.create!(group:, invited_user:, invited_by_user: User.find_by(id: actor_user_id), status: :pending, expires_at: Time.current + 7.days)
+      invitation = GroupInvitation.create!(group:, invited_user:, invited_by_user: User.find_by(id: actor_user_id), status: :pending, expires_at: Time.current + 7.days)
+      publish_group_state_changed(group:, actor_user_id:, change_type: :invitation_created, subject_user_id: invited_user_id)
+      invitation
     end
   rescue ActiveRecord::RecordNotUnique
     raise InvalidTransition, "convite pendente já existe"

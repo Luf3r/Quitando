@@ -1,5 +1,6 @@
 class ApplicationController < ActionController::Base
   include Pundit::Authorization
+  include TurboRefreshResponse
 
   rescue_from Pundit::NotAuthorizedError, with: :render_forbidden
   rescue_from ExpenseDescriptionEditor::Forbidden, ExpenseCorrector::Forbidden, with: :render_forbidden

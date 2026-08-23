@@ -36,6 +36,13 @@ class ExpenseCreator
       )
       group.increment!(:financial_state_version)
       schedule_created_by_third_party_event(expense) if created_by_user_id != paid_by_user_id
+      GroupStateChanged.publish(
+        group_id: group.id,
+        actor_user_id: created_by_user_id,
+        change_type: :expense_created,
+        subject_user_id: paid_by_user_id,
+        financial_state_version: group.financial_state_version
+      )
       expense
     end
   end

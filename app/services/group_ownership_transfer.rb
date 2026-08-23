@@ -27,6 +27,7 @@ class GroupOwnershipTransfer < GroupCommand
 
       previous_owner.update!(role: :member)
       new_owner.update!(role: :owner)
+      publish_group_state_changed(group:, actor_user_id:, change_type: :ownership_transferred, subject_user_id: new_owner_user_id)
       Result.new(previous_owner, new_owner)
     end
   end

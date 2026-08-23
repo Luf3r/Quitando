@@ -56,6 +56,18 @@ RSpec.describe "Group invitations" do
       expect(GroupInvitation.last).to have_attributes(invited_user_id: invited_user.id, status: "pending")
     end
 
+    it "responde com refresh Turbo Stream depois de criar convite" do
+      owner = create(:user, email: "ana@example.com")
+      invited_user = create(:user, email: "bia@example.com")
+      group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
+
+      post user_session_path, params: { user: { email: owner.email, password: owner.password } }
+      post "/groups/#{group.id}/invitations", params: { invitation: { email: invited_user.email } }, headers: { "Accept" => Mime[:turbo_stream].to_s }
+
+      expect(response.media_type).to eq(Mime[:turbo_stream])
+      expect(response.body).to include('action="refresh"')
+    end
+
     it "não enumera contas quando o e-mail não existe" do
       owner = create(:user, email: "ana@example.com")
       group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
@@ -82,6 +94,18 @@ RSpec.describe "Group invitations" do
       expect(invitation.reload).to be_accepted
       expect(Membership.where(group: invitation.group, user: invited_user, status: :active)).to exist
     end
+
+    it "reconcilia a própria caixa imediatamente por refresh Turbo Stream ao aceitar" do
+      invited_user = create(:user, email: "bia@example.com")
+      invitation = create(:group_invitation, invited_user:, expires_at: 2.days.from_now)
+
+      post user_session_path, params: { user: { email: invited_user.email, password: invited_user.password } }
+      post "/invitations/#{invitation.id}/accept", headers: { "Accept" => Mime[:turbo_stream].to_s }
+
+      expect(response.media_type).to eq(Mime[:turbo_stream])
+      expect(response.body).to include('action="refresh"')
+      expect(invitation.reload).to be_accepted
+    end
   end
 
   describe "POST /invitations/:id/decline" do
@@ -93,6 +117,18 @@ RSpec.describe "Group invitations" do
       post "/invitations/#{invitation.id}/decline"
 
       expect(response).to have_http_status(:see_other)
+      expect(invitation.reload).to be_declined
+    end
+
+    it "reconcilia a própria caixa imediatamente por refresh Turbo Stream ao recusar" do
+      invited_user = create(:user, email: "bia@example.com")
+      invitation = create(:group_invitation, invited_user:, expires_at: 2.days.from_now)
+
+      post user_session_path, params: { user: { email: invited_user.email, password: invited_user.password } }
+      post "/invitations/#{invitation.id}/decline", headers: { "Accept" => Mime[:turbo_stream].to_s }
+
+      expect(response.media_type).to eq(Mime[:turbo_stream])
+      expect(response.body).to include('action="refresh"')
       expect(invitation.reload).to be_declined
     end
   end
@@ -111,6 +147,19 @@ RSpec.describe "Group invitations" do
       expect(response).to have_http_status(:not_found)
       expect(queries).to be_empty
       expect(invitation.reload).to be_pending
+    end
+
+    it "responde com refresh Turbo Stream depois de revogar convite" do
+      owner = create(:user, email: "ana@example.com")
+      group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
+      invitation = create(:group_invitation, group:, invited_by_user: owner, expires_at: 2.days.from_now)
+
+      post user_session_path, params: { user: { email: owner.email, password: owner.password } }
+      post "/groups/#{group.id}/invitations/#{invitation.id}/revoke", headers: { "Accept" => Mime[:turbo_stream].to_s }
+
+      expect(response.media_type).to eq(Mime[:turbo_stream])
+      expect(response.body).to include('action="refresh"')
+      expect(invitation.reload).to be_revoked
     end
 
     it "permite que owner revogue convite pending" do

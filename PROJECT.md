@@ -250,10 +250,10 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 
 ## 11. Milestone atual
 
-- **Última fase concluída:** Fase 11 — Requests, policies e HTML funcional.
-- **Fase atual:** Fase 12 — Turbo Streams e Action Cable, ainda não iniciada.
-- **Status atual:** o gate integrado da Fase 11 foi demonstrado; o épico #16 e suas subissues estão prontos para `Done` no GitHub Project.
-- **Trabalho executável atual:** preparar a Fase 12 sem substituir a reconciliação por HTTP já verificada.
+- **Última fase concluída:** Fase 12 — Turbo Frames, Streams e Action Cable.
+- **Fase atual:** Fase 13 — Visualização, explicação e acessibilidade.
+- **Status atual:** o gate integrado da Fase 12 foi demonstrado; a sincronização final do épico #17 e da subissue #117 no GitHub Project depende das verificações finais desta entrega.
+- **Trabalho executável atual:** preparar a Fase 13, preservando HTTP como fonte de reconciliação.
 - **Gate integrado da Fase 0:** `bin/ci` executa localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação. O hardening adicional da PR #38 também foi aprovado nos checks remotos atuais.
 
 **Integrado e verificado até agora:**
@@ -338,6 +338,14 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 - formulários preservam entradas inválidas, parsing monetário usa centavos inteiros e as ações financeiras mantêm idempotência, versão e estado atual visíveis em conflitos;
 - a jornada Rack::Test cobre Ana, Bruno e Carla desde o convite até `settled`, incluindo pagador e creator distintos, plano líquido e confirmação pelo destino;
 - `bin/rails tailwindcss:build`, `bin/verify-financial-schema-migrations`, `bin/rubocop`, `bin/ci`, `bin/verify-production-image` e `git diff --check` foram executados com sucesso sobre o diff final.
+
+**Concluído e verificado na Fase 12:**
+
+- conexões Action Cable autenticadas e subscriptions de grupo autorizadas usam stream assinado e rejeitam identidade, UUID ou membership inválidos;
+- eventos de estado do grupo são publicados após commit e produzem aviso seguro mais refresh Turbo/morph, sem transmitir valores, descrições ou formulário;
+- despesas, correções e pagamentos possuem deep-links HTML e diálogos Turbo Frame; respostas Turbo preservam falhas e conflitos visíveis;
+- a jornada Selenium com navegadores independentes prova despesa de terceiro, report, confirmação, creator/pagador distintos e equivalência entre stream e reload, usando Solid Cable e PostgreSQL reais também no ambiente de teste;
+- desconexão Cable apresenta aviso, não simula atualização e converge por reload HTTP.
 
 Atualize esta seção e o [GitHub Project](https://github.com/users/Luf3r/projects/2) sempre que a tarefa ativa, uma entrega verificável, pendência, fase ou gate mudar. O estado detalhado e os critérios de saída ficam no [roadmap de implementação](./docs/05-quitando-roadmap-implementacao.md).
 

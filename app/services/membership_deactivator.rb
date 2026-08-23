@@ -31,6 +31,8 @@ class MembershipDeactivator < GroupCommand
       raise InvalidTransition, "último owner ativo não pode sair" if last_active_owner?(group, membership)
 
       membership.update!(status: :inactive)
+      publish_group_state_changed(group:, actor_user_id:, change_type: :membership_deactivated, subject_user_id: user_id)
+      GroupRealtimeBroadcaster.schedule_reconnection(user_id)
       membership
     end
   end

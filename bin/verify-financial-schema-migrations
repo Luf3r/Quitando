@@ -220,7 +220,18 @@ PHASE_TEN_GROUP_SCHEMA_MIGRATION_ASSERTION = <<~'RUBY'.freeze
   end
 RUBY
 
-class CommandFailure < StandardError; end
+class CommandFailure < StandardError
+  attr_reader :termination_unconfirmed
+
+  def initialize(message, termination_unconfirmed: false)
+    @termination_unconfirmed = termination_unconfirmed
+    super(message)
+  end
+
+  def termination_unconfirmed?
+    termination_unconfirmed
+  end
+end
 
 unless COMMAND_TIMEOUT_SECONDS.positive? && COMMAND_TERMINATION_GRACE_SECONDS.positive? && DATABASE_TIMEOUT_SECONDS.positive?
   raise ArgumentError, "financial migration verifier timeouts must be positive"
@@ -277,6 +288,8 @@ def run!(*command, environment:)
   return if status.success?
 
   raise CommandFailure, "command failed with exit #{status.exitstatus}: #{command.join(' ')}"
+rescue FinancialMigrationCommandRunner::TerminationUnconfirmed => error
+  raise CommandFailure.new("#{error.message}: #{command.join(' ')}", termination_unconfirmed: true), cause: nil
 rescue FinancialMigrationCommandRunner::CommandTimedOut => error
   raise CommandFailure, "#{error.message}: #{command.join(' ')}", cause: nil
 end
@@ -285,6 +298,10 @@ def run_expect_failure!(*command, environment:)
   puts "==> expected failure: #{command.join(' ')}"
   status = COMMAND_RUNNER.call(*command, environment: environment.merge("FINANCIAL_MIGRATION_EXPECT_FAILURE" => "true"))
   raise CommandFailure, "command unexpectedly succeeded: #{command.join(' ')}" if status.success?
+rescue FinancialMigrationCommandRunner::TerminationUnconfirmed => error
+  raise CommandFailure.new("#{error.message}: #{command.join(' ')}", termination_unconfirmed: true), cause: nil
+rescue FinancialMigrationCommandRunner::CommandTimedOut => error
+  raise CommandFailure, "#{error.message}: #{command.join(' ')}", cause: nil
 end
 
 source_uri = database_uri(ENV.fetch("TEST_DATABASE_URL"))
@@ -370,18 +387,22 @@ ensure
   active_primary_error = primary_error || $ERROR_INFO
 
   if database_created
-    begin
-      execute_database_statement(
-        maintenance_database_url,
-        temporary_database_name,
-        "DROP DATABASE IF EXISTS"
-      )
-      puts "==> Removed temporary database: #{temporary_database_name}"
-    rescue StandardError => cleanup_error
-      if active_primary_error
-        warn "cleanup also failed: #{cleanup_error.message}"
-      else
-        raise
+    if active_primary_error.is_a?(CommandFailure) && active_primary_error.termination_unconfirmed?
+      puts "==> Retained temporary database: #{temporary_database_name}; process termination was not confirmed"
+    else
+      begin
+        execute_database_statement(
+          maintenance_database_url,
+          temporary_database_name,
+          "DROP DATABASE IF EXISTS"
+        )
+        puts "==> Removed temporary database: #{temporary_database_name}"
+      rescue StandardError => cleanup_error
+        if active_primary_error
+          warn "cleanup also failed: #{cleanup_error.message}"
+        else
+          raise
+        end
       end
     end
   end

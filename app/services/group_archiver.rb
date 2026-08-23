@@ -21,6 +21,7 @@ class GroupArchiver < GroupCommand
       raise InvalidTransition, "grupo possui convite pendente" if group.group_invitations.pending.exists?
 
       group.update!(archived_at: Time.current)
+      publish_group_state_changed(group:, actor_user_id:, change_type: :group_archived)
       group
     end
   end
