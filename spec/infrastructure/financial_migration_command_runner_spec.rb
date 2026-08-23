@@ -50,13 +50,13 @@ RSpec.describe FinancialMigrationCommandRunner do
             sleep 60
           RUBY
         )
-        runner = described_class.new(timeout_seconds: 0.2, termination_grace_seconds: 0.2)
+        runner = described_class.new(timeout_seconds: 2, termination_grace_seconds: 0.2)
 
         expect do
           runner.call(RbConfig.ruby, command_path, child_pid_path, heartbeat_path, environment: {})
         end.to raise_error(described_class::CommandTimedOut)
 
-        child_pid = Integer(File.read(child_pid_path), 10)
+        child_pid = read_child_pid(child_pid_path)
         heartbeat = File.read(heartbeat_path)
         sleep 0.1
         expect(File.read(heartbeat_path)).to eq(heartbeat)
@@ -119,14 +119,26 @@ RSpec.describe FinancialMigrationCommandRunner do
           sleep 60
         RUBY
       )
-      runner = described_class.new(timeout_seconds: 0.2, termination_grace_seconds: 2)
+      runner = described_class.new(timeout_seconds: 2, termination_grace_seconds: 2)
 
       expect do
         runner.call(RbConfig.ruby, command_path, child_pid_path, environment: {})
       end.to raise_error(described_class::CommandTimedOut)
 
-      child_pid = Integer(File.read(child_pid_path), 10)
+      child_pid = read_child_pid(child_pid_path)
       expect { Process.kill(0, child_pid) }.to raise_error(Errno::ESRCH)
     end
+  end
+
+  def read_child_pid(path)
+    deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 1
+
+    until File.exist?(path)
+      raise "child PID file was not created" if Process.clock_gettime(Process::CLOCK_MONOTONIC) >= deadline
+
+      sleep 0.01
+    end
+
+    Integer(File.read(path), 10)
   end
 end
