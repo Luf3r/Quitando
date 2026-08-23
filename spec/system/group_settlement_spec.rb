@@ -57,7 +57,9 @@ RSpec.describe "Jornada de quitação do grupo" do
 
     expect(page).to have_text("pago por bruno@example.com, registrado por carla@example.com")
     expect(page).to have_text("Plano líquido")
-    click_button "Reportar pagamento"
+    click_link "Marcar como enviado"
+    expect(page).to have_text("Registrar pagamento")
+    click_button "Marcar como enviado"
     payment_path = current_path
 
     sign_out
