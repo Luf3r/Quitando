@@ -28,9 +28,15 @@ class FinancialMigrationCommandRunner
     Process.kill("TERM", -pid)
     wait_for_process(pid, termination_grace_seconds)
   rescue Timeout::Error
-    Process.kill("KILL", -pid)
-    Process.wait2(pid)
+    wait_for_forced_termination(pid)
   rescue Errno::ESRCH, Errno::ECHILD
+    nil
+  end
+
+  def wait_for_forced_termination(pid)
+    Process.kill("KILL", -pid)
+    wait_for_process(pid, termination_grace_seconds)
+  rescue Timeout::Error, Errno::ESRCH, Errno::ECHILD
     nil
   end
 end
