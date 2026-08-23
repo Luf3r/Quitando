@@ -4,7 +4,7 @@ RSpec.describe GroupStateChanged, :non_transactional do
   self.use_transactional_tests = false
 
   it "emits its minimal event only after the outer transaction commits" do
-    group = create(:group)
+    group = create(:group, name: "Realtime state #{SecureRandom.hex(8)}")
     actor = create(:user)
     events = []
     subscriber = ActiveSupport::Notifications.subscribe(described_class::EVENT_NAME) { |event| events << event.payload }
@@ -18,10 +18,12 @@ RSpec.describe GroupStateChanged, :non_transactional do
     expect(events.first).not_to include(:description, :amount_cents, :idempotency_key, :token, :form)
   ensure
     ActiveSupport::Notifications.unsubscribe(subscriber) if subscriber
+    group&.delete
+    actor&.delete
   end
 
   it "does not emit after an outer rollback" do
-    group = create(:group)
+    group = create(:group, name: "Realtime state #{SecureRandom.hex(8)}")
     actor = create(:user)
     events = []
     subscriber = ActiveSupport::Notifications.subscribe(described_class::EVENT_NAME) { |event| events << event.payload }
@@ -34,6 +36,8 @@ RSpec.describe GroupStateChanged, :non_transactional do
     expect(events).to be_empty
   ensure
     ActiveSupport::Notifications.unsubscribe(subscriber) if subscriber
+    group&.delete
+    actor&.delete
   end
 
   it "rejects a change type outside its closed map" do
@@ -43,7 +47,7 @@ RSpec.describe GroupStateChanged, :non_transactional do
   end
 
   it "keeps persistence confirmed and reports a consumer failure without secret payload fields" do
-    group = create(:group)
+    group = create(:group, name: "Realtime state #{SecureRandom.hex(8)}")
     actor = create(:user)
     reports = []
     subscriber = Object.new
@@ -61,5 +65,7 @@ RSpec.describe GroupStateChanged, :non_transactional do
   ensure
     ActiveSupport::Notifications.unsubscribe(failing_listener) if failing_listener
     Rails.error.unsubscribe(subscriber) if subscriber
+    group&.delete
+    actor&.delete
   end
 end
