@@ -23,11 +23,16 @@ RSpec.describe "Atualizações em tempo real do grupo", type: :system do
     visit_group_in(:counterparty, fixture.fetch(:group))
     in_session(:counterparty) { expect(page).to have_connected_group_stream }
 
+    cable_channel = fixture.fetch(:group).id
+    messages = SolidCable::Message.where(channel: cable_channel)
+    messages_before_broadcast = messages.count
+    transport_token = SecureRandom.hex(12)
     ActionCable.server.broadcast(
-      fixture.fetch(:group).id,
-      '<turbo-stream action="append" target="group_remote_notice"><template><p>Prova de transporte Cable</p></template></turbo-stream>'
+      cable_channel,
+      "<turbo-stream action=\"append\" target=\"group_remote_notice\"><template><p>Prova de transporte Cable #{transport_token}</p></template></turbo-stream>"
     )
-    expect(SolidCable::Message.where(channel: fixture.fetch(:group).id)).to exist
+    expect(messages.count).to eq(messages_before_broadcast + 1)
+    expect(messages.order(:id).last.payload).to include(transport_token)
     in_session(:ana) { expect(page).to have_text("Prova de transporte Cable") }
 
     Capybara.using_session(:counterparty) do
