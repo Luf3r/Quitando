@@ -6,9 +6,8 @@ development:
   adapter: async
 
 test:
-  # System specs exercise the browser WebSocket against the in-process Cable server.
-  # The async adapter keeps that integration real without requiring a second service.
-  adapter: async
+  adapter: solid_cable
+  polling_interval: 0.05.seconds
 
 production:
   adapter: solid_cable

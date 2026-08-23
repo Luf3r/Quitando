@@ -10,7 +10,7 @@ O projeto está em construção. As **Fases 0 a 12** estão implementadas e veri
 
 A base integrada já oferece o bootstrap Rails, RSpec com exemplos reais, `bin/ci`, checagens de lint e segurança, Docker com PostgreSQL 18, Active Storage/Vips, Devise, Pundit, FactoryBot, parser monetário em centavos e locale `pt-BR`.
 
-O fluxo HTTP continua sendo a fonte principal de reconciliação: páginas e formulários funcionam sem JavaScript, enquanto navegadores conectados recebem refresh/morph após commit. Se o Cable cair ou for rejeitado, há aviso visível e o reload HTTP converge para o estado persistido.
+O fluxo HTTP continua sendo a fonte principal de reconciliação: páginas e formulários funcionam sem JavaScript, enquanto navegadores conectados recebem refresh/morph após commit. O gate de navegador usa Solid Cable e PostgreSQL reais; se o Cable cair ou for rejeitado, há aviso visível e o reload HTTP converge para o estado persistido.
 
 O trabalho é acompanhado no [GitHub Project — Quitando](https://github.com/users/Luf3r/projects/2). As [Fases 3](https://github.com/Luf3r/Quitando/issues/8), [4](https://github.com/Luf3r/Quitando/issues/9), [5](https://github.com/Luf3r/Quitando/issues/10), [6](https://github.com/Luf3r/Quitando/issues/11), [7](https://github.com/Luf3r/Quitando/issues/12), [8](https://github.com/Luf3r/Quitando/issues/13), [9](https://github.com/Luf3r/Quitando/issues/14), [10](https://github.com/Luf3r/Quitando/issues/15) e [11](https://github.com/Luf3r/Quitando/issues/16), com suas subissues, estão em `Done`. Status e campos do quadro devem refletir apenas trabalho realmente demonstrado; contratos e gates continuam definidos pela documentação do repositório.
 

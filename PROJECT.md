@@ -344,7 +344,7 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 - conexões Action Cable autenticadas e subscriptions de grupo autorizadas usam stream assinado e rejeitam identidade, UUID ou membership inválidos;
 - eventos de estado do grupo são publicados após commit e produzem aviso seguro mais refresh Turbo/morph, sem transmitir valores, descrições ou formulário;
 - despesas, correções e pagamentos possuem deep-links HTML e diálogos Turbo Frame; respostas Turbo preservam falhas e conflitos visíveis;
-- a jornada Selenium com navegadores independentes prova despesa de terceiro, report, confirmação, creator/pagador distintos e equivalência entre stream e reload;
+- a jornada Selenium com navegadores independentes prova despesa de terceiro, report, confirmação, creator/pagador distintos e equivalência entre stream e reload, usando Solid Cable e PostgreSQL reais também no ambiente de teste;
 - desconexão Cable apresenta aviso, não simula atualização e converge por reload HTTP.
 
 Atualize esta seção e o [GitHub Project](https://github.com/users/Luf3r/projects/2) sempre que a tarefa ativa, uma entrega verificável, pendência, fase ou gate mudar. O estado detalhado e os critérios de saída ficam no [roadmap de implementação](./docs/05-quitando-roadmap-implementacao.md).

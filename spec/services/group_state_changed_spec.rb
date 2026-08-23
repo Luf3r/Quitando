@@ -61,7 +61,7 @@ RSpec.describe GroupStateChanged, :non_transactional do
     end
 
     expect(group.reload.name).to eq("Nome confirmado")
-    expect(reports).to contain_exactly(include(an_instance_of(RuntimeError), include(handled: true, source: described_class::EVENT_NAME, context: { group_id: group.id, actor_user_id: actor.id, change_type: :group_renamed })))
+    expect(reports).to contain_exactly(include(an_instance_of(RuntimeError), include(handled: true, source: described_class::EVENT_NAME, context: include(group_id: group.id, actor_user_id: actor.id, change_type: :group_renamed))))
   ensure
     ActiveSupport::Notifications.unsubscribe(failing_listener) if failing_listener
     Rails.error.unsubscribe(subscriber) if subscriber

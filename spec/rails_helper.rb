@@ -8,6 +8,7 @@ require "factory_bot_rails"
 require_relative "spec_helper"
 require_relative "support/payment_command_receipt_cleanup"
 require_relative "support/system_browser"
+require_relative "support/solid_cable_test_schema"
 
 begin
   ActiveRecord::Migration.maintain_test_schema!

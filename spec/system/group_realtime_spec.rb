@@ -8,6 +8,7 @@ RSpec.describe "Atualizações em tempo real do grupo", type: :system do
 
   after do
     Capybara.reset_sessions!
+    ActionCable.server.restart
     cleanup_fixture!
   end
 
