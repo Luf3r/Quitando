@@ -64,6 +64,22 @@ RSpec.describe "Groups" do
       expect(response.body).to include("Plano líquido")
     end
 
+    it "habilita refresh por morph apenas no shell permanente do grupo" do
+      user = create(:user, email: "ana@example.com")
+      group = GroupCreator.call(owner_user_id: user.id, name: "Apartamento")
+
+      post user_session_path, params: { user: { email: user.email, password: user.password } }
+      get "/groups/#{group.id}"
+
+      expect(response.body).to include('name="turbo-refresh-method" content="morph"')
+      expect(response.body).to include('name="turbo-refresh-scroll" content="preserve"')
+      expect(response.body).to include('id="group_remote_notice"')
+      expect(response.body).to include('aria-live="polite"')
+      expect(response.body).to include('id="group_dialog"')
+      expect(response.body).to include('channel="GroupsChannel"')
+      expect(response.body).to include('data-controller="group-realtime-status"')
+    end
+
     it "oferece a ordenação de memberships por formulário HTML ao owner" do
       owner = create(:user, email: "ana@example.com")
       member = create(:user, email: "bia@example.com")

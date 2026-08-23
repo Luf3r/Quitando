@@ -1,42 +1,12 @@
+<%= render "groups/realtime_shell", group: @group %>
+
 <div class="space-y-8">
   <div>
     <%= link_to "Voltar aos grupos", groups_path, class: "text-sm underline" %>
     <h1 class="mt-3 text-2xl font-semibold"><%= @group.name %></h1>
   </div>
 
-  <section aria-labelledby="resumo-financeiro">
-    <h2 id="resumo-financeiro" class="text-lg font-medium">Resumo financeiro</h2>
-    <p><%= render StatusBadgeComponent.new(status: @dashboard.status) %></p>
-    <ul class="mt-3 space-y-2">
-      <% @dashboard.official_balances.each do |user_id, cents| %>
-        <li>Saldo oficial (<%= @dashboard.participant_emails.fetch(user_id) %>): <%= render MoneyComponent.new(cents:, currency_code: @group.currency_code) %></li>
-      <% end %>
-      <% @dashboard.projected_balances.each do |user_id, cents| %>
-        <li>Saldo projetado (<%= @dashboard.participant_emails.fetch(user_id) %>): <%= render MoneyComponent.new(cents:, currency_code: @group.currency_code) %></li>
-      <% end %>
-    </ul>
-    <h3 class="mt-4 font-medium">Pendências</h3>
-    <p><%= @dashboard.pending_payments.size %> pagamento(s) reportado(s).</p>
-    <h3 class="mt-4 font-medium">Plano líquido</h3>
-    <p>Esta sugestão compensa os saldos do grupo e reduz transferências; não é um pagamento realizado.</p>
-    <% if @dashboard.settlement_plan.any? %>
-      <ul><% @dashboard.settlement_plan.each do |transfer| %><li><%= @dashboard.participant_emails.fetch(transfer.from_user_id) %> paga <%= render MoneyComponent.new(cents: transfer.amount_cents, currency_code: @group.currency_code) %> para <%= @dashboard.participant_emails.fetch(transfer.to_user_id) %>
-        <% if transfer.from_user_id == current_user.id && !@group.archived_at? %>
-          <%= form_with url: group_payments_path(@group), scope: :payment, local: true, data: { turbo: false }, class: "mt-2 flex gap-2" do |form| %>
-            <%= form.hidden_field :from_user_id, value: transfer.from_user_id %>
-            <%= form.hidden_field :to_user_id, value: transfer.to_user_id %>
-            <%= form.hidden_field :expected_financial_state_version, value: @group.financial_state_version %>
-            <%= form.hidden_field :idempotency_key, value: SecureRandom.uuid %>
-            <%= form.label :amount_text, "Valor", class: "sr-only" %>
-            <%= form.text_field :amount_text, value: MoneyFormatter.call(cents: transfer.amount_cents, currency_code: @group.currency_code).delete_prefix("R$ "), required: true, inputmode: "decimal", class: "rounded border-slate-300" %>
-            <%= form.submit "Reportar pagamento", class: "rounded bg-slate-900 px-3 py-1 text-white" %>
-          <% end %>
-        <% end %>
-      </li><% end %></ul>
-    <% else %>
-      <p>Não há transferências sugeridas.</p>
-    <% end %>
-  </section>
+  <%= render "groups/financial_summary", group: @group, dashboard: @dashboard %>
 
   <% if @payment_conflict %>
     <section id="conflito-pagamento" aria-labelledby="conflito-pagamento-titulo" class="rounded border border-amber-300 bg-amber-50 p-4">
@@ -50,7 +20,7 @@
     </section>
   <% end %>
 
-  <section aria-labelledby="membros">
+  <section id="group_dashboard_memberships" aria-labelledby="membros">
     <h2 id="membros" class="text-lg font-medium">Membros ativos</h2>
     <ul><% @dashboard.memberships.each do |membership| %><li class="mt-2"><%= membership.user.email %>
       <% if !@group.archived_at? && policy(membership).deactivate? %>
@@ -85,7 +55,7 @@
   </section>
 
   <% unless @group.archived_at? %>
-  <section aria-labelledby="nova-despesa">
+  <section id="group_dashboard_expense_entry" aria-labelledby="nova-despesa">
     <h2 id="nova-despesa" class="text-lg font-medium">Nova despesa</h2>
     <%= form_with url: group_expenses_path(@group), scope: :expense, local: true, data: { turbo: false }, class: "mt-3 space-y-3" do |form| %>
       <div><%= form.label :description, "Descrição" %><%= form.text_field :description, value: @expense_form&.description, required: true, class: "block w-full rounded border-slate-300" %></div>
@@ -112,7 +82,7 @@
   </section>
   <% end %>
 
-  <section aria-labelledby="historico">
+  <section id="group_dashboard_history" aria-labelledby="historico">
     <h2 id="historico" class="text-lg font-medium">Histórico</h2>
     <% if @history_entries.any? %>
       <ul class="mt-3 space-y-2">

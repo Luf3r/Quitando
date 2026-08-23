@@ -187,6 +187,18 @@ RSpec.describe "Expenses" do
     expect(response.body).to include("registrado por ana@example.com")
   end
 
+  it "assina o stream autorizado e preserva o shell de diálogo no detalhe" do
+    owner = create(:user, email: "ana@example.com")
+    group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
+    expense = create(:expense, group:, created_by_user: owner, paid_by_user: owner, description: "Mercado")
+
+    post user_session_path, params: { user: { email: owner.email, password: owner.password } }
+    get "/groups/#{group.id}/expenses/#{expense.id}"
+
+    expect(response.body).to include('channel="GroupsChannel"')
+    expect(response.body).to include('id="group_dialog" data-turbo-permanent')
+  end
+
   it "navega por todas as relações diretas de uma cadeia de correções e mostra ambos os fatos da versão intermediária" do
     owner = create(:user, email: "ana@example.com")
     member = create(:user, email: "bia@example.com")

@@ -61,6 +61,20 @@ RSpec.describe "Payments" do
     expect(response.body).to include("Reportar pagamento")
   end
 
+  it "assina o stream autorizado e preserva o shell de diálogo no detalhe" do
+    owner = create(:user, email: "ana@example.com")
+    debtor = create(:user, email: "bia@example.com")
+    group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
+    create(:membership, group:, user: debtor, position: 1)
+    payment = create(:payment, group:, from_user: debtor, to_user: owner, reported_by_user: debtor, status: :reported)
+
+    post user_session_path, params: { user: { email: owner.email, password: owner.password } }
+    get "/groups/#{group.id}/payments/#{payment.id}"
+
+    expect(response.body).to include('channel="GroupsChannel"')
+    expect(response.body).to include('id="group_dialog" data-turbo-permanent')
+  end
+
   it "permite à origem reportar valor parcial da sugestão atual por POST" do
     owner = create(:user, email: "ana@example.com")
     debtor = create(:user, email: "bia@example.com")
