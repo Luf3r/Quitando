@@ -27,6 +27,7 @@ RSpec.describe "Atualizações em tempo real do grupo", type: :system do
       fixture.fetch(:group).id,
       '<turbo-stream action="append" target="group_remote_notice"><template><p>Prova de transporte Cable</p></template></turbo-stream>'
     )
+    expect(SolidCable::Message.where(channel: fixture.fetch(:group).id)).to exist
     in_session(:ana) { expect(page).to have_text("Prova de transporte Cable") }
 
     Capybara.using_session(:counterparty) do
