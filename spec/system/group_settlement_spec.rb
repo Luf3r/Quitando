@@ -32,6 +32,7 @@ RSpec.describe "Jornada de quitação do grupo" do
     sign_out
     sign_in(ana)
     visit group_path(group)
+    click_link "Adicionar despesa"
     within(all('form[action="/groups/' + group.id + '/expenses"]').first) do
       fill_in "expense_description", with: "Compra de Ana"
       fill_in "expense_occurred_on", with: "2026-08-14"
@@ -43,6 +44,7 @@ RSpec.describe "Jornada de quitação do grupo" do
     sign_out
     sign_in(carla)
     visit group_path(group)
+    click_link "Adicionar despesa"
     forms = all('form[action="/groups/' + group.id + '/expenses"]')
     within(forms.last) do
       fill_in "expense_description", with: "Compra registrada por Carla"
