@@ -15,6 +15,7 @@ RSpec.describe "Visualização explicativa do grupo", type: :system do
     )
     page.current_window.resize_to(1400, 1400)
     Capybara.reset_sessions!
+    ActionCable.server.restart
     cleanup_fixture!
   end
 

@@ -1,0 +1,7 @@
+<% if href.present? %>
+  <%= link_to label, href, class: classes, aria: (disabled ? { disabled: true } : {}), tabindex: (disabled ? -1 : nil), data: data %>
+<% elsif method.present? %>
+  <%= button_to label, href, method: method, class: classes, disabled: disabled, data: data %>
+<% else %>
+  <button type="<%= type %>" class="<%= classes %>" <%= "disabled" if disabled %> <%= tag.attributes(data: data) %>><%= label %></button>
+<% end %>

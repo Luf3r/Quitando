@@ -78,6 +78,10 @@ Login/Cadastro
 
 Links públicos, participantes sem conta, disputas e pagamentos integrados ficam fora do MVP. Convites internos para contas já cadastradas fazem parte do fluxo essencial.
 
+A raiz pública apresenta a landing. Depois da autenticação, a navegação principal oferece Grupos, Convites, Conta, Tema e Sair. Dentro de cada grupo, os quatro destinos são Resumo, Plano, Histórico e Configurações.
+
+O Resumo prioriza a posição e as ações da pessoa. O Plano concentra pendências, transferências, métricas, tabelas, grafo, explicação e trace. Histórico e Configurações deixam de competir por espaço no dashboard.
+
 ---
 
 ## 4. Vocabulário da interface
@@ -90,8 +94,8 @@ Links públicos, participantes sem conta, disputas e pagamentos integrados ficam
 | Saldo projetado | “Se as pendências forem confirmadas, ainda faltarão R$ X” |
 | Transferência sugerida | “Pague R$ X para Ana” |
 | Destinatário não intuitivo | “Você deve ao grupo. Pagar Ana compensa outras despesas e reduz transferências.” |
-| Despesa criada por terceiro | “Pago por Diego · registrado por Carla” |
-| Grupo settled | “Todos estão em dia — contas encerradas” |
+| Despesa criada por terceiro | “Pago por Diego, registrado por Carla” |
+| Grupo settled | “Todos estão em dia. Contas encerradas.” |
 
 Evitar “dívida com Ana” quando o sistema possui apenas saldo líquido e uma sugestão atual.
 
@@ -109,6 +113,8 @@ Cada card apresenta:
 - indicador de pendências quando existirem.
 
 O card não executa o `DebtSimplifier`. Ele usa saldo oficial e situação derivada.
+
+Convites recebidos aparecem antes dos grupos. Na ausência de convites ou grupos, a interface oferece a próxima ação possível em vez de uma área vazia genérica.
 
 Criar grupo pode abrir Turbo Frame modal. A navegação convencional permanece disponível caso Turbo falhe.
 
@@ -163,6 +169,10 @@ Toast remoto deve explicar a origem, como “Ana confirmou um pagamento; o plano
 ## 7. Adicionar despesa
 
 Modal no desktop e bottom sheet no mobile.
+
+Criação e correção usam um único padrão de formulário com seletor entre divisão igual e exata. Antes de persistir, o servidor calcula um preview obrigatório em centavos inteiros. A pessoa revisa valor, pagador, participantes, shares e residual em um resumo somente leitura e então confirma.
+
+Preview inválido retorna `422` no mesmo frame, mostra resumo focável e erro abaixo do campo e não grava. Divisão exata exige soma idêntica ao total. Conflito concorrente permanece visível e preserva os dados seguros.
 
 ### Campos do MVP
 
@@ -347,6 +357,8 @@ Se existirem pagamentos reportados ou confirmados, eles permanecem no histórico
 
 Reúne despesas e pagamentos em ordem cronológica.
 
+O histórico possui rota própria, pagina 25 fatos e usa ordem total por timestamp e identificador. Página malformada retorna `422` em vez de ser coagida silenciosamente.
+
 Cada item mostra:
 
 - tipo;
@@ -369,6 +381,10 @@ Despesa original anulada -> motivo -> despesa substituta
 ---
 
 ## 13. Configurações, convites e memberships
+
+A página de Configurações reúne nome, convites, memberships, ordem, ownership, saída, arquivamento e restauração. Todos os membros ativos podem acessá-la, mas cada ação continua submetida à policy correspondente. Ação indisponível permanece visível e desabilitada com motivo derivado das regras existentes.
+
+Arquivar, sair e transferir ownership exigem confirmação acessível.
 
 - grupos usam BRL, única moeda suportada no MVP; não há seletor, conversão ou taxa de câmbio na interface;
 - owner edita nome e convida uma conta já cadastrada informando o e-mail exato, sem autocomplete público;
@@ -473,6 +489,12 @@ Não existe ação unilateral que remova o usuário de uma share. Divergência e
 - animação opcional entre camadas;
 - contador animado acompanhado do valor final estático;
 - nenhuma celebração de “quitado” antes de o saldo oficial ser zero e as pendências acabarem.
+
+### 18.1 Tema e linguagem visual
+
+A interface oferece tema Sistema, Claro ou Escuro. A escolha é persistida em `quitando.theme`, aplicada antes da primeira pintura e volta a Sistema quando o valor armazenado é inválido. O mesmo tema vale para a página inteira.
+
+Outfit variável é self-hosted. Coral é o único acento interativo; cores financeiras são semânticas e sempre possuem texto equivalente. Containers usam raio de 20 px, controles 12 px e badges pill. Strings visíveis não usam em dash ou en dash.
 
 ---
 

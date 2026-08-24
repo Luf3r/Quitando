@@ -251,9 +251,9 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 ## 11. Milestone atual
 
 - **Última fase concluída:** Fase 12 — Turbo Frames, Streams e Action Cable.
-- **Fase atual:** Fase 13 — Visualização, explicação e acessibilidade (correção de concorrência).
-- **Status atual:** o gate foi reaberto para eliminar a repetição ilimitada do dashboard e provar que o lock do grupo preserva um único snapshot financeiro.
-- **Trabalho executável atual:** #124 em `In progress`; concluir a prova de contenção PostgreSQL, as verificações do gate e a reconciliação documental.
+- **Fase atual:** Fase 13, experiência visual, landing e acessibilidade.
+- **Status atual:** gate reaberto. As entregas 13.1 a 13.6 permanecem verificadas, mas a fase só volta a concluir depois de landing, redesign integral, temas, previews, histórico, configurações, ativos e novo gate acessível.
+- **Trabalho executável atual:** Fase 13.7 em andamento para sincronizar o contrato, reabrir #18 e construir a fundação visual. A Fase 14 retorna ao Backlog até o novo gate.
 - **Gate integrado da Fase 0:** `bin/ci` executa localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação. O hardening adicional da PR #38 também foi aprovado nos checks remotos atuais.
 
 **Integrado e verificado até agora:**
@@ -347,7 +347,7 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 - a jornada Selenium com navegadores independentes prova despesa de terceiro, report, confirmação, creator/pagador distintos e equivalência entre stream e reload, usando Solid Cable e PostgreSQL reais também no ambiente de teste;
 - desconexão Cable apresenta aviso, não simula atualização e converge por reload HTTP.
 
-**Concluído e verificado na Fase 13:**
+**Concluído e preservado da primeira passagem da Fase 13 (13.1 a 13.6):**
 
 - `ObligationGraphBuilder` deriva relações históricas agregadas e compensação bilateral de despesas ativas, preserva participantes inativos do histórico, ordena arestas e mantém agregados acima de `bigint` como `Integer`, sem escrita financeira;
 - `DebtSimplifier#call_with_trace` produz o plano e passos determinísticos no mesmo ciclo, preservando o contrato de `call`, sinais dos saldos, imutabilidade, propriedades e isolamento de Rails/ActiveRecord;
@@ -356,6 +356,16 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 - specs de navegador cobrem seleção por teclado, `aria-live`, foco inicial e retorno por botão/Escape, contraste WCAG AA, padrões além de cor, movimento reduzido, viewport móvel, estados vazios e redraw por Turbo morph;
 - Tailwind é construído explicitamente no `bin/ci`, e auditoria do importmap cobre o módulo mínimo `d3-selection` fixado localmente e carregado somente quando a visualização conecta.
 - a leitura concorrente do dashboard é delimitada pela `financial_state_version`: uma alteração financeira confirmada entre o plano e as obrigações descarta a composição parcial e retorna uma composição integral da versão nova, demonstrada em PostgreSQL real.
+
+**Pendente no gate reaberto da Fase 13:**
+
+- fundação visual, Outfit self-hosted, temas e componentes consolidados;
+- landing pública, autenticação localizada e conta pessoal;
+- shell responsivo, cards de grupos e convites;
+- destinos Resumo, Plano, Histórico e Configurações;
+- preview e revisão obrigatória de despesas e correções;
+- histórico paginado e detalhes auditáveis completos;
+- ativos reais, páginas de erro, screenshots, Lighthouse e verificações integrais frescas.
 
 Atualize esta seção e o [GitHub Project](https://github.com/users/Luf3r/projects/2) sempre que a tarefa ativa, uma entrega verificável, pendência, fase ou gate mudar. O estado detalhado e os critérios de saída ficam no [roadmap de implementação](./docs/05-quitando-roadmap-implementacao.md).
 

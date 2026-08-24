@@ -37,9 +37,12 @@ A partir desses registros, o sistema:
 2. mostra pagamentos já declarados e ainda aguardando confirmação;
 3. gera um **plano simplificado de quitação** para o valor ainda não coberto;
 4. permite registrar e confirmar os pagamentos efetivamente realizados;
-5. indica quando as contas podem ser consideradas encerradas.
+5. indica quando as contas podem ser consideradas encerradas;
+6. apresenta publicamente a proposta do produto e oferece todas as jornadas do MVP em uma interface responsiva, acessível e operável sem JavaScript.
 
 A aplicação é inspirada em produtos de divisão de contas, mas o diferencial de portfólio está na profundidade técnica: ledger auditável, projeções explícitas, algoritmo explicável, testes de invariantes, concorrência, idempotência e uma UI reativa construída com Hotwire.
+
+A landing pública equilibra aquisição e portfólio sem alegações inventadas. Ela explica o ciclo do produto, diferencia saldo oficial, pendência e plano, mostra uma captura real do dashboard e declara tanto a engenharia verificável quanto a fronteira de confiança do MVP.
 
 ### 1.1 O problema humano
 
@@ -377,6 +380,8 @@ A combinação Solid Queue + Solid Cable mantém a arquitetura inicial sem Redis
 ---
 
 ## 9. MVP
+
+A experiência do MVP inclui landing pública, autenticação em português, conta pessoal sem exclusão, lista de grupos e convites, quatro destinos por grupo (Resumo, Plano, Histórico e Configurações), previews financeiros calculados no servidor e temas claro e escuro. O HTML é o caminho completo; Turbo, Action Cable e grafo são melhorias progressivas.
 
 O primeiro release fecha o ciclo completo:
 

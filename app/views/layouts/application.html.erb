@@ -1,11 +1,20 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR" data-theme="system">
   <head>
     <title><%= content_for(:title) || t("app.name") %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="application-name" content="<%= t("app.name") %>">
     <meta name="mobile-web-app-capable" content="yes">
+    <script data-theme-bootstrap>
+      (() => {
+        const key = "quitando.theme"
+        const allowed = ["light", "dark"]
+        const stored = localStorage.getItem(key)
+        if (stored && !allowed.includes(stored)) localStorage.removeItem(key)
+        document.documentElement.dataset.theme = allowed.includes(stored) ? stored : "system"
+      })()
+    </script>
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
@@ -18,20 +27,14 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="min-h-screen bg-slate-50 text-slate-950">
-    <header class="border-b border-slate-200 bg-white">
-      <div class="mx-auto flex max-w-4xl items-center justify-between px-4 py-4">
-        <%= link_to t("app.name"), root_path, class: "font-semibold tracking-tight" %>
-        <% if user_signed_in? %>
-          <nav aria-label="Navegação principal" class="flex items-center gap-4">
-            <%= link_to "Grupos", groups_path, class: "text-sm underline" %>
-            <%= link_to "Convites", invitations_path, class: "text-sm underline" %>
-            <%= button_to "Sair", destroy_user_session_path, method: :delete, class: "text-sm underline" %>
-          </nav>
-        <% end %>
+  <body>
+    <header class="site-header">
+      <div class="site-header__inner">
+        <%= link_to t("app.name"), root_path, class: "wordmark" %>
+        <%= render NavigationComponent.new(user: (current_user if user_signed_in?)) %>
       </div>
     </header>
-    <main class="mx-auto w-full max-w-4xl px-4 py-8">
+    <main class="page-shell" id="main-content">
       <% if flash[:alert].present? %>
         <%= render AlertComponent.new(message: flash[:alert]) %>
       <% end %>

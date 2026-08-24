@@ -30,6 +30,11 @@ Este arquivo resume decisões que precisam permanecer consistentes entre produto
 - Arquivamento só ocorre quando o grupo está vazio ou quitado, sem pendências ou convites abertos; o owner pode restaurá-lo sem alterar o ledger.
 - O roadmap funcional define o que entra no release; a ordem técnica prioriza algoritmo, ledger e comandos financeiros antes de HTTP reativo e visualização.
 - Após o MVP, a interface deve evoluir para suportar múltiplos idiomas; locale altera apresentação e linguagem, não as regras do ledger nem a moeda BRL definida para o grupo no MVP.
+- A raiz é uma landing pública real; usuários autenticados seguem dela para o app, sem criar uma segunda fonte de produto ou alegações fictícias.
+- Cada grupo possui Resumo, Plano, Histórico e Configurações. A separação altera composição e navegação, não regras financeiras.
+- Previews de divisão são derivados no servidor, usam centavos inteiros e nunca persistem fatos antes da confirmação final.
+- O tema aceita Sistema, Claro e Escuro e é uma preferência de apresentação local. Ele não altera domínio ou persistência financeira.
+- A conta pessoal permite atualização autenticada de e-mail e senha; exclusão de conta permanece fora do MVP.
 
 ### Domínio
 

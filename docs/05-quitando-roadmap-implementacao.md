@@ -798,11 +798,11 @@ Dois navegadores podem observar mudanças em tempo real, mas o sistema continua 
 
 ## 16. Fase 13 — Visualização, explicação e acessibilidade
 
-**Estado da fase:** em revalidação após correção de concorrência identificada em code review. A composição do dashboard deve manter o lock de grupo durante toda a leitura e as verificações integrais precisam ser demonstradas novamente.
+**Estado da fase:** reaberta para concluir a experiência visual integral. As entregas de visualização 13.1 a 13.6 permanecem concluídas, mas o gate só volta a fechar depois das entregas 13.7 a 13.14. Até lá, a Fase 12 é a última fase integralmente concluída e a Fase 14 permanece no Backlog.
 
 ### 16.1 Objetivo
 
-Adicionar o diferencial demonstrativo sem transformar o grafo em requisito operacional.
+Entregar uma experiência pública e autenticada completa, coerente, responsiva e acessível, sem transformar JavaScript, Action Cable ou o grafo em requisitos operacionais.
 
 ### 16.2 Implementar
 
@@ -814,6 +814,13 @@ Adicionar o diferencial demonstrativo sem transformar o grafo em requisito opera
 - SVG/D3;
 - trace opcional do algoritmo;
 - estados vazios, foco, `aria-live` e `prefers-reduced-motion`.
+- fundação visual com tokens semânticos, Outfit self-hosted e temas `system`, `light` e `dark`;
+- landing pública em `/`, autenticação localizada e conta pessoal sem exclusão;
+- shell responsivo e quatro destinos por grupo: Resumo, Plano, Histórico e Configurações;
+- cards de grupos e convites orientados a ação, sem executar o simplificador na listagem;
+- preview financeiro no servidor e revisão obrigatória de despesas e correções;
+- histórico auditável paginado em 25 fatos;
+- ativos reais, páginas de erro e screenshots nos dois temas.
 
 ### 16.3 Specs
 
@@ -828,10 +835,19 @@ Adicionar o diferencial demonstrativo sem transformar o grafo em requisito opera
 - comparação histórica não é apresentada como trabalho restante após reports;
 - navegação por teclado e foco dos modais funcionam.
 - composição concorrente mantém o lock de grupo, impede commit financeiro intercalado e devolve um snapshot único sem repetição ilimitada.
+- landing distingue visitante e usuário autenticado, mantém a ordem prevista e não inventa pricing, prova social ou métricas;
+- tema respeita preferência do sistema, override persistido e descarte de valor inválido antes da primeira pintura;
+- cards de grupo não chamam `DebtSimplifier`;
+- Resumo usa snapshot leve e Plano preserva o snapshot completo sob lock;
+- previews iguais e exatos usam centavos inteiros, exibem residual, retornam `422` quando inválidos e nunca persistem;
+- histórico usa ordenação total e retorna `422` para página malformada;
+- todas as jornadas operam sem JavaScript e mantêm equivalência após stream, desconexão ou grafo indisponível;
+- temas claro e escuro funcionam em 360, 768 e 1440 px, por teclado e com movimento reduzido;
+- strings visíveis não contêm em dash ou en dash.
 
 ### 16.4 Gate de saída
 
-O produto pode ser demonstrado visualmente sem introduzir nova fonte de verdade ou bloquear acessibilidade.
+Uma pessoa conhece o produto pela landing e executa todas as jornadas do MVP em uma interface coerente, responsiva e acessível, por HTTP sem JavaScript e com melhorias progressivas quando Turbo, Action Cable e o grafo estão disponíveis. O gate inclui suíte completa, build Tailwind, `bin/ci`, imagem de produção, diff limpo e Lighthouse mobile dentro dos limites documentados no design da fase.
 
 ---
 
@@ -839,7 +855,7 @@ O produto pode ser demonstrado visualmente sem introduzir nova fonte de verdade 
 
 ### 17.1 Objetivo
 
-Preparar o MVP para demonstração pública e piloto real.
+Preparar operacionalmente o MVP visualmente concluído para demonstração pública e piloto real.
 
 ### 17.2 Implementar
 
@@ -851,7 +867,7 @@ Preparar o MVP para demonstração pública e piloto real.
 - deploy com Kamal;
 - smoke tests;
 - revisão de índices e queries;
-- documentação do README e GIF/demo;
+- documentação operacional do README e cenário de demonstração reproduzível;
 - roteiro de teste com usuário para destinatário contraintuitivo e despesa registrada por terceiro.
 
 ### 17.3 Verificações
@@ -864,7 +880,7 @@ Preparar o MVP para demonstração pública e piloto real.
 
 ### 17.4 Gate de saída
 
-Uma pessoa externa consegue usar o fluxo principal em ambiente publicado e compreender saldo, pendência, plano e encerramento.
+O ambiente público possui observabilidade, proteção operacional, backups, configuração reproduzível, smoke tests e rollback demonstrado. Nenhuma tela ou fluxo visual conhecido fica postergado para esta fase.
 
 ---
 

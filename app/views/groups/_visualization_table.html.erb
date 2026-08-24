@@ -26,7 +26,7 @@
               <% if layer == :plan && edge.from_user_id == current_user.id && !group.archived_at? %>
                 <%= link_to t("financial_visualization.table.report"), new_group_payment_path(group, to_user_id: edge.to_user_id), data: { turbo_frame: "group_dialog" }, class: "inline-block rounded bg-slate-900 px-3 py-1 text-white" %>
               <% else %>
-                <span aria-label="<%= t("financial_visualization.table.no_action") %>">—</span>
+                <span aria-label="<%= t("financial_visualization.table.no_action") %>">-</span>
               <% end %>
             </td>
           </tr>

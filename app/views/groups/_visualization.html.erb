@@ -38,7 +38,7 @@
       <p><%= t("financial_visualization.metrics.historical_notice") %></p>
       <ul class="mt-2 text-sm">
         <% visualization.metrics.each do |metric| %>
-          <li><strong><%= metric.count %></strong> <%= t("financial_visualization.metrics.#{metric.layer}") %> — <%= t("financial_visualization.periods.#{metric.period}") %>; <%= t("financial_visualization.denominators.#{metric.denominator}") %>.</li>
+          <li><strong><%= metric.count %></strong> <%= t("financial_visualization.metrics.#{metric.layer}") %>. <%= t("financial_visualization.periods.#{metric.period}") %>; <%= t("financial_visualization.denominators.#{metric.denominator}") %>.</li>
         <% end %>
       </ul>
     </div>
