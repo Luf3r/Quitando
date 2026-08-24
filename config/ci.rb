@@ -13,7 +13,7 @@ CI.run do
   step "Setup: Test database", "env RAILS_ENV=test DATABASE_URL=$TEST_DATABASE_URL bin/rails db:prepare && bin/normalize-structure-sql"
   step "Boot: Zeitwerk eager load", "env RAILS_ENV=test DATABASE_URL=$TEST_DATABASE_URL bin/rails zeitwerk:check"
   step "Assets: Tailwind CSS", "bin/rails tailwindcss:build"
-  step "Tests: RSpec", "env CI=true RAILS_ENV=test DATABASE_URL=$TEST_DATABASE_URL bundle exec rspec"
+  step "Tests: RSpec", "env CI=true RAILS_ENV=test DATABASE_URL=$TEST_DATABASE_URL bundle exec rspec --exclude-pattern 'spec/system/**/*_spec.rb'"
   step "Tests: System", "env CI=true RAILS_ENV=test DATABASE_URL=$TEST_DATABASE_URL bundle exec rspec spec/system"
   step "Tests: Seeds", "env RAILS_ENV=test DATABASE_URL=$TEST_DATABASE_URL bin/rails db:seed:replant"
 
