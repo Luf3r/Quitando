@@ -229,25 +229,30 @@ Carla paga R$ 30 para Ana
 Antes de pagamentos, a tela pode mostrar:
 
 ```text
-12 obrigações de despesas
-8 após compensação bilateral
+12 relações históricas agregadas
+8 relações após compensação bilateral
 4 transferências no plano inicial
 ```
 
-Depois que a quitação começa, a tela prioriza progresso. Qualquer porcentagem histórica é rotulada como baseada somente nas despesas e não como quantidade atual restante. Sem ciclos formais, a comparação de três camadas não é reiniciada como se um novo mês fosse uma nova medição depois que já houve pagamento confirmado no grupo.
+Os denominadores são, respectivamente, pares direcionados agregados, pares líquidos após compensação e transferências sugeridas. A comparação inicial só aparece enquanto o grupo não possui pagamento `reported`, `confirmed` ou `cancelled` no histórico.
+
+Depois que a quitação começa, a tela prioriza progresso. Os números das camadas históricas são rotulados como baseados somente nas despesas e não como quantidade atual restante. Sem ciclos formais, a comparação de três camadas não é reiniciada como se um novo mês fosse uma nova medição depois que já houve qualquer pagamento no grupo.
 
 ### 8.3 Grafo e alternativa acessível
 
 - nós são participantes;
 - arestas indicam a camada selecionada;
 - dados vêm do servidor;
-- SVG/D3 apenas desenha e interage;
+- centavos atravessam o JSON como strings decimais exatas, e o navegador usa somente o valor já formatado pelo servidor;
+- SVG/D3 apenas desenha e interage, com o módulo mínimo de seleção carregado quando a visualização conecta;
 - tabela “de → para → valor” contém informação equivalente;
 - o grafo nunca é requisito para realizar pagamento.
 
+As três tabelas são renderizadas no HTML inicial. Com JavaScript, controles nativos selecionam a camada e ocultam apenas as tabelas não selecionadas; sem JavaScript, todas continuam disponíveis. No desktop, a tabela selecionada permanece ao lado do grafo; no móvel, continua antes dele. Um erro estrutural ou de carregamento da dependência de desenho torna o grafo visivelmente indisponível, mantém as tabelas à vista e é registrado para operação; essa recuperação não conta como grafo funcional.
+
 ### 8.4 Explicabilidade
 
-“Como chegamos a este plano?” mostra iterações do algoritmo e critérios de desempate. É secundário para o usuário comum e central para a demonstração técnica.
+“Como chegamos a este plano?” mostra, em um `details` recolhido por padrão, as iterações derivadas do mesmo ciclo do algoritmo e explica separadamente o critério de desempate por UUID. O trace não é persistido. É secundário para o usuário comum e central para a demonstração técnica.
 
 Quando o destinatário sugerido não corresponde ao pagador de uma despesa que o usuário reconhece, a tela oferece primeiro uma explicação curta:
 

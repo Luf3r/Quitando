@@ -1,0 +1,39 @@
+<% id_prefix = local_assigns.fetch(:id_prefix, "visualization") %>
+<section id="<%= id_prefix %>_panel_<%= layer %>" aria-labelledby="<%= id_prefix %>_caption_<%= layer %>" data-visualization-layer-panel="<%= layer %>">
+  <table id="<%= id_prefix %>_table_<%= layer %>" class="w-full border-collapse text-left">
+    <caption id="<%= id_prefix %>_caption_<%= layer %>" class="mb-2 text-left font-medium"><%= t("financial_visualization.layers.#{layer}.title") %></caption>
+    <thead>
+      <tr class="border-b border-slate-400">
+        <th scope="col" class="py-2 pr-3"><%= t("financial_visualization.table.from") %></th>
+        <th scope="col" class="py-2 pr-3"><%= t("financial_visualization.table.to") %></th>
+        <th scope="col" class="py-2 pr-3"><%= t("financial_visualization.table.amount") %></th>
+        <th scope="col" class="py-2"><%= t("financial_visualization.table.action") %></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if edges.any? %>
+        <% edges.each do |edge| %>
+          <tr
+            class="border-b border-slate-200"
+            data-from-user-id="<%= edge.from_user_id %>"
+            data-to-user-id="<%= edge.to_user_id %>"
+            data-amount-cents="<%= edge.amount_cents %>"
+          >
+            <td class="py-2 pr-3"><%= dashboard.participant_emails.fetch(edge.from_user_id) %></td>
+            <td class="py-2 pr-3"><%= dashboard.participant_emails.fetch(edge.to_user_id) %></td>
+            <td class="py-2 pr-3"><%= render MoneyComponent.new(cents: edge.amount_cents, currency_code: group.currency_code) %></td>
+            <td class="py-2">
+              <% if layer == :plan && edge.from_user_id == current_user.id && !group.archived_at? %>
+                <%= link_to t("financial_visualization.table.report"), new_group_payment_path(group, to_user_id: edge.to_user_id), data: { turbo_frame: "group_dialog" }, class: "inline-block rounded bg-slate-900 px-3 py-1 text-white" %>
+              <% else %>
+                <span aria-label="<%= t("financial_visualization.table.no_action") %>">—</span>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      <% else %>
+        <tr><td colspan="4" class="py-3 text-slate-600"><%= t("financial_visualization.layers.#{layer}.empty") %></td></tr>
+      <% end %>
+    </tbody>
+  </table>
+</section>

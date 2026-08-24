@@ -2,6 +2,17 @@ class DebtSimplifier
   UUID_V7_PATTERN = /\A[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/
 
   Transfer = Data.define(:from_user_id, :to_user_id, :amount_cents)
+  TraceStep = Data.define(
+    :iteration,
+    :from_user_id,
+    :to_user_id,
+    :amount_cents,
+    :debtor_balance_before_cents,
+    :creditor_balance_before_cents,
+    :debtor_residue_cents,
+    :creditor_residue_cents
+  )
+  Result = Data.define(:transfers, :trace)
   BalanceEntry = Data.define(:user_id, :amount_cents)
 
   class BinaryMaxHeap
@@ -79,6 +90,10 @@ class DebtSimplifier
   end
 
   def call
+    call_with_trace.transfers
+  end
+
+  def call_with_trace
     validate_user_ids!
     validate_balance_values!
     validate_zero_sum!
@@ -117,10 +132,11 @@ class DebtSimplifier
     populate_heaps(creditors, debtors)
 
     transfers = []
+    trace = []
     until creditors.empty? || debtors.empty?
-      settle_highest_priority_pair(creditors, debtors, transfers)
+      settle_highest_priority_pair(creditors, debtors, transfers, trace)
     end
-    transfers
+    Result.new(transfers:, trace:)
   end
 
   def populate_heaps(creditors, debtors)
@@ -133,7 +149,7 @@ class DebtSimplifier
     end
   end
 
-  def settle_highest_priority_pair(creditors, debtors, transfers)
+  def settle_highest_priority_pair(creditors, debtors, transfers, trace)
     creditor = creditors.pop
     debtor = debtors.pop
     amount_cents = [ creditor.amount_cents, debtor.amount_cents ].min
@@ -146,6 +162,16 @@ class DebtSimplifier
 
     creditor_residue = creditor.amount_cents - amount_cents
     debtor_residue = debtor.amount_cents - amount_cents
+    trace << TraceStep.new(
+      iteration: transfers.length,
+      from_user_id: debtor.user_id,
+      to_user_id: creditor.user_id,
+      amount_cents:,
+      debtor_balance_before_cents: -debtor.amount_cents,
+      creditor_balance_before_cents: creditor.amount_cents,
+      debtor_residue_cents: -debtor_residue,
+      creditor_residue_cents: creditor_residue
+    )
     creditors.push(creditor.with(amount_cents: creditor_residue)) if creditor_residue.positive?
     debtors.push(debtor.with(amount_cents: debtor_residue)) if debtor_residue.positive?
   end

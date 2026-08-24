@@ -798,6 +798,8 @@ Dois navegadores podem observar mudanças em tempo real, mas o sistema continua 
 
 ## 16. Fase 13 — Visualização, explicação e acessibilidade
 
+**Estado da fase:** em revalidação após correção de concorrência identificada em code review. A composição do dashboard deve manter o lock de grupo durante toda a leitura e as verificações integrais precisam ser demonstradas novamente.
+
 ### 16.1 Objetivo
 
 Adicionar o diferencial demonstrativo sem transformar o grafo em requisito operacional.
@@ -825,6 +827,7 @@ Adicionar o diferencial demonstrativo sem transformar o grafo em requisito opera
 - detalhe de despesa distingue `registrado por` de `pago por`;
 - comparação histórica não é apresentada como trabalho restante após reports;
 - navegação por teclado e foco dos modais funcionam.
+- composição concorrente mantém o lock de grupo, impede commit financeiro intercalado e devolve um snapshot único sem repetição ilimitada.
 
 ### 16.4 Gate de saída
 

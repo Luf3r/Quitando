@@ -11,15 +11,5 @@
   </ul>
   <h3 class="mt-4 font-medium">Pendências</h3>
   <p><%= dashboard.pending_payments.size %> pagamento(s) reportado(s).</p>
-  <h3 class="mt-4 font-medium">Plano líquido</h3>
-  <p>Esta sugestão compensa os saldos do grupo e reduz transferências; não é um pagamento realizado.</p>
-  <% if dashboard.settlement_plan.any? %>
-    <ul><% dashboard.settlement_plan.each do |transfer| %><li><%= dashboard.participant_emails.fetch(transfer.from_user_id) %> paga <%= render MoneyComponent.new(cents: transfer.amount_cents, currency_code: group.currency_code) %> para <%= dashboard.participant_emails.fetch(transfer.to_user_id) %>
-      <% if transfer.from_user_id == current_user.id && !group.archived_at? %>
-        <%= link_to "Marcar como enviado", new_group_payment_path(group, to_user_id: transfer.to_user_id), data: { turbo_frame: "group_dialog" }, class: "mt-2 inline-block rounded bg-slate-900 px-3 py-1 text-white" %>
-      <% end %>
-    </li><% end %></ul>
-  <% else %>
-    <p>Não há transferências sugeridas.</p>
-  <% end %>
+  <%= render "groups/visualization", group:, dashboard: %>
 </section>

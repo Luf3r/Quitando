@@ -21,6 +21,9 @@ Este arquivo resume decisões que precisam permanecer consistentes entre produto
 - O produto resolve o **encerramento de despesas compartilhadas**, não apenas o cadastro de gastos.
 - O modo padrão reduz transferências, mas não promete o mínimo matemático absoluto.
 - O plano textual é a ferramenta operacional principal; o grafo é explicativo e demonstrativo.
+- Obrigações históricas são derivadas das shares de não pagadores, agregadas por par e sentido e então compensadas bilateralmente; elas não são fatos persistidos nem substituem o ledger.
+- A comparação inicial conta relações agregadas, relações compensadas e transferências sugeridas somente antes de existir qualquer pagamento no histórico. Depois disso, números históricos são rotulados como explicação das despesas, nunca como trabalho restante.
+- O trace do simplificador é derivado no mesmo ciclo do plano, não persistido e recolhido por padrão na interface.
 - O MVP trabalha com usuários autenticados, BRL como única moeda (`groups.currency_code = 'BRL'`), convites internos para contas existentes (`pending/accepted/declined/revoked/expired`) com validade fixa de sete dias e pagamentos manuais declarados.
 - O produto pressupõe grupos de confiança pré-existente; ele não é desenhado para desconhecidos ou relações adversariais no MVP.
 - A obrigação histórica pode apontar para uma pessoa e o plano líquido para outra; a interface deve explicar essa diferença sem chamar a sugestão de dívida bilateral.

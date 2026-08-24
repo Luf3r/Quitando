@@ -16,6 +16,7 @@ export default class extends Controller {
     this.frame?.removeEventListener("turbo:frame-load", this.onFrameLoad)
     this.element.removeEventListener("close", this.onClose)
     document.removeEventListener("turbo:click", this.onTurboClick)
+    cancelAnimationFrame(this.focusFrame)
   }
 
   close() {
@@ -28,7 +29,14 @@ export default class extends Controller {
 
     this.returnFocus ||= document.activeElement
     if (!this.element.open) this.element.showModal()
-    this.frame.querySelector("[autofocus], input, select, textarea, button")?.focus()
+    cancelAnimationFrame(this.focusFrame)
+    this.focusFrame = requestAnimationFrame(() => {
+      if (!this.element.open) return
+
+      const initialFocus = this.frame.querySelector("[autofocus]") ||
+        this.frame.querySelector("input, select, textarea, button")
+      initialFocus?.focus()
+    })
   }
 
   restoreFocus() {

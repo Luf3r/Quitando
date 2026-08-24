@@ -251,9 +251,9 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 ## 11. Milestone atual
 
 - **Última fase concluída:** Fase 12 — Turbo Frames, Streams e Action Cable.
-- **Fase atual:** Fase 13 — Visualização, explicação e acessibilidade.
-- **Status atual:** o gate integrado da Fase 12 foi demonstrado; a sincronização final do épico #17 e da subissue #117 no GitHub Project depende das verificações finais desta entrega.
-- **Trabalho executável atual:** preparar a Fase 13, preservando HTTP como fonte de reconciliação.
+- **Fase atual:** Fase 13 — Visualização, explicação e acessibilidade (correção de concorrência).
+- **Status atual:** o gate foi reaberto para eliminar a repetição ilimitada do dashboard e provar que o lock do grupo preserva um único snapshot financeiro.
+- **Trabalho executável atual:** #124 em `In progress`; concluir a prova de contenção PostgreSQL, as verificações do gate e a reconciliação documental.
 - **Gate integrado da Fase 0:** `bin/ci` executa localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação. O hardening adicional da PR #38 também foi aprovado nos checks remotos atuais.
 
 **Integrado e verificado até agora:**
@@ -346,6 +346,16 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 - despesas, correções e pagamentos possuem deep-links HTML e diálogos Turbo Frame; respostas Turbo preservam falhas e conflitos visíveis;
 - a jornada Selenium com navegadores independentes prova despesa de terceiro, report, confirmação, creator/pagador distintos e equivalência entre stream e reload, usando Solid Cable e PostgreSQL reais também no ambiente de teste;
 - desconexão Cable apresenta aviso, não simula atualização e converge por reload HTTP.
+
+**Concluído e verificado na Fase 13:**
+
+- `ObligationGraphBuilder` deriva relações históricas agregadas e compensação bilateral de despesas ativas, preserva participantes inativos do histórico, ordena arestas e mantém agregados acima de `bigint` como `Integer`, sem escrita financeira;
+- `DebtSimplifier#call_with_trace` produz o plano e passos determinísticos no mesmo ciclo, preservando o contrato de `call`, sinais dos saldos, imutabilidade, propriedades e isolamento de Rails/ActiveRecord;
+- o dashboard entrega um payload tipado único para relações históricas, compensação e plano, com centavos serializados como strings decimais exatas, valores formatados no servidor, métricas de período/denominador e modo histórico depois de qualquer pagamento;
+- as três tabelas semânticas estão presentes no HTML inicial e mantêm a quitação por HTTP; D3/SVG desenha o mesmo payload, usa layout determinístico e apresenta recuperação visível sem simular sucesso quando o desenho falha;
+- specs de navegador cobrem seleção por teclado, `aria-live`, foco inicial e retorno por botão/Escape, contraste WCAG AA, padrões além de cor, movimento reduzido, viewport móvel, estados vazios e redraw por Turbo morph;
+- Tailwind é construído explicitamente no `bin/ci`, e auditoria do importmap cobre o módulo mínimo `d3-selection` fixado localmente e carregado somente quando a visualização conecta.
+- a leitura concorrente do dashboard é delimitada pela `financial_state_version`: uma alteração financeira confirmada entre o plano e as obrigações descarta a composição parcial e retorna uma composição integral da versão nova, demonstrada em PostgreSQL real.
 
 Atualize esta seção e o [GitHub Project](https://github.com/users/Luf3r/projects/2) sempre que a tarefa ativa, uma entrega verificável, pendência, fase ou gate mudar. O estado detalhado e os critérios de saída ficam no [roadmap de implementação](./docs/05-quitando-roadmap-implementacao.md).
 

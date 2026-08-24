@@ -28,6 +28,14 @@ RSpec.describe "DebtSimplifier em Ruby puro" do
         #{creditor_id.dump} => 500
       ).call
       abort "resultado isolado incorreto" unless result == [transfer]
+      traced_result = DebtSimplifier.new(
+        #{debtor_id.dump} => -500,
+        #{creditor_id.dump} => 500
+      ).call_with_trace
+      abort "trace isolado alterou o plano" unless traced_result.transfers == result
+      abort "trace isolado ausente" unless traced_result.trace.length == 1
+      abort "trace carregou Rails" if defined?(Rails)
+      abort "trace carregou ActiveRecord" if defined?(ActiveRecord)
       puts "isolated-ok"
     RUBY
 
