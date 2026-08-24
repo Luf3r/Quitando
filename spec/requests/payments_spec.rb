@@ -171,6 +171,11 @@ RSpec.describe "Payments" do
     expect(response.body).to include("value=\"5,00\"")
     expect(response.body).to include("value=\"#{idempotency_key}\"")
     expect(response.body).to include("value=\"#{group.reload.financial_state_version}\"")
+    document = response.parsed_body
+    expect(document.css("#group_dashboard_financial_summary")).to be_empty
+    expect(document.css("#group_settlement_visualization")).to be_empty
+    expect(document.css("input[name='visualization_layer']")).to be_empty
+    expect(document.at_css("#dialog_visualization_table_plan").text).to include("Marcar como enviado")
     expect(Payment.where(group:)).to be_empty
   end
 

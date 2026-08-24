@@ -3,7 +3,7 @@
 **Data da revisão:** 15 de julho de 2026
 **Escopo:** consistência cruzada entre produto, domínio, UX, casos de uso e decisões consolidadas, na data da revisão.
 
-Este relatório não substitui testes automatizados nem valida a implementação. A fundação Rails já existe, mas as funcionalidades do MVP ainda serão construídas conforme o roadmap. O relatório registra o resultado de uma revisão independente da documentação e as limitações que permanecem deliberadamente fora do MVP.
+Este relatório não substitui testes automatizados nem valida a implementação. Ele registra uma revisão documental histórica realizada em 15 de julho de 2026. Desde então, as Fases 0 a 13 foram implementadas e verificadas; o estado operacional vigente permanece em [`PROJECT.md`](../PROJECT.md) e no GitHub Project.
 
 ## Navegação rápida
 
@@ -309,6 +309,6 @@ Os maiores riscos restantes não são contradições documentais, mas hipóteses
 - usuários podem rejeitar o plano quando o destinatário difere da dívida percebida;
 - a premissa de grupos de confiança pode ser estreita demais se registros em nome de terceiros gerarem desconforto.
 
-A implementação deve seguir o roadmap: concluir a fundação e o `DebtSimplifier` antes de schema e ledger, sempre com contratos de teste, e deixar grafo e microinterações para depois. Isso permitirá validar as regras mais arriscadas com baixo custo de retrabalho. Os cenários de destinatário contraintuitivo e despesa registrada por terceiro já fazem parte dos gates de UX e não exigem alterar o ledger.
+A implementação seguiu essa ordem até a Fase 13: fundação e `DebtSimplifier` antecederam schema e ledger, e o grafo foi adicionado somente depois do ciclo HTTP e do real-time. Os cenários de destinatário contraintuitivo e despesa registrada por terceiro foram demonstrados sem alterar o ledger. A próxima fase operacional é a Fase 14 — hardening, observabilidade e deploy.
 
 A ordem detalhada, os arquivos de spec e os critérios de saída foram consolidados no [Roadmap de Implementação e Estratégia de Specs](./05-quitando-roadmap-implementacao.md).

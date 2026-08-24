@@ -1,1 +1,73 @@
 @import "tailwindcss";
+
+:root {
+  --visualization-canvas: #f8fafc;
+  --visualization-node-fill: #e0f2fe;
+  --visualization-node-stroke: #075985;
+  --visualization-edge: #334155;
+  --visualization-text: #0f172a;
+  --visualization-focus: #0c4a6e;
+}
+
+[data-visualization-graph] {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid #94a3b8;
+  border-radius: 0.5rem;
+  background: var(--visualization-canvas);
+}
+
+.visualization-node {
+  fill: var(--visualization-node-fill);
+  stroke: var(--visualization-node-stroke);
+  stroke-width: 3;
+}
+
+.visualization-node-label,
+.visualization-edge-label {
+  fill: var(--visualization-text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.visualization-edge {
+  fill: none;
+  stroke: var(--visualization-edge);
+  stroke-width: 3;
+}
+
+.visualization-edge,
+.visualization-node,
+.visualization-edge-label,
+.visualization-node-label {
+  transition-duration: 180ms;
+  transition-property: opacity, transform;
+  transition-timing-function: ease-out;
+}
+
+.visualization-layer-option:has(input:focus-visible) {
+  outline: 3px solid var(--visualization-focus);
+  outline-offset: 2px;
+}
+
+.visualization-edges--bilateral .visualization-edge {
+  stroke-dasharray: 10 5;
+}
+
+.visualization-edges--historical .visualization-edge {
+  stroke-dasharray: 3 6;
+}
+
+.visualization-arrow {
+  fill: var(--visualization-edge);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .visualization-edge,
+  .visualization-node,
+  .visualization-edge-label,
+  .visualization-node-label {
+    transition-duration: 0s;
+  }
+}

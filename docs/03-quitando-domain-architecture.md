@@ -567,11 +567,16 @@ O plano acionável usa o saldo projetado. Um modo técnico pode calcular também
 
 Responsabilidades:
 
-- produzir uma obrigação por share de não pagador em despesas ativas;
+- produzir uma contribuição de obrigação por share de não pagador em despesas ativas;
 - preservar a distinção entre obrigações históricas e transferências do plano líquido;
-- agregar relações do mesmo par;
-- compensar sentidos opostos;
+- agregar contribuições do mesmo par e sentido antes da apresentação;
+- compensar sentidos opostos pelo valor líquido e remover relações zeradas;
+- ordenar o resultado por origem e destino, mantendo participantes inativos quando fizerem parte do histórico;
 - fornecer dados para visualização, sem substituir o cálculo de saldo.
+
+As contribuições por share, as relações agregadas e a compensação bilateral são dados derivados e não são persistidos. Seus valores permanecem inteiros em centavos, inclusive quando a soma derivada excede o limite de uma coluna `bigint`; o builder não escreve em despesas, shares, memberships nem em `financial_state_version`.
+
+No payload JSON destinado ao navegador, `amount_cents` é serializado como string decimal positiva. A representação tipada no servidor permanece `Integer`; o cliente valida a forma textual e nunca converte, arredonda ou calcula dinheiro com `Number`.
 
 ### 8.5 `GroupFinancialStatusResolver`
 
@@ -749,13 +754,19 @@ Quando links públicos forem adicionados, exigirão token armazenado como digest
 
 Essas respostas são relacionadas, mas não intercambiáveis. Uma obrigação histórica pode apontar para Diego enquanto o plano restante aponta para Ana; isso é válido quando ambos derivam do mesmo saldo líquido e deve ser explicado pela interface.
 
-Assim que existe qualquer pagamento `reported`, a comparação histórica deixa de representar o trabalho atual e passa a ser secundária. Após o primeiro pagamento `confirmed` do histórico do grupo:
+O dashboard mantém o lock de linha do grupo enquanto compõe saldos, pagamentos pendentes, plano, trace, obrigações e memberships. Os comandos financeiros usam o mesmo lock e, portanto, não conseguem confirmar uma mudança no meio dessa composição; o payload devolvido não combina camadas de commits distintos e a leitura não depende de repetição ilimitada. Uma mudança que aguarda o lock, ou que começa depois de sua liberação, pertence ao próximo snapshot HTTP.
+
+As métricas iniciais contam relações históricas já agregadas por origem/destino, relações líquidas após compensação bilateral e transferências sugeridas. Essa comparação só representa redução do plano antes de existir qualquer pagamento no histórico do grupo.
+
+Assim que existe qualquer pagamento `reported`, `confirmed` ou `cancelled`, a comparação histórica deixa de representar o trabalho atual e passa a ser secundária. A partir do primeiro pagamento do histórico do grupo:
 
 - o grafo de obrigações de despesas continua sendo histórico/explicativo;
 - o plano restante deve ser calculado dos saldos projetados;
 - a UI não apresenta o contador de obrigações históricas como se fosse a quantidade atual de pagamentos restantes;
 - a comparação de três camadas não reaparece como uma nova redução de ciclo, mesmo depois que o grupo volta a zero, porque o MVP não possui períodos formais;
 - métricas de redução declaram período e denominador.
+
+O trace do `DebtSimplifier` é produzido no mesmo ciclo que gera as transferências. Ele é derivado, não persistido e apresentado recolhido por padrão; cada passo registra a seleção do maior devedor e credor e os resíduos, preservando a convenção do saldo (devedor e seu resíduo negativos; credor e seu resíduo positivos; zero quando quitado). A regra de desempate por UUID é explicada separadamente na interface.
 
 ---
 

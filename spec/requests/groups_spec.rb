@@ -90,6 +90,87 @@ RSpec.describe "Groups" do
       expect(response.body).to include('data-controller="group-realtime-status"')
     end
 
+
+    it "renderiza tabelas semânticas e JSON equivalentes para as três camadas" do
+      owner = create(:user, email: "ana@example.com")
+      member = create(:user, email: "bruno@example.com")
+      group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
+      create(:membership, group:, user: member, position: 1)
+      expense = create(
+        :expense,
+        group:,
+        paid_by_user: owner,
+        created_by_user: member,
+        amount_cents: 300
+      )
+      create(:expense_share, expense:, user: member, amount_owed_cents: 300, position: 0)
+
+      post user_session_path, params: { user: { email: member.email, password: member.password } }
+      get "/groups/#{group.id}"
+
+      document = response.parsed_body
+      payload_element = document.at_css("[data-group-visualization-payload-value]")
+      payload = JSON.parse(payload_element["data-group-visualization-payload-value"])
+
+      %w[historical bilateral plan].each do |layer|
+        table = document.at_css("#visualization_table_#{layer}")
+        expect(table.css("thead th").map(&:text)).to eq([ "De", "Para", "Valor", "Ação" ])
+        table_edges = table.css("tbody tr[data-from-user-id]").map do |row|
+          {
+            "from_user_id" => row["data-from-user-id"],
+            "to_user_id" => row["data-to-user-id"],
+            "amount_cents" => row["data-amount-cents"],
+            "formatted_amount" => row.at_css('data[role="money"]').text
+          }
+        end
+        expect(table_edges).to eq(payload.fetch("layers").fetch(layer))
+      end
+      expect(document.at_css("#visualization_table_plan").text).to include("Marcar como enviado")
+      expect(document.at_css("details#settlement_trace")).not_to have_attribute("open")
+      expect(document.at_css("details#settlement_trace summary").text).to include("Como chegamos a este plano?")
+    end
+
+
+    it "explica quando o plano líquido muda o destinatário histórico" do
+      ana = create(:user, email: "ana@example.com")
+      diego = create(:user, email: "diego@example.com")
+      carla = create(:user, email: "carla@example.com")
+      group = GroupCreator.call(owner_user_id: ana.id, name: "Viagem")
+      create(:membership, group:, user: diego, position: 1)
+      create(:membership, group:, user: carla, position: 2)
+      lodging = create(
+        :expense,
+        group:,
+        paid_by_user: ana,
+        created_by_user: carla,
+        amount_cents: 600,
+        description: "Hospedagem"
+      )
+      create(:expense_share, expense: lodging, user: ana, amount_owed_cents: 300, position: 0)
+      create(:expense_share, expense: lodging, user: diego, amount_owed_cents: 300, position: 1)
+      groceries = create(
+        :expense,
+        group:,
+        paid_by_user: diego,
+        created_by_user: diego,
+        amount_cents: 300,
+        description: "Mercado"
+      )
+      create(:expense_share, expense: groceries, user: carla, amount_owed_cents: 300, position: 0)
+
+      post user_session_path, params: { user: { email: carla.email, password: carla.password } }
+      get "/groups/#{group.id}"
+
+      document = response.parsed_body
+      explanation = document.at_css("[data-counterintuitive-explanation]").text.squish
+      expect(explanation).to include("carla@example.com deve ao grupo. Pagar ana@example.com")
+      expect(document.at_css("#visualization_table_historical").text.squish).to include("carla@example.com diego@example.com")
+      expect(document.at_css("#visualization_table_plan").text.squish).to include("carla@example.com ana@example.com")
+      expect(document.at_css("#group_dashboard_history").text.squish).to include(
+        "pago por ana@example.com, registrado por carla@example.com"
+      )
+    end
+
     it "oferece a ordenação de memberships por formulário HTML ao owner" do
       owner = create(:user, email: "ana@example.com")
       member = create(:user, email: "bia@example.com")

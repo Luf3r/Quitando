@@ -245,8 +245,8 @@ CREATE TABLE public.memberships (
     updated_at timestamp(6) without time zone NOT NULL,
     "position" integer NOT NULL,
     CONSTRAINT memberships_position_nonnegative CHECK (("position" >= 0)),
-    CONSTRAINT memberships_role_valid CHECK (((role)::text = ANY (ARRAY[('owner'::character varying)::text, ('member'::character varying)::text]))),
-    CONSTRAINT memberships_status_valid CHECK (((status)::text = ANY (ARRAY[('active'::character varying)::text, ('inactive'::character varying)::text])))
+    CONSTRAINT memberships_role_valid CHECK (((role)::text = ANY ((ARRAY['owner'::character varying, 'member'::character varying])::text[]))),
+    CONSTRAINT memberships_status_valid CHECK (((status)::text = ANY ((ARRAY['active'::character varying, 'inactive'::character varying])::text[])))
 );
 
 
@@ -277,7 +277,7 @@ CREATE TABLE public.payments (
     CONSTRAINT payments_audit_metadata_matches_status CHECK (((((status)::text = 'reported'::text) AND (confirmed_by_user_id IS NULL) AND (confirmed_at IS NULL) AND (cancelled_by_user_id IS NULL) AND (cancelled_at IS NULL) AND (cancellation_reason IS NULL)) OR (((status)::text = 'confirmed'::text) AND (confirmed_by_user_id IS NOT NULL) AND (confirmed_at IS NOT NULL) AND (cancelled_by_user_id IS NULL) AND (cancelled_at IS NULL) AND (cancellation_reason IS NULL)) OR (((status)::text = 'cancelled'::text) AND (confirmed_by_user_id IS NULL) AND (confirmed_at IS NULL) AND (cancelled_by_user_id IS NOT NULL) AND (cancelled_at IS NOT NULL) AND (cancellation_reason IS NOT NULL)))),
     CONSTRAINT payments_distinct_participants CHECK ((from_user_id <> to_user_id)),
     CONSTRAINT payments_source_version_nonnegative CHECK ((source_financial_state_version >= 0)),
-    CONSTRAINT payments_status_valid CHECK (((status)::text = ANY (ARRAY[('reported'::character varying)::text, ('confirmed'::character varying)::text, ('cancelled'::character varying)::text])))
+    CONSTRAINT payments_status_valid CHECK (((status)::text = ANY ((ARRAY['reported'::character varying, 'confirmed'::character varying, 'cancelled'::character varying])::text[])))
 );
 
 
@@ -845,4 +845,3 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20260721161000'),
 ('20260721160000'),
 ('20260716180000');
-

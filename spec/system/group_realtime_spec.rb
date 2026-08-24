@@ -42,7 +42,11 @@ RSpec.describe "Atualizações em tempo real do grupo", type: :system do
 
     in_session(:ana) do
       expect(page).to have_text("pago por #{fixture.fetch(:bruno).email}, registrado por #{fixture.fetch(:carla).email}")
-      expect(page).to have_text("#{fixture.fetch(:ana).email} paga")
+      expect(page).to have_css("#visualization_table_plan", text: fixture.fetch(:ana).email)
+      expect(page).to have_css("svg[data-layer='plan']")
+      expect(page).to have_css(
+        "svg path[data-from-user-id='#{fixture.fetch(:ana).id}'][data-to-user-id='#{fixture.fetch(:bruno).id}']"
+      )
     end
 
     Capybara.using_session(:ana) do
@@ -50,7 +54,10 @@ RSpec.describe "Atualizações em tempo real do grupo", type: :system do
       within("#group_dialog") { click_button "Marcar como enviado" }
     end
 
-    in_session(:counterparty) { expect(page).to have_text("1 pagamento(s) reportado(s)") }
+    in_session(:counterparty) do
+      expect(page).to have_text("1 pagamento(s) reportado(s)")
+      expect(page).to have_css("svg[data-layer='bilateral']")
+    end
 
     sign_in_in(:bruno, fixture.fetch(:bruno))
     visit_group_in(:bruno, fixture.fetch(:group))

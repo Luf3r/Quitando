@@ -52,11 +52,55 @@ RSpec.describe DebtSimplifier do
       expect(described_class.new({}).call).to eq([])
     end
 
+    it "expõe os tipos públicos do trace e retorna coleções vazias para o mapa vazio" do
+      expect(described_class::TraceStep).to be < Data
+      expect(described_class::TraceStep.members).to eq(
+        %i[
+          iteration
+          from_user_id
+          to_user_id
+          amount_cents
+          debtor_balance_before_cents
+          creditor_balance_before_cents
+          debtor_residue_cents
+          creditor_residue_cents
+        ]
+      )
+      expect(described_class::Result.members).to eq(%i[transfers trace])
+      expect(described_class.new({}).call_with_trace).to eq(
+        described_class::Result.new(transfers: [], trace: [])
+      )
+    end
+
     it "expõe erros de domínio distinguíveis" do
       expect(described_class::InvalidBalances).to be < StandardError
       expect(described_class::InvalidUserId).to be < StandardError
       expect(described_class::InvalidBalance).to be < StandardError
       expect(described_class::UnbalancedBalances).to be < StandardError
+    end
+
+    it "produz o plano e um trace tipado no mesmo resultado" do
+      balances = { user_id => -500, other_user_id => 500 }
+      transfer = described_class::Transfer.new(
+        from_user_id: user_id,
+        to_user_id: other_user_id,
+        amount_cents: 500
+      )
+      trace_step = described_class::TraceStep.new(
+        iteration: 1,
+        from_user_id: user_id,
+        to_user_id: other_user_id,
+        amount_cents: 500,
+        debtor_balance_before_cents: -500,
+        creditor_balance_before_cents: 500,
+        debtor_residue_cents: 0,
+        creditor_residue_cents: 0
+      )
+
+      expect(described_class.new(balances).call_with_trace).to eq(
+        described_class::Result.new(transfers: [ transfer ], trace: [ trace_step ])
+      )
+      expect(described_class.new(balances).call).to eq([ transfer ])
     end
   end
 
@@ -112,6 +156,19 @@ RSpec.describe DebtSimplifier do
         expect { described_class.new(balances).call }
           .to raise_error(described_class::UnbalancedBalances)
         expect(balances).to eq(original_balances)
+      end
+    end
+
+
+    it "mantém os mesmos erros públicos em call_with_trace" do
+      cases = [
+        [ { "invalid-id" => 0 }, described_class::InvalidUserId ],
+        [ { user_id => 1.0 }, described_class::InvalidBalance ],
+        [ { user_id => 1, other_user_id => 0 }, described_class::UnbalancedBalances ]
+      ]
+
+      cases.each do |balances, expected_error|
+        expect { described_class.new(balances).call_with_trace }.to raise_error(expected_error)
       end
     end
   end
@@ -245,6 +302,79 @@ RSpec.describe DebtSimplifier do
         ]
       )
     end
+
+
+    it "registra saldos anteriores e resíduos assinados em cada iteração" do
+      balances = {
+        user_id => -700,
+        other_user_id => -300,
+        third_user_id => 600,
+        fourth_user_id => 400
+      }
+
+      result = described_class.new(balances).call_with_trace
+
+      expect(result.transfers).to eq(described_class.new(balances).call)
+      expect(result.trace).to eq(
+        [
+          described_class::TraceStep.new(
+            iteration: 1,
+            from_user_id: user_id,
+            to_user_id: third_user_id,
+            amount_cents: 600,
+            debtor_balance_before_cents: -700,
+            creditor_balance_before_cents: 600,
+            debtor_residue_cents: -100,
+            creditor_residue_cents: 0
+          ),
+          described_class::TraceStep.new(
+            iteration: 2,
+            from_user_id: other_user_id,
+            to_user_id: fourth_user_id,
+            amount_cents: 300,
+            debtor_balance_before_cents: -300,
+            creditor_balance_before_cents: 400,
+            debtor_residue_cents: 0,
+            creditor_residue_cents: 100
+          ),
+          described_class::TraceStep.new(
+            iteration: 3,
+            from_user_id: user_id,
+            to_user_id: fourth_user_id,
+            amount_cents: 100,
+            debtor_balance_before_cents: -100,
+            creditor_balance_before_cents: 100,
+            debtor_residue_cents: 0,
+            creditor_residue_cents: 0
+          )
+        ]
+      )
+    end
+
+
+    it "produz transferências e trace em uma única passagem do solver" do
+      instrumented_simplifier_class = Class.new(described_class) do
+        attr_reader :settled_pair_count
+
+        private
+
+        def settle_highest_priority_pair(...)
+          @settled_pair_count = settled_pair_count.to_i + 1
+          super
+        end
+      end
+      simplifier = instrumented_simplifier_class.new(
+        user_id => -700,
+        other_user_id => -300,
+        third_user_id => 600,
+        fourth_user_id => 400
+      )
+
+      result = simplifier.call_with_trace
+
+      expect(simplifier.settled_pair_count).to eq(result.transfers.length)
+      expect(result.trace.length).to eq(result.transfers.length)
+    end
   end
 
   describe "desempate determinístico" do
@@ -322,6 +452,23 @@ RSpec.describe DebtSimplifier do
 
       expect(described_class.new(canonical_balances).call).to eq(expected_transfers)
       expect(described_class.new(permuted_balances).call).to eq(expected_transfers)
+    end
+
+
+    it "produz o mesmo trace para permutações equivalentes" do
+      canonical_balances = {
+        user_id => -500,
+        other_user_id => -500,
+        third_user_id => 500,
+        fourth_user_id => 500
+      }
+      permuted_balances = canonical_balances.to_a.reverse.to_h
+
+      canonical_result = described_class.new(canonical_balances.freeze).call_with_trace
+      permuted_result = described_class.new(permuted_balances.freeze).call_with_trace
+
+      expect(permuted_result).to eq(canonical_result)
+      expect(canonical_result.transfers).to eq(described_class.new(canonical_balances).call)
     end
   end
 

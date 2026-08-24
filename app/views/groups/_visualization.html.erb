@@ -1,0 +1,121 @@
+<% visualization = dashboard.visualization %>
+<section
+  id="group_settlement_visualization"
+  class="mt-6 space-y-5"
+  aria-labelledby="settlement_visualization_title"
+  data-controller="group-visualization"
+  data-group-visualization-payload-value="<%= visualization.to_json %>"
+  data-group-visualization-unavailable-message-value="<%= t("financial_visualization.graph.unavailable") %>"
+  data-group-visualization-empty-message-value="<%= t("financial_visualization.graph.empty") %>"
+  data-group-visualization-layer-names-value="<%= {
+    plan: t("financial_visualization.layers.plan.title"),
+    bilateral: t("financial_visualization.layers.bilateral.title"),
+    historical: t("financial_visualization.layers.historical.title")
+  }.to_json %>"
+  data-group-visualization-announcements-value="<%= {
+    plan: t("financial_visualization.controls.announcement", layer: t("financial_visualization.layers.plan.title").downcase),
+    bilateral: t("financial_visualization.controls.announcement", layer: t("financial_visualization.layers.bilateral.title").downcase),
+    historical: t("financial_visualization.controls.announcement", layer: t("financial_visualization.layers.historical.title").downcase)
+  }.to_json %>"
+>
+  <div>
+    <h3 id="settlement_visualization_title" class="font-medium"><%= t("financial_visualization.title") %></h3>
+    <p class="mt-1 text-sm text-slate-700"><%= t("financial_visualization.distinction") %></p>
+  </div>
+
+  <% if visualization.mode == :initial_comparison %>
+    <ul class="grid gap-2 sm:grid-cols-3" aria-label="<%= t("financial_visualization.metrics.initial_label") %>">
+      <% visualization.metrics.each do |metric| %>
+        <li class="rounded border border-slate-300 p-3">
+          <strong><%= metric.count %></strong>
+          <span><%= t("financial_visualization.metrics.#{metric.layer}") %></span>
+          <span class="block text-xs text-slate-600"><%= t("financial_visualization.periods.#{metric.period}") %>; <%= t("financial_visualization.denominators.#{metric.denominator}") %>.</span>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <div class="rounded border border-amber-300 bg-amber-50 p-3">
+      <p><%= t("financial_visualization.metrics.historical_notice") %></p>
+      <ul class="mt-2 text-sm">
+        <% visualization.metrics.each do |metric| %>
+          <li><strong><%= metric.count %></strong> <%= t("financial_visualization.metrics.#{metric.layer}") %> — <%= t("financial_visualization.periods.#{metric.period}") %>; <%= t("financial_visualization.denominators.#{metric.denominator}") %>.</li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <fieldset data-group-visualization-target="controls" class="rounded border border-slate-300 p-3" hidden>
+    <legend class="px-1 font-medium"><%= t("financial_visualization.controls.legend") %></legend>
+    <div class="flex flex-wrap gap-3">
+      <% %i[plan bilateral historical].each do |layer| %>
+        <label class="visualization-layer-option inline-flex items-center gap-2 rounded px-2 py-1">
+          <input
+            type="radio"
+            name="visualization_layer"
+            value="<%= layer %>"
+            aria-controls="visualization_graph visualization_panel_<%= layer %>"
+            data-action="change->group-visualization#selectLayer"
+          >
+          <span><%= t("financial_visualization.layers.#{layer}.title") %></span>
+        </label>
+      <% end %>
+    </div>
+  </fieldset>
+
+  <p id="visualization_layer_announcement" class="sr-only" aria-live="polite" aria-atomic="true" data-group-visualization-target="live"></p>
+
+  <div class="grid gap-6 lg:grid-cols-2 lg:items-start" data-visualization-content>
+    <div class="min-w-0 space-y-5 overflow-x-auto">
+      <% %i[plan bilateral historical].each do |layer| %>
+        <%= render "groups/visualization_table", layer:, edges: visualization.public_send(layer), group:, dashboard: %>
+      <% end %>
+    </div>
+
+    <section id="visualization_graph_region" class="min-w-0" aria-labelledby="visualization_graph_title">
+      <h4 id="visualization_graph_title" class="font-medium"><%= t("financial_visualization.graph.title") %></h4>
+      <p class="text-sm text-slate-600"><%= t("financial_visualization.graph.description") %></p>
+      <p id="visualization_current_layer" class="mt-1 text-sm font-medium" data-group-visualization-target="currentLayer"></p>
+      <p data-group-visualization-target="status" hidden></p>
+      <div id="visualization_graph" data-group-visualization-target="graph" class="mt-3 overflow-x-auto"></div>
+    </section>
+  </div>
+
+  <% historical_destinations = visualization.historical.group_by(&:from_user_id).transform_values { |edges| edges.map(&:to_user_id) } %>
+  <% visualization.plan.each do |edge| %>
+    <% next if historical_destinations.fetch(edge.from_user_id, []).include?(edge.to_user_id) %>
+    <p class="rounded border border-sky-300 bg-sky-50 p-3 text-sm" data-counterintuitive-explanation>
+      <%= t(
+        "financial_visualization.counterintuitive",
+        debtor: dashboard.participant_emails.fetch(edge.from_user_id),
+        recipient: dashboard.participant_emails.fetch(edge.to_user_id)
+      ) %>
+    </p>
+  <% end %>
+
+  <details id="settlement_trace" class="rounded border border-slate-300 p-3">
+    <summary class="cursor-pointer font-medium"><%= t("financial_visualization.trace.title") %></summary>
+    <p class="mt-2 text-sm text-slate-700"><%= t("financial_visualization.trace.tie_break") %></p>
+    <% if dashboard.settlement_trace.any? %>
+      <ol class="mt-3 space-y-3">
+        <% dashboard.settlement_trace.each do |step| %>
+          <li>
+            <p><%= t(
+              "financial_visualization.trace.step",
+              iteration: step.iteration,
+              debtor: dashboard.participant_emails.fetch(step.from_user_id),
+              creditor: dashboard.participant_emails.fetch(step.to_user_id)
+            ) %> <%= render MoneyComponent.new(cents: step.amount_cents, currency_code: group.currency_code) %>.</p>
+            <dl class="mt-1 grid gap-x-3 text-sm sm:grid-cols-2">
+              <div><dt class="font-medium"><%= t("financial_visualization.trace.debtor_before") %></dt><dd><%= render MoneyComponent.new(cents: step.debtor_balance_before_cents, currency_code: group.currency_code) %></dd></div>
+              <div><dt class="font-medium"><%= t("financial_visualization.trace.creditor_before") %></dt><dd><%= render MoneyComponent.new(cents: step.creditor_balance_before_cents, currency_code: group.currency_code) %></dd></div>
+              <div><dt class="font-medium"><%= t("financial_visualization.trace.debtor_residue") %></dt><dd><%= render MoneyComponent.new(cents: step.debtor_residue_cents, currency_code: group.currency_code) %></dd></div>
+              <div><dt class="font-medium"><%= t("financial_visualization.trace.creditor_residue") %></dt><dd><%= render MoneyComponent.new(cents: step.creditor_residue_cents, currency_code: group.currency_code) %></dd></div>
+            </dl>
+          </li>
+        <% end %>
+      </ol>
+    <% else %>
+      <p class="mt-2"><%= t("financial_visualization.trace.empty") %></p>
+    <% end %>
+  </details>
+</section>
