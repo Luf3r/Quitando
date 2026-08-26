@@ -32,6 +32,7 @@ Rails.application.routes.draw do
     post "expenses/preview", to: "expenses#preview", as: :expenses_preview
     resources :expenses, only: :show, constraints: uuid_v7.call(:id)
     get "expenses/:id/correction", to: "expenses#correction", as: :expense_correction, constraints: uuid_v7.call(:id)
+    post "expenses/:id/correction/preview", to: "expenses#correction_preview", as: :expense_correction_preview, constraints: uuid_v7.call(:id)
     patch "expenses/:id/description", to: "expenses#update_description", constraints: uuid_v7.call(:id)
     post "expenses/:id/correct", to: "expenses#correct", constraints: uuid_v7.call(:id)
 

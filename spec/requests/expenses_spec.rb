@@ -38,8 +38,8 @@ RSpec.describe "Expenses" do
 
     expect(response).to have_http_status(:ok)
     expect(response.body).to include('<turbo-frame id="group_dialog">')
-    expect(response.body).to include("action=\"/groups/#{group.id}/expenses/#{expense.id}/correct\"")
-    expect(response.body).to include("Registrar correção")
+    expect(response.body).to include("action=\"/groups/#{group.id}/expenses/#{expense.id}/correction/preview\"")
+    expect(response.body).to include("Revisar correção")
   end
 
   it "preserva a entrada inválida no frame de nova despesa" do
@@ -320,8 +320,8 @@ RSpec.describe "Expenses" do
     post user_session_path, params: { user: { email: owner.email, password: owner.password } }
     get "/groups/#{group.id}/expenses/#{expense.id}/correction"
 
-    expect(response.body).to include("Dividir igualmente entre")
-    expect(response.body).to include("Correção com divisão exata")
+    expect(response.body).to include("Participantes da divisão igual")
+    expect(response.body).to include("Valores exatos")
     expect(response.body).to include('name="correction[shares][0][amount_text]"')
   end
 

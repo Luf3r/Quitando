@@ -66,6 +66,30 @@ class ExpensesController < ApplicationController
     render_dialog_or_page(:correction)
   end
 
+  def correction_preview
+    @group = policy_scope(Group).find(params[:group_id])
+    authorize @group, :create_expense?
+    load_expense_detail(@group)
+    authorize @expense, :correct?
+    @submitted_correction = correction_params.to_h
+    @correction_form = ExpenseCorrectionForm.new(**@submitted_correction.symbolize_keys.merge(occurred_on: @expense.occurred_on))
+    raise ExpenseSplitPreview::InvalidPreview, "revise os campos obrigatórios da correção" unless @correction_form.valid?
+
+    @preview = ExpenseSplitPreview.call(
+      amount_text: correction_params[:amount_text],
+      split_type: correction_params[:split_type],
+      memberships: @group.memberships.active.order(:position, :user_id).to_a,
+      paid_by_user_id: correction_params[:paid_by_user_id],
+      participant_user_ids: correction_params[:participant_user_ids],
+      shares: correction_params[:shares]
+    )
+
+    render :correction_preview
+  rescue ExpenseSplitPreview::InvalidPreview => error
+    @preview_error = error.message
+    render :correction_preview, status: :unprocessable_content
+  end
+
   def update_description
     group = policy_scope(Group).find(params[:group_id])
     authorize group, :show?
