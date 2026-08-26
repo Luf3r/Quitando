@@ -29,6 +29,7 @@ Rails.application.routes.draw do
     patch "memberships/order", to: "memberships#order", as: :memberships_order
 
     resources :expenses, only: %i[new create]
+    post "expenses/preview", to: "expenses#preview", as: :expenses_preview
     resources :expenses, only: :show, constraints: uuid_v7.call(:id)
     get "expenses/:id/correction", to: "expenses#correction", as: :expense_correction, constraints: uuid_v7.call(:id)
     patch "expenses/:id/description", to: "expenses#update_description", constraints: uuid_v7.call(:id)

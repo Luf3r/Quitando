@@ -27,6 +27,24 @@ class ExpensesController < ApplicationController
     end
   end
 
+  def preview
+    @group = policy_scope(Group).find(params[:group_id])
+    authorize @group, :create_expense?
+    @preview = ExpenseSplitPreview.call(
+      amount_text: expense_params[:amount_text],
+      split_type: expense_params[:split_type],
+      memberships: @group.memberships.active.order(:position, :user_id).to_a,
+      paid_by_user_id: expense_params[:paid_by_user_id],
+      participant_user_ids: expense_params[:participant_user_ids],
+      shares: expense_params[:shares]
+    )
+
+    render :preview, status: :ok
+  rescue ExpenseSplitPreview::InvalidPreview => error
+    @preview_error = error.message
+    render :preview, status: :unprocessable_content
+  end
+
   def show
     group = policy_scope(Group).find(params[:group_id])
     authorize group, :show?

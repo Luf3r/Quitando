@@ -1,0 +1,12 @@
+<turbo-frame id="expense_preview">
+  <% if @preview_error.present? %>
+    <div class="ui-alert ui-alert--error" role="alert" tabindex="-1"><%= @preview_error %></div>
+  <% else %>
+    <section class="expense-preview" aria-labelledby="expense-preview-title">
+      <h2 id="expense-preview-title">Revise a divisão</h2>
+      <p>Valor total: <%= render MoneyComponent.new(cents: @preview.amount_cents, currency_code: @group.currency_code) %>.</p>
+      <ul><% @preview.shares.each do |share| %><li><%= @group.memberships.find { |membership| membership.user_id == share.fetch(:user_id) }&.user&.email %>: <%= render MoneyComponent.new(cents: share.fetch(:amount_owed_cents), currency_code: @group.currency_code) %></li><% end %></ul>
+      <p>Esta é uma revisão derivada. Nenhuma despesa foi registrada.</p>
+    </section>
+  <% end %>
+</turbo-frame>
