@@ -67,12 +67,40 @@ RSpec.describe "Groups" do
       group = GroupCreator.call(owner_user_id: user.id, name: "Apartamento")
 
       post user_session_path, params: { user: { email: user.email, password: user.password } }
-      get "/groups/#{group.id}"
+      get group_path(group)
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Apartamento")
       expect(response.body).to include("Saldo oficial")
-      expect(response.body).to include("Plano líquido")
+      expect(response.body).to include("Resumo")
+    end
+
+    it "renderiza o Resumo sem o payload do grafo histórico" do
+      user = create(:user, email: "ana@example.com")
+      group = GroupCreator.call(owner_user_id: user.id, name: "Apartamento")
+
+      post user_session_path, params: { user: { email: user.email, password: user.password } }
+      get group_path(group)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include("data-group-visualization-payload-value")
+      expect(response.body).not_to include("group_settlement_visualization")
+    end
+
+    it "oferece no Resumo uma sugestão acionável para o devedor" do
+      ana = create(:user, email: "ana@example.com")
+      bruno = create(:user, email: "bruno@example.com")
+      group = GroupCreator.call(owner_user_id: ana.id, name: "Apartamento")
+      create(:membership, group:, user: bruno, position: 1)
+      expense = create(:expense, group:, paid_by_user: ana, created_by_user: ana, amount_cents: 300)
+      create(:expense_share, expense:, user: bruno, amount_owed_cents: 300, position: 0)
+
+      post user_session_path, params: { user: { email: bruno.email, password: bruno.password } }
+      get group_path(group)
+
+      document = response.parsed_body
+      expect(document.at_css("#group_dashboard_financial_summary").text).to include("bruno@example.com deve enviar")
+      expect(document.at_css("a[href='#{new_group_payment_path(group, to_user_id: ana.id)}']").text).to include("Marcar como enviado")
     end
 
     it "habilita refresh por morph apenas no shell permanente do grupo" do
@@ -80,7 +108,7 @@ RSpec.describe "Groups" do
       group = GroupCreator.call(owner_user_id: user.id, name: "Apartamento")
 
       post user_session_path, params: { user: { email: user.email, password: user.password } }
-      get "/groups/#{group.id}"
+      get group_plan_path(group)
 
       expect(response.body).to include('name="turbo-refresh-method" content="morph"')
       expect(response.body).to include('name="turbo-refresh-scroll" content="preserve"')
@@ -107,7 +135,7 @@ RSpec.describe "Groups" do
       create(:expense_share, expense:, user: member, amount_owed_cents: 300, position: 0)
 
       post user_session_path, params: { user: { email: member.email, password: member.password } }
-      get "/groups/#{group.id}"
+      get group_plan_path(group)
 
       document = response.parsed_body
       payload_element = document.at_css("[data-group-visualization-payload-value]")
@@ -160,16 +188,13 @@ RSpec.describe "Groups" do
       create(:expense_share, expense: groceries, user: carla, amount_owed_cents: 300, position: 0)
 
       post user_session_path, params: { user: { email: carla.email, password: carla.password } }
-      get "/groups/#{group.id}"
+      get group_plan_path(group)
 
       document = response.parsed_body
       explanation = document.at_css("[data-counterintuitive-explanation]").text.squish
       expect(explanation).to include("carla@example.com deve ao grupo. Pagar ana@example.com")
       expect(document.at_css("#visualization_table_historical").text.squish).to include("carla@example.com diego@example.com")
       expect(document.at_css("#visualization_table_plan").text.squish).to include("carla@example.com ana@example.com")
-      expect(document.at_css("#group_dashboard_history").text.squish).to include(
-        "pago por ana@example.com, registrado por carla@example.com"
-      )
     end
 
     it "oferece a ordenação de memberships por formulário HTML ao owner" do

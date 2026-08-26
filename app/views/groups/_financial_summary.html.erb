@@ -1,6 +1,20 @@
 <section id="group_dashboard_financial_summary" aria-labelledby="resumo-financeiro">
   <h2 id="resumo-financeiro" class="text-lg font-medium">Resumo financeiro</h2>
   <p><%= render StatusBadgeComponent.new(status: dashboard.status) %></p>
+  <p class="mt-2">
+    <%= case dashboard.status
+        when :empty then "Ainda não há despesas. Registre a primeira para iniciar o acerto."
+        when :open then "Há saldos em aberto. Confira a sugestão prática para o grupo."
+        when :awaiting_confirmation then "Há pagamento aguardando confirmação. O saldo oficial ainda não mudou."
+        when :settled then "Tudo confirmado. O grupo está quitado."
+        end %>
+  </p>
+  <% viewer_official = dashboard.official_balances.fetch(current_user.id, 0) %>
+  <% viewer_projected = dashboard.projected_balances.fetch(current_user.id, 0) %>
+  <dl class="mt-3 space-y-1">
+    <div><dt class="inline font-medium">Seu saldo oficial:</dt> <dd class="inline"><%= render MoneyComponent.new(cents: viewer_official, currency_code: group.currency_code) %></dd></div>
+    <div><dt class="inline font-medium">Seu saldo projetado:</dt> <dd class="inline"><%= render MoneyComponent.new(cents: viewer_projected, currency_code: group.currency_code) %></dd></div>
+  </dl>
   <ul class="mt-3 space-y-2">
     <% dashboard.official_balances.each do |user_id, cents| %>
       <li>Saldo oficial (<%= dashboard.participant_emails.fetch(user_id) %>): <%= render MoneyComponent.new(cents:, currency_code: group.currency_code) %></li>
@@ -10,6 +24,26 @@
     <% end %>
   </ul>
   <h3 class="mt-4 font-medium">Pendências</h3>
-  <p><%= dashboard.pending_payments.size %> pagamento(s) reportado(s).</p>
-  <%= render "groups/visualization", group:, dashboard: %>
+  <% viewer_pending_payments = dashboard.pending_payments.select { |payment| [ payment.from_user_id, payment.to_user_id ].include?(current_user.id) } %>
+  <p><%= viewer_pending_payments.size %> pagamento(s) reportado(s) envolvendo você.</p>
+  <% if dashboard.settlement_plan.any? %>
+    <section class="mt-4" aria-labelledby="suggestions-title">
+      <h3 id="suggestions-title" class="font-medium">Próximas transferências sugeridas</h3>
+      <ol class="mt-2 space-y-2">
+        <% dashboard.settlement_plan.first(3).each do |transfer| %>
+          <li>
+            <strong><%= dashboard.participant_emails.fetch(transfer.from_user_id) %></strong> deve enviar
+            <%= render MoneyComponent.new(cents: transfer.amount_cents, currency_code: group.currency_code) %>
+            para <strong><%= dashboard.participant_emails.fetch(transfer.to_user_id) %></strong>.
+            <% if transfer.from_user_id == current_user.id && !group.archived_at? %>
+              <%= link_to "Marcar como enviado", new_group_payment_path(group, to_user_id: transfer.to_user_id), data: { turbo_frame: "group_dialog" }, class: "ml-2 underline" %>
+            <% end %>
+          </li>
+        <% end %>
+      </ol>
+      <%= link_to "Ver plano completo", group_plan_path(group), class: "mt-2 inline-block underline" %>
+    </section>
+  <% else %>
+    <p class="mt-3">Não há transferências sugeridas neste estado.</p>
+  <% end %>
 </section>
