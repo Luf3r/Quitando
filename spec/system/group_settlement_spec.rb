@@ -33,27 +33,31 @@ RSpec.describe "Jornada de quitação do grupo" do
     sign_in(ana)
     visit group_path(group)
     click_link "Adicionar despesa"
-    within(all('form[action="/groups/' + group.id + '/expenses"]').first) do
+    within(all('form[action="/groups/' + group.id + '/expenses/preview"]').first) do
       fill_in "expense_description", with: "Compra de Ana"
       fill_in "expense_occurred_on", with: "2026-08-14"
       fill_in "expense_amount_text", with: "200,00"
       all('input[name="expense[participant_user_ids][]"]')[1].uncheck
-      click_button "Registrar despesa"
+      click_button "Revisar divisão"
     end
+    expect(page).to have_text("Revise a divisão")
+    click_button "Confirmar despesa"
 
     sign_out
     sign_in(carla)
     visit group_path(group)
     click_link "Adicionar despesa"
-    forms = all('form[action="/groups/' + group.id + '/expenses"]')
-    within(forms.last) do
+    within(all('form[action="/groups/' + group.id + '/expenses/preview"]').first) do
       fill_in "expense_description", with: "Compra registrada por Carla"
       fill_in "expense_occurred_on", with: "2026-08-14"
       fill_in "expense_amount_text", with: "100,00"
       select bruno.email, from: "expense_paid_by_user_id"
+      choose "expense_split_type_exact"
       find('input[name="expense[shares][0][amount_text]"]').set("100,00")
-      click_button "Registrar divisão exata"
+      click_button "Revisar divisão"
     end
+    expect(page).to have_text("Revise a divisão")
+    click_button "Confirmar despesa"
 
     expect(page).to have_text("pago por bruno@example.com, registrado por carla@example.com")
     expect(page).to have_text("Plano líquido")

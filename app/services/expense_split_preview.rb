@@ -13,7 +13,12 @@ class ExpenseSplitPreview
     @memberships = memberships
     @paid_by_user_id = paid_by_user_id
     @participant_user_ids = Array(participant_user_ids)
-    @shares = shares.is_a?(Hash) ? shares.values : Array(shares)
+    normalized_shares = shares.is_a?(Array) ? shares : (shares.respond_to?(:to_h) ? shares.to_h : shares)
+    raw_shares = normalized_shares.is_a?(Hash) ? normalized_shares.values : Array(normalized_shares)
+    @shares = raw_shares.reject do |share|
+      data = share.respond_to?(:to_h) ? share.to_h : share
+      data.is_a?(Hash) && (data[:amount_text] || data["amount_text"]).blank?
+    end
   end
 
   def call

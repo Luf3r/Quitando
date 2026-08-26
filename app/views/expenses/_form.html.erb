@@ -5,7 +5,7 @@
 <%= form_with url: group_expenses_preview_path(group), scope: :expense, class: "expense-entry-form", data: { turbo_frame: "expense_preview" } do |form| %>
   <div><%= form.label :description, "Descrição" %><%= form.text_field :description, value: expense_form&.description, required: true, class: "block w-full rounded border-slate-300" %></div>
   <div><%= form.label :occurred_on, "Data" %><%= form.date_field :occurred_on, value: expense_form&.occurred_on.presence || Date.current.iso8601, required: true, class: "block rounded border-slate-300" %></div>
-  <div><%= form.label :amount_text, "Valor total (R$)" %><%= form.text_field :amount_text, value: expense_form&.amount_text, required: true, inputmode: "decimal", class: "block rounded border-slate-300" %></div>
+  <div><%= form.label :amount_text, "Valor (R$)" %><%= form.text_field :amount_text, value: expense_form&.amount_text, required: true, inputmode: "decimal", class: "block rounded border-slate-300" %></div>
   <div><%= form.label :paid_by_user_id, "Pago por" %><%= form.select :paid_by_user_id, memberships.map { |membership| [ membership.user.email, membership.user_id ] }, { selected: expense_form&.paid_by_user_id }, class: "rounded border-slate-300" %></div>
   <fieldset><legend>Como dividir</legend>
     <label><%= radio_button_tag "expense[split_type]", "equal", expense_form&.split_type != "exact" %> Dividir igualmente</label>

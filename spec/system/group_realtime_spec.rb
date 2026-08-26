@@ -165,8 +165,9 @@ RSpec.describe "Atualizações em tempo real do grupo", type: :system do
       select fixture.fetch(:bruno).email, from: "Pago por"
       uncheck fixture.fetch(:bruno).email
       uncheck fixture.fetch(:carla).email
-      click_button "Registrar despesa"
+      click_button "Revisar divisão"
     end
+    within("#group_dialog") { click_button "Confirmar despesa" }
   end
 
   def within_in(session_name, selector)
