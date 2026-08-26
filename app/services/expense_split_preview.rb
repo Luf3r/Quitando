@@ -23,11 +23,13 @@ class ExpenseSplitPreview
 
   def call
     amount_cents = MoneyParser.parse_cents(amount_text)
+    computed_shares = split_type == "equal" ? equal_shares(amount_cents) : exact_shares(amount_cents)
+    validate_non_payer_obligation!(computed_shares)
 
     Result.new(
       amount_cents:,
       split_type: split_type,
-      shares: split_type == "equal" ? equal_shares(amount_cents) : exact_shares(amount_cents)
+      shares: computed_shares
     )
   rescue ArgumentError, TypeError => error
     raise InvalidPreview, error.message
@@ -65,5 +67,11 @@ class ExpenseSplitPreview
     raise InvalidPreview, "shares devem somar o total" unless parsed.sum { |share| share.fetch(:amount_owed_cents) } == amount_cents
 
     parsed
+  end
+
+  def validate_non_payer_obligation!(computed_shares)
+    unless computed_shares.any? { |share| share.fetch(:user_id) != paid_by_user_id }
+      raise InvalidPreview, "despesa deve gerar obrigação para não pagador"
+    end
   end
 end

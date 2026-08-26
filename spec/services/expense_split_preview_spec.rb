@@ -25,4 +25,12 @@ RSpec.describe ExpenseSplitPreview do
       described_class.call(amount_text: "10,00", split_type: "exact", memberships: [ membership ], paid_by_user_id: "ana", shares: [ { user_id: "ana", amount_text: "9,99" } ])
     }.to raise_error(described_class::InvalidPreview, "shares devem somar o total")
   end
+
+  it "rejeita divisão exata que não gera obrigação para não pagador" do
+    membership = Struct.new(:user_id, :position).new("ana", 0)
+
+    expect {
+      described_class.call(amount_text: "10,00", split_type: "exact", memberships: [ membership ], paid_by_user_id: "ana", shares: [ { user_id: "ana", amount_text: "10,00" } ])
+    }.to raise_error(described_class::InvalidPreview, "despesa deve gerar obrigação para não pagador")
+  end
 end
