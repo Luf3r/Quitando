@@ -6,8 +6,8 @@
       <% if policy(membership).reactivate? && membership.inactive? %><%= button_to "Reativar", "/groups/#{@group.id}/memberships/#{membership.id}/reactivate", class: "ui-button ui-button--secondary" %><% end %>
       <% if policy(membership).transfer_ownership? && membership.active? && membership.user_id != current_user.id %><%= button_to "Transferir ownership", "/groups/#{@group.id}/memberships/#{membership.id}/transfer_ownership", class: "ui-button ui-button--secondary", data: { turbo_confirm: "Transferir ownership para #{membership.user.email}?" } %><% end %>
       <% if policy(membership).deactivate? && membership.active? %>
-        <% last_owner = membership.owner? && @memberships.count { |candidate| candidate.owner? && candidate.active? } == 1 %>
-        <% if last_owner %><span class="settings-action-note">Transfira o ownership antes de sair.</span><% else %><%= button_to membership.user_id == current_user.id ? "Sair do grupo" : "Inativar membro", "/groups/#{@group.id}/memberships/#{membership.id}/deactivate", class: "ui-button ui-button--secondary", data: { turbo_confirm: membership.user_id == current_user.id ? "Sair deste grupo?" : "Inativar #{membership.user.email}?" } %><% end %>
+        <% reason = @membership_deactivation_reasons.fetch(membership.id, nil) %>
+        <% if reason %><%= button_tag(membership.user_id == current_user.id ? "Sair do grupo" : "Inativar membro", type: "button", disabled: true, class: "ui-button ui-button--secondary") %><span class="settings-action-note"><%= reason == "último owner ativo não pode sair" ? "Transfira o ownership antes de sair." : reason %></span><% else %><%= button_to membership.user_id == current_user.id ? "Sair do grupo" : "Inativar membro", "/groups/#{@group.id}/memberships/#{membership.id}/deactivate", class: "ui-button ui-button--secondary", data: { turbo_confirm: membership.user_id == current_user.id ? "Sair deste grupo?" : "Inativar #{membership.user.email}?" } %><% end %>
       <% end %>
     </div><% end %>
   </li><% end %></ul></section>

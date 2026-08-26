@@ -52,4 +52,21 @@ RSpec.describe "Histórico e configurações do grupo" do
     expect(response.body).not_to include("Ordenar membros")
     expect(response.body).not_to include("Sair do grupo")
   end
+
+  it "explica por que uma membership com saldo não pode ser inativada" do
+    owner = create(:user, email: "ana@example.com")
+    member = create(:user, email: "bia@example.com")
+    group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
+    create(:membership, group:, user: member, position: 1)
+    expense = create(:expense, group:, paid_by_user: owner, created_by_user: owner, amount_cents: 300)
+    create(:expense_share, expense:, user: member, amount_owed_cents: 300, position: 0)
+
+    post user_session_path, params: { user: { email: owner.email, password: owner.password } }
+    get group_settings_path(group)
+
+    document = response.parsed_body
+    member_row = document.css(".audit-list li").find { |row| row.text.include?(member.email) }
+    expect(member_row.text).to include("saldo oficial diferente de zero")
+    expect(member_row.at_css("button[disabled]")&.text).to include("Inativar membro")
+  end
 end

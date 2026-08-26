@@ -50,6 +50,7 @@ class GroupsController < ApplicationController
     authorize @group, :show?
     @memberships = @group.memberships.includes(:user).order(:position, :user_id)
     @pending_invitations = @group.group_invitations.pending.where(expires_at: Time.current..).includes(:invited_user) if policy(@group).invite?
+    @membership_deactivation_reasons = membership_deactivation_reasons
   end
 
   def update
@@ -78,5 +79,25 @@ class GroupsController < ApplicationController
 
   def group_params
     params.require(:group).permit(:name)
+  end
+
+  def membership_deactivation_reasons
+    official_balances = GroupBalanceCalculator.call(@group)
+    projected_balances = ProjectedBalanceCalculator.call(official_balances, @group.payments.reported.select(:from_user_id, :to_user_id, :amount_cents))
+    last_active_owner = @memberships.count { |membership| membership.owner? && membership.active? } == 1
+
+    @memberships.each_with_object({}) do |membership, reasons|
+      next unless membership.active?
+
+      reasons[membership.id] = if !official_balances.fetch(membership.user_id, 0).zero?
+        "saldo oficial diferente de zero"
+      elsif !projected_balances.fetch(membership.user_id, 0).zero?
+        "saldo projetado diferente de zero"
+      elsif @group.payments.reported.where(from_user_id: membership.user_id).or(@group.payments.reported.where(to_user_id: membership.user_id)).exists?
+        "pagamento pendente envolve membership"
+      elsif membership.owner? && last_active_owner
+        "último owner ativo não pode sair"
+      end
+    end
   end
 end
