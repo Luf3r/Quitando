@@ -1,0 +1,34 @@
+<% content_for :title, "Conta | Quitando" %>
+
+<section class="account-page" aria-labelledby="account-title">
+  <header class="ui-page-header">
+    <div>
+      <p class="eyebrow">Conta pessoal</p>
+      <h1 id="account-title" class="ui-page-header__title">Seus dados de acesso</h1>
+      <p class="ui-page-header__description">Atualize e-mail ou senha. Para proteger sua conta, confirme sua senha atual.</p>
+    </div>
+  </header>
+
+  <%= render FormErrorsComponent.new(messages: @user.errors.full_messages) if @user.errors.any? %>
+
+  <%= form_with model: @user, url: account_path, method: :patch, class: "account-form" do |form| %>
+    <div class="ui-field">
+      <%= form.label :email, "E-mail", class: "ui-field__label" %>
+      <%= form.email_field :email, autocomplete: "email", class: "ui-field__control" %>
+    </div>
+    <div class="ui-field">
+      <%= form.label :password, "Nova senha", class: "ui-field__label" %>
+      <%= form.password_field :password, autocomplete: "new-password", class: "ui-field__control" %>
+      <p class="ui-field__hint">Deixe em branco para manter a senha atual.</p>
+    </div>
+    <div class="ui-field">
+      <%= form.label :password_confirmation, "Confirme a nova senha", class: "ui-field__label" %>
+      <%= form.password_field :password_confirmation, autocomplete: "new-password", class: "ui-field__control" %>
+    </div>
+    <div class="ui-field">
+      <%= form.label :current_password, "Senha atual", class: "ui-field__label" %>
+      <%= form.password_field :current_password, autocomplete: "current-password", class: "ui-field__control", required: true %>
+    </div>
+    <%= form.submit "Salvar alterações", class: "ui-button ui-button--primary" %>
+  <% end %>
+</section>

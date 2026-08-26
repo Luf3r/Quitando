@@ -7,6 +7,7 @@ Rails.application.routes.draw do
 
   devise_for :users
   root "home#index"
+  resource :account, only: %i[show update]
   uuid_v7 = ->(*parameter_names) { CanonicalUuidV7RouteConstraint.new(*parameter_names) }
 
   resources :invitations, only: :index

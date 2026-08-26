@@ -18,6 +18,8 @@
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
+    <%= yield :metadata %>
+
     <%= yield :head %>
 
 
@@ -37,6 +39,9 @@
     <main class="page-shell" id="main-content">
       <% if flash[:alert].present? %>
         <%= render AlertComponent.new(message: flash[:alert]) %>
+      <% end %>
+      <% if flash[:notice].present? %>
+        <%= render AlertComponent.new(message: flash[:notice]) %>
       <% end %>
       <%= yield %>
     </main>

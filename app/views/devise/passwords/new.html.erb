@@ -1,0 +1,16 @@
+<section class="auth-page" aria-labelledby="password-title">
+  <div class="auth-page__intro">
+    <p class="eyebrow">Recupere o acesso</p>
+    <h1 id="password-title">Recuperar senha</h1>
+    <p>Enviaremos instruções para o e-mail da sua conta.</p>
+  </div>
+  <%= form_for(resource, as: resource_name, url: password_path(resource_name), html: { class: "auth-form" }) do |form| %>
+    <%= render FormErrorsComponent.new(messages: resource.errors.full_messages) if resource.errors.any? %>
+    <div class="ui-field">
+      <%= form.label :email, "E-mail", class: "ui-field__label" %>
+      <%= form.email_field :email, autofocus: true, autocomplete: "email", class: "ui-field__control" %>
+    </div>
+    <%= form.submit "Enviar instruções", class: "ui-button ui-button--primary" %>
+  <% end %>
+  <p class="auth-page__links"><%= link_to "Voltar para entrar", new_session_path(resource_name) %></p>
+</section>

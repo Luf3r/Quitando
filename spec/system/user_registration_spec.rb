@@ -11,7 +11,7 @@ RSpec.describe "User registration" do
     fill_in "user_password_confirmation", with: "senha-segura"
     find('input[type="submit"]').click
 
-    expect(page).to have_text("Conectado como ana@example.com.")
+    expect(page).to have_link("Abrir app", href: "/groups")
   end
 
   it "permite que uma pessoa existente inicie uma sessão" do
@@ -22,7 +22,7 @@ RSpec.describe "User registration" do
     fill_in "user_password", with: user.password
     find('input[type="submit"]').click
 
-    expect(page).to have_text("Conectado como bia@example.com.")
+    expect(page).to have_link("Abrir app", href: "/groups")
   end
 
   it "não inicia sessão com credenciais inválidas" do
@@ -35,6 +35,6 @@ RSpec.describe "User registration" do
     visit root_path
 
     expect(page).to have_link("Entrar")
-    expect(page).not_to have_text("Conectado como carla@example.com.")
+    expect(page).not_to have_link("Abrir app", href: "/groups")
   end
 end
