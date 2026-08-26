@@ -7,6 +7,7 @@ RSpec.describe MoneyComponent, type: :component do
   it "renderiza valor monetário acessível" do
     render_inline(described_class.new(cents: 250, currency_code: "BRL"))
 
-    expect(page).to have_css("data[role='money']", text: "R$ 2,50")
+    expect(page).to have_css("data[value='250']", text: "R$ 2,50")
+    expect(page).not_to have_css("[role='money']")
   end
 end

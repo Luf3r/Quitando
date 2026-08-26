@@ -63,7 +63,7 @@ RSpec.describe "Atualizações em tempo real do grupo", type: :system do
     visit_group_in(:bruno, fixture.fetch(:group))
     Capybara.using_session(:bruno) do
       click_link "Pagamento reported"
-      click_button "Confirmar pagamento"
+      accept_confirm { click_button "Confirmar pagamento" }
     end
 
     in_session(:ana) do

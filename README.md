@@ -8,7 +8,7 @@ O Quitando ajuda grupos que já confiam uns nos outros a encerrar despesas compa
 
 O projeto está em construção. As **Fases 0 a 12** estão implementadas e verificadas. A Fase 13 foi reaberta depois da primeira entrega de visualização para concluir landing pública, redesign integral, temas, arquitetura de informação, previews, histórico, configurações, ativos e o novo gate responsivo e acessível.
 
-A reabertura já entrega landing pública, tema claro/escuro/sistema, conta pessoal, navegação por Resumo/Plano/Histórico/Configurações e revisão de despesas e correções no servidor antes da confirmação. A Fase 13 continua em andamento: o gate visual, os screenshots normativos e a auditoria Lighthouse ainda não foram concluídos.
+A reabertura já entrega landing pública, tema claro/escuro/sistema, conta pessoal, navegação por Resumo/Plano/Histórico/Configurações e revisão de despesas e correções no servidor antes da confirmação. A inspeção visual cobriu os breakpoints normativos e o Lighthouse da imagem de produção ficou dentro dos limites de LCP e CLS, sem falhas críticas de acessibilidade. A Fase 13 continua em andamento até o pre-flight e a reconciliação final do gate.
 
 A base integrada já oferece o bootstrap Rails, RSpec com exemplos reais, `bin/ci`, checagens de lint e segurança, Docker com PostgreSQL 18, Active Storage/Vips, Devise, Pundit, FactoryBot, parser monetário em centavos e locale `pt-BR`.
 

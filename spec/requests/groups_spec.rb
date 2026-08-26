@@ -121,7 +121,7 @@ RSpec.describe "Groups" do
             "from_user_id" => row["data-from-user-id"],
             "to_user_id" => row["data-to-user-id"],
             "amount_cents" => row["data-amount-cents"],
-            "formatted_amount" => row.at_css('data[role="money"]').text
+            "formatted_amount" => row.at_css("data[value]").text
           }
         end
         expect(table_edges).to eq(payload.fetch("layers").fetch(layer))
