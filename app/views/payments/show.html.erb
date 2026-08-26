@@ -9,7 +9,7 @@
   <% if @payment.confirmed? %><p>Confirmado por <%= @payment.confirmed_by_user.email %> em <%= l(@payment.confirmed_at, format: :short) %>.</p><% end %>
   <% if @payment.cancelled? %><p>Cancelado por <%= @payment.cancelled_by_user.email %> em <%= l(@payment.cancelled_at, format: :short) %>. Motivo: <%= @payment.cancellation_reason %>.</p><% end %>
   <% if @payment.reported? && !@payment.group.archived_at? && @payment.to_user_id == current_user.id %>
-    <%= button_to "Confirmar pagamento", "/groups/#{@payment.group_id}/payments/#{@payment.id}/confirm", params: { payment: { idempotency_key: SecureRandom.uuid } }, form: { data: { turbo_stream: true } }, class: "rounded bg-slate-900 px-3 py-1 text-white" %>
+    <%= button_to "Confirmar pagamento", "/groups/#{@payment.group_id}/payments/#{@payment.id}/confirm", params: { payment: { idempotency_key: SecureRandom.uuid } }, form: { data: { turbo_stream: true, turbo_confirm: "Confirmar este pagamento? Esta ação é terminal no MVP." } }, class: "rounded bg-slate-900 px-3 py-1 text-white" %>
   <% end %>
   <% if @payment.reported? && !@payment.group.archived_at? && [ @payment.from_user_id, @payment.to_user_id ].include?(current_user.id) %>
     <%= form_with url: "/groups/#{@payment.group_id}/payments/#{@payment.id}/cancel", scope: :payment, data: { turbo_stream: true }, class: "space-y-2" do |form| %>
