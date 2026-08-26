@@ -7,6 +7,7 @@
   <meta property="og:title" content="Quitando | Feche as contas do grupo">
   <meta property="og:description" content="Registre despesas, acompanhe confirmações e veja um plano prático com menos transferências.">
   <meta property="og:url" content="<%= root_url %>">
+  <meta property="og:image" content="<%= image_url("landing/hero-friends-og.webp") %>">
 <% end %>
 
 <section class="landing-hero" aria-labelledby="landing-title">
@@ -24,9 +25,14 @@
     </div>
     <% unless user_signed_in? %><p class="landing-hero__login">Já tem uma conta? <%= link_to "Entrar", new_user_session_path %></p><% end %>
   </div>
-  <div class="landing-hero__photo" role="img" aria-label="Amigos conversando depois de uma refeição compartilhada.">
-    <span>Um grupo, uma visão clara.</span>
-  </div>
+  <figure class="landing-hero__photo">
+    <picture>
+      <source media="(max-width: 520px)" srcset="<%= image_path("landing/hero-friends-480.webp") %>">
+      <source media="(max-width: 820px)" srcset="<%= image_path("landing/hero-friends-768.webp") %>">
+      <%= image_tag "landing/hero-friends-1024.webp", alt: "Quatro amigos conversando depois de uma refeição compartilhada.", width: 1024, height: 576, fetchpriority: "high" %>
+    </picture>
+    <figcaption>Um grupo, uma visão clara.</figcaption>
+  </figure>
 </section>
 
 <section id="como-funciona" class="landing-section landing-flow" aria-labelledby="flow-title">

@@ -16,6 +16,8 @@ RSpec.describe "Landing pública" do
     expect(response.body).to include("Registre despesas, acompanhe confirmações e veja um plano prático com menos transferências.")
     expect(document.css("a").map(&:text)).to include("Criar conta")
     expect(document.at_css("a[href='#como-funciona']")&.text).to eq("Como funciona")
+    expect(document.at_css("meta[property='og:image']")["content"]).to match(/hero-friends-og(?:-[a-f0-9]+)?\.webp/)
+    expect(document.at_css(".landing-hero picture img")["alt"]).to include("Quatro amigos")
     expect(section_ids).to eq(%w[como-funciona estados produto engenharia confianca comecar])
     expect(response.body).not_to match(/preços|depoimentos|clientes atendidos/i)
   end
