@@ -51,6 +51,7 @@ class GroupsController < ApplicationController
     @memberships = @group.memberships.includes(:user).order(:position, :user_id)
     @pending_invitations = @group.group_invitations.pending.where(expires_at: Time.current..).includes(:invited_user) if policy(@group).invite?
     @membership_deactivation_reasons = membership_deactivation_reasons
+    @archive_reason = archive_reason
   end
 
   def update
@@ -99,5 +100,10 @@ class GroupsController < ApplicationController
         "último owner ativo não pode sair"
       end
     end
+  end
+
+  def archive_reason
+    return "grupo não pode ser arquivado" unless %i[empty settled].include?(GroupFinancialStatusResolver.call(@group))
+    return "grupo possui convite pendente" if @group.group_invitations.pending.where(expires_at: Time.current..).exists?
   end
 end

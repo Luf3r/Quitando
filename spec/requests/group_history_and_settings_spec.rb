@@ -69,4 +69,21 @@ RSpec.describe "Histórico e configurações do grupo" do
     expect(member_row.text).to include("saldo oficial diferente de zero")
     expect(member_row.at_css("button[disabled]")&.text).to include("Inativar membro")
   end
+
+  it "explica por que um grupo aberto não pode ser arquivado" do
+    owner = create(:user, email: "ana@example.com")
+    member = create(:user, email: "bia@example.com")
+    group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
+    create(:membership, group:, user: member, position: 1)
+    expense = create(:expense, group:, paid_by_user: owner, created_by_user: owner, amount_cents: 300)
+    create(:expense_share, expense:, user: member, amount_owed_cents: 300, position: 0)
+
+    post user_session_path, params: { user: { email: owner.email, password: owner.password } }
+    get group_settings_path(group)
+
+    document = response.parsed_body
+    archive_section = document.at_css("#archive-title").parent
+    expect(archive_section.text).to include("grupo não pode ser arquivado")
+    expect(archive_section.at_css("button[disabled]")&.text).to include("Arquivar grupo")
+  end
 end
