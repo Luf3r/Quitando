@@ -1,7 +1,16 @@
 <section class="group-settings-page" aria-labelledby="settings-title">
   <%= render "groups/navigation", group: @group %>
   <header class="ui-page-header"><div><p class="eyebrow"><%= @group.name %></p><h1 id="settings-title" class="ui-page-header__title">Configurações</h1><p class="ui-page-header__description">Membros, convites, ownership e arquivamento seguem as permissões existentes do grupo.</p></div></header>
-  <section class="settings-section" aria-labelledby="members-title"><h2 id="members-title">Membros</h2><ul class="audit-list"><% @memberships.each do |membership| %><li><strong><%= membership.user.email %></strong> <%= membership.role == "owner" ? "Owner" : "Membro" %>; <%= membership.active? ? "ativo" : "inativo" %>.</li><% end %></ul></section>
+  <section class="settings-section" aria-labelledby="members-title"><h2 id="members-title">Membros</h2><ul class="audit-list"><% @memberships.each do |membership| %><li><strong><%= membership.user.email %></strong> <%= membership.role == "owner" ? "Owner" : "Membro" %>; <%= membership.active? ? "ativo" : "inativo" %>.
+    <div class="invitation-card__actions">
+      <% if policy(membership).reactivate? && membership.inactive? %><%= button_to "Reativar", "/groups/#{@group.id}/memberships/#{membership.id}/reactivate", class: "ui-button ui-button--secondary" %><% end %>
+      <% if policy(membership).transfer_ownership? && membership.active? && membership.user_id != current_user.id %><%= button_to "Transferir ownership", "/groups/#{@group.id}/memberships/#{membership.id}/transfer_ownership", class: "ui-button ui-button--secondary", data: { turbo_confirm: "Transferir ownership para #{membership.user.email}?" } %><% end %>
+      <% if policy(membership).deactivate? && membership.active? %>
+        <% last_owner = membership.owner? && @memberships.count { |candidate| candidate.owner? && candidate.active? } == 1 %>
+        <% if last_owner %><span class="settings-action-note">Transfira o ownership antes de sair.</span><% else %><%= button_to membership.user_id == current_user.id ? "Sair do grupo" : "Inativar membro", "/groups/#{@group.id}/memberships/#{membership.id}/deactivate", class: "ui-button ui-button--secondary", data: { turbo_confirm: membership.user_id == current_user.id ? "Sair deste grupo?" : "Inativar #{membership.user.email}?" } %><% end %>
+      <% end %>
+    </div>
+  </li><% end %></ul></section>
   <% if policy(@group).update? %><section class="settings-section" aria-labelledby="group-name-title"><h2 id="group-name-title">Nome do grupo</h2><%= form_with model: @group, class: "group-create__form" do |form| %><%= form.label :name, "Nome", class: "sr-only" %><%= form.text_field :name, required: true, class: "ui-field__control" %><%= form.submit "Salvar nome", class: "ui-button ui-button--primary" %><% end %></section><% end %>
   <% if policy(@group).update? %><section class="settings-section" aria-labelledby="archive-title"><h2 id="archive-title">Arquivamento</h2><% if @group.archived_at? %><%= button_to "Restaurar grupo", group_restore_path(@group), method: :post, class: "ui-button ui-button--primary" %><% else %><%= button_to "Arquivar grupo", group_archive_path(@group), method: :post, class: "ui-button ui-button--secondary", data: { turbo_confirm: "Arquivar este grupo?" } %><% end %></section><% end %>
 </section>
