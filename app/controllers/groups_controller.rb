@@ -5,7 +5,12 @@ class GroupsController < ApplicationController
 
   def index
     authorize Group, :index?
-    @groups = policy_scope(Group)
+    @group_cards = GroupListQuery.call(groups: policy_scope(Group), viewer: current_user)
+    visible_invitations = policy_scope(GroupInvitation)
+    visible_invitations.where(expires_at: ..Time.current).find_each do |invitation|
+      GroupInvitationExpirer.call(invitation_id: invitation.id)
+    end
+    @invitations = visible_invitations.includes(:group, :invited_by_user).to_a
   end
 
   def create

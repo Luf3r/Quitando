@@ -33,7 +33,7 @@
     <header class="site-header">
       <div class="site-header__inner">
         <%= link_to t("app.name"), root_path, class: "wordmark" %>
-        <%= render NavigationComponent.new(user: (current_user if user_signed_in?)) %>
+        <%= render NavigationComponent.new(user: (current_user if user_signed_in?), pending_invitation_count: pending_invitation_count) %>
       </div>
     </header>
     <main class="page-shell" id="main-content">

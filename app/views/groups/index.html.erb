@@ -1,29 +1,52 @@
-<div class="space-y-8">
-  <div>
-    <h1 class="text-2xl font-semibold">Grupos</h1>
-    <p class="mt-1 text-slate-600">Crie um grupo ou abra um grupo do qual você participa.</p>
-  </div>
+<%= render PageHeaderComponent.new(title: "Seus grupos", description: "Acompanhe o que falta encerrar e registre novas despesas.") %>
 
-  <section aria-labelledby="novo-grupo">
-    <h2 id="novo-grupo" class="text-lg font-medium">Novo grupo</h2>
-    <%= form_with url: groups_path, scope: :group, data: { turbo_stream: true }, class: "mt-3 flex max-w-md gap-2" do |form| %>
-      <%= form.label :name, "Nome", class: "sr-only" %>
-      <%= form.text_field :name, required: true, class: "min-w-0 flex-1 rounded border-slate-300", placeholder: "Ex.: Apartamento" %>
-      <%= form.submit "Criar grupo", class: "rounded bg-slate-900 px-4 py-2 text-white" %>
-    <% end %>
-  </section>
+<section class="group-create" aria-labelledby="novo-grupo">
+  <h2 id="novo-grupo">Criar grupo</h2>
+  <%= form_with url: groups_path, scope: :group, data: { turbo_stream: true }, class: "group-create__form" do |form| %>
+    <%= form.label :name, "Nome", class: "sr-only" %>
+    <%= form.text_field :name, required: true, class: "ui-field__control", placeholder: "Ex.: Apartamento" %>
+    <%= form.submit "Criar grupo", class: "ui-button ui-button--primary" %>
+  <% end %>
+</section>
 
-  <section aria-labelledby="convites-pendentes">
-    <h2 id="convites-pendentes" class="text-lg font-medium">Convites pendentes</h2>
-    <p class="mt-1 text-slate-600"><%= link_to "Abrir caixa de convites", invitations_path, class: "underline" %></p>
-  </section>
+<section class="group-index-section" aria-labelledby="convites-pendentes">
+  <div class="section-heading"><h2 id="convites-pendentes">Convites recebidos</h2><%= link_to "Ver todos", invitations_path %></div>
+  <% if @invitations.any? %>
+    <ul class="invitation-list">
+      <% @invitations.each do |invitation| %>
+        <li class="invitation-card">
+          <div><strong><%= invitation.group.name %></strong><span>Convidado por <%= invitation.invited_by_user.email %></span></div>
+          <div class="invitation-card__actions">
+            <%= button_to "Aceitar", "/invitations/#{invitation.id}/accept", method: :post, form: { data: { turbo_stream: true } }, class: "ui-button ui-button--primary" %>
+            <%= button_to "Recusar", "/invitations/#{invitation.id}/decline", method: :post, form: { data: { turbo_stream: true } }, class: "ui-button ui-button--secondary" %>
+          </div>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="section-empty">Você não possui convites pendentes.</p>
+  <% end %>
+</section>
 
-  <section aria-labelledby="seus-grupos">
-    <h2 id="seus-grupos" class="text-lg font-medium">Seus grupos</h2>
-  <ul class="mt-3 space-y-2">
-    <% @groups.each do |group| %>
-      <li><%= link_to group.name, group_path(group), class: "underline" %></li>
-    <% end %>
-  </ul>
-  </section>
-</div>
+<section class="group-index-section" aria-labelledby="seus-grupos">
+  <div class="section-heading"><h2 id="seus-grupos">Seus grupos</h2></div>
+  <% if @group_cards.any? %>
+    <ul class="group-card-list">
+      <% @group_cards.each do |card| %>
+        <li>
+          <%= link_to group_path(card.group), class: "group-card" do %>
+            <div class="group-card__top"><strong><%= card.group.name %></strong><%= render StatusBadgeComponent.new(status: card.archived ? "archived" : card.status) %></div>
+            <p class="group-card__members"><%= card.memberships.map { |membership| membership.user.email }.to_sentence %></p>
+            <dl class="group-card__facts">
+              <div><dt>Seu saldo oficial</dt><dd><%= MoneyFormatter.call(cents: card.viewer_balance_cents, currency_code: card.group.currency_code) %></dd></div>
+              <div><dt>Pendências</dt><dd><%= card.pending_payment_count %></dd></div>
+            </dl>
+            <% if card.archived %><span class="group-card__archive-note">Grupo arquivado. A leitura permanece disponível.</span><% end %>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <%= render EmptyStateComponent.new(title: "Nenhum grupo ainda", body: "Crie um grupo para registrar a primeira despesa.", action_label: "Criar grupo", action_path: "#novo-grupo") %>
+  <% end %>
+</section>

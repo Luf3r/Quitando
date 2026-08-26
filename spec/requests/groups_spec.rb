@@ -28,7 +28,8 @@ RSpec.describe "Groups" do
       post user_session_path, params: { user: { email: user.email, password: user.password } }
       get "/groups"
 
-      expect(response.body.index("Convites pendentes")).to be < response.body.index("Seus grupos")
+      headings = Nokogiri::HTML(response.body).css("section h2").map(&:text)
+      expect(headings.index("Convites recebidos")).to be < headings.index("Seus grupos")
       expect(response.body).to include('href="/invitations"')
     end
   end

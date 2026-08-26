@@ -3,7 +3,8 @@ class StatusBadgeComponent < ApplicationComponent
     "empty" => "Sem atividade",
     "open" => "Em aberto",
     "awaiting_confirmation" => "Aguardando confirmação",
-    "settled" => "Quitado"
+    "settled" => "Quitado",
+    "archived" => "Arquivado"
   }.freeze
 
   def initialize(status:)
