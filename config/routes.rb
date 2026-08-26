@@ -17,6 +17,9 @@ Rails.application.routes.draw do
   resources :groups, only: :update, constraints: uuid_v7.call(:id)
 
   scope "groups/:group_id", as: "group", constraints: { group_id: CanonicalUuidV7RouteConstraint::ROUTE_PATTERN } do
+    get :plan, to: "groups#plan"
+    get :history, to: "groups#history"
+    get :settings, to: "groups#settings"
     post :archive, to: "groups#archive", as: :archive
     post :restore, to: "groups#restore", as: :restore
 

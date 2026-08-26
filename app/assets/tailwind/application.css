@@ -618,6 +618,27 @@ a {
 .group-card__facts dt { color: var(--color-text-secondary); font-size: 0.8rem; }
 .group-card__facts dd { margin: 0; font-weight: 670; }
 .group-card__archive-note { display: block; margin-top: 0.85rem; color: var(--color-text-secondary); font-size: 0.9rem; }
+.group-navigation { display: flex; gap: 0.35rem; margin: 0 0 2rem; border-bottom: 1px solid var(--color-border); overflow-x: auto; }
+.group-navigation a, .group-navigation span { display: inline-flex; white-space: nowrap; padding: 0.75rem 0.9rem; color: var(--color-text-secondary); text-decoration: none; }
+.group-navigation .is-current { border-bottom: 2px solid var(--color-accent); color: var(--color-text); font-weight: 680; }
+.group-navigation span { opacity: 0.55; cursor: not-allowed; }
+.back-link { color: var(--color-text-secondary); }
+.plan-section { margin-top: 1.25rem; border: 1px solid var(--color-border); border-radius: var(--radius-container); padding: 1.25rem; background: var(--color-surface); }
+.plan-section h2 { margin: 0 0 0.85rem; font-size: 1.2rem; }
+.plan-list { display: grid; gap: 0.75rem; margin: 0; padding-left: 1.25rem; }
+.plan-list li { color: var(--color-text-secondary); line-height: 1.45; }
+.plan-list strong { color: var(--color-text); }
+.plan-balances { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.75rem; margin: 0; }
+.plan-balances div { padding: 0.75rem; border-radius: var(--radius-control); background: var(--color-surface-secondary); }
+.plan-balances dt { color: var(--color-text-secondary); font-size: 0.85rem; }
+.plan-balances dd { margin: 0.25rem 0 0; font-weight: 680; }
+.audit-list { display: grid; gap: 0.75rem; padding: 0; margin: 0; list-style: none; }
+.audit-list li { display: grid; gap: 0.3rem; border-bottom: 1px solid var(--color-border); padding-bottom: 0.85rem; color: var(--color-text-secondary); }
+.audit-list strong, .audit-list a { color: var(--color-text); }
+.audit-list time { color: var(--color-text-secondary); font-size: 0.85rem; }
+.settings-section { margin-top: 1.25rem; border: 1px solid var(--color-border); border-radius: var(--radius-container); padding: 1.25rem; background: var(--color-surface); }
+.settings-section h2 { margin: 0 0 1rem; font-size: 1.2rem; }
+.pagination { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1rem; }
 
 @media (max-width: 767px) {
   .landing-hero,

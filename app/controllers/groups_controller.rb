@@ -28,6 +28,30 @@ class GroupsController < ApplicationController
     @pending_invitations = @group.group_invitations.pending.where(expires_at: Time.current..).includes(:invited_user) if policy(@group).invite?
   end
 
+  def plan
+    @group = policy_scope(Group).find(params[:group_id])
+    authorize @group, :show?
+    @dashboard = GroupDashboardQuery.call(group: @group, viewer: current_user)
+  end
+
+  def history
+    @group = policy_scope(Group).find(params[:group_id])
+    authorize @group, :show?
+    page = params.fetch(:page, "1")
+    unless /\A[1-9]\d*\z/.match?(page)
+      render plain: t("errors.unprocessable_entity"), status: :unprocessable_content
+      return
+    end
+    @history_page = GroupHistoryQuery.page(group: @group, number: page.to_i)
+  end
+
+  def settings
+    @group = policy_scope(Group).find(params[:group_id])
+    authorize @group, :show?
+    @memberships = @group.memberships.includes(:user).order(:position, :user_id)
+    @pending_invitations = @group.group_invitations.pending.where(expires_at: Time.current..).includes(:invited_user) if policy(@group).invite?
+  end
+
   def update
     @group = policy_scope(Group).find(params[:id])
     authorize @group

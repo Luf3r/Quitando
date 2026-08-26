@@ -1,0 +1,34 @@
+<%= render "groups/realtime_shell", group: @group %>
+
+<section class="group-plan-page" aria-labelledby="plan-title">
+  <%= link_to "Voltar aos grupos", groups_path, class: "back-link" %>
+  <%= render "groups/navigation", group: @group %>
+  <header class="ui-page-header">
+    <div>
+      <p class="eyebrow"><%= @group.name %></p>
+      <h1 id="plan-title" class="ui-page-header__title">Plano líquido</h1>
+      <p class="ui-page-header__description">Sugestões derivadas do saldo projetado. Elas não são pagamentos realizados.</p>
+    </div>
+  </header>
+
+  <section class="plan-section" aria-labelledby="pending-title">
+    <h2 id="pending-title">Pendências</h2>
+    <% if @dashboard.pending_payments.any? %>
+      <ul class="plan-list"><% @dashboard.pending_payments.each do |payment| %><li><%= payment.from_user.email %> reportou <%= render MoneyComponent.new(cents: payment.amount_cents, currency_code: @group.currency_code) %> para <%= payment.to_user.email %>. <%= link_to "Ver pagamento", group_payment_path(@group, payment) %></li><% end %></ul>
+    <% else %><p>Nenhum pagamento aguarda confirmação.</p><% end %>
+  </section>
+
+  <section class="plan-section" aria-labelledby="suggestions-title">
+    <h2 id="suggestions-title">Transferências sugeridas</h2>
+    <% if @dashboard.settlement_plan.any? %>
+      <ol class="plan-list"><% @dashboard.settlement_plan.each do |transfer| %><li><strong><%= @dashboard.participant_emails.fetch(transfer.from_user_id) %></strong> envia <%= render MoneyComponent.new(cents: transfer.amount_cents, currency_code: @group.currency_code) %> para <strong><%= @dashboard.participant_emails.fetch(transfer.to_user_id) %></strong>.</li><% end %></ol>
+    <% else %><p>Não há transferências sugeridas neste estado.</p><% end %>
+  </section>
+
+  <section class="plan-section" aria-labelledby="projected-title">
+    <h2 id="projected-title">Saldo projetado restante</h2>
+    <dl class="plan-balances"><% @dashboard.projected_balances.each do |user_id, cents| %><div><dt><%= @dashboard.participant_emails.fetch(user_id) %></dt><dd><%= render MoneyComponent.new(cents:, currency_code: @group.currency_code) %></dd></div><% end %></dl>
+  </section>
+
+  <%= render "groups/visualization", group: @group, dashboard: @dashboard %>
+</section>
