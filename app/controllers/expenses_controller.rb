@@ -30,6 +30,10 @@ class ExpensesController < ApplicationController
   def preview
     @group = policy_scope(Group).find(params[:group_id])
     authorize @group, :create_expense?
+    @submitted_expense = expense_params.to_h
+    @expense_form = ExpenseForm.new(**@submitted_expense.symbolize_keys)
+    raise ExpenseSplitPreview::InvalidPreview, "revise os campos obrigatórios da despesa" unless @expense_form.valid?
+
     @preview = ExpenseSplitPreview.call(
       amount_text: expense_params[:amount_text],
       split_type: expense_params[:split_type],

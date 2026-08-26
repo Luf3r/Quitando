@@ -639,6 +639,15 @@ a {
 .settings-section { margin-top: 1.25rem; border: 1px solid var(--color-border); border-radius: var(--radius-container); padding: 1.25rem; background: var(--color-surface); }
 .settings-section h2 { margin: 0 0 1rem; font-size: 1.2rem; }
 .pagination { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1rem; }
+.expense-entry-form { display: grid; gap: 1rem; max-width: 44rem; padding: 1.25rem; border: 1px solid var(--color-border); border-radius: var(--radius-container); background: var(--color-surface); }
+.expense-entry-form > div, .expense-entry-form fieldset { display: grid; gap: 0.4rem; }
+.expense-entry-form fieldset { margin: 0; padding: 0.9rem; border: 1px solid var(--color-border); border-radius: var(--radius-control); }
+.expense-entry-form legend { padding-inline: 0.25rem; font-weight: 680; }
+.expense-entry-form label { color: var(--color-text-secondary); }
+.expense-preview { display: grid; gap: 0.85rem; margin-top: 1rem; max-width: 44rem; padding: 1.25rem; border: 1px solid color-mix(in srgb, var(--color-accent) 40%, var(--color-border)); border-radius: var(--radius-container); background: var(--color-surface); }
+.expense-preview h2, .expense-preview p, .expense-preview ul { margin: 0; }
+.expense-preview ul { display: grid; gap: 0.35rem; padding-left: 1.25rem; }
+.expense-preview__confirmation { margin-top: 0.25rem; }
 
 @media (max-width: 767px) {
   .landing-hero,

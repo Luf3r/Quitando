@@ -10,8 +10,9 @@ RSpec.describe "Expenses" do
 
     expect(response).to have_http_status(:ok)
     expect(response.body).to include('<turbo-frame id="group_dialog">')
-    expect(response.body).to include("action=\"/groups/#{group.id}/expenses\"")
-    expect(response.body).to include("Registrar despesa")
+    expect(response.body).to include("action=\"/groups/#{group.id}/expenses/preview\"")
+    expect(response.body).to include("Revisar divisão")
+    expect(response.body).to include('<turbo-frame id="expense_preview">')
   end
 
   it "mantém o deep link de nova despesa como página HTML completa" do
@@ -24,7 +25,7 @@ RSpec.describe "Expenses" do
     expect(response).to have_http_status(:ok)
     expect(response.body).to include("<title>Quitando</title>")
     expect(response.body).to include("Nova despesa")
-    expect(response.body).to include("action=\"/groups/#{group.id}/expenses\"")
+    expect(response.body).to include("action=\"/groups/#{group.id}/expenses/preview\"")
   end
 
   it "renderiza a correção autorizada dentro do frame de diálogo" do

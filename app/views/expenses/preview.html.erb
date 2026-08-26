@@ -7,6 +7,17 @@
       <p>Valor total: <%= render MoneyComponent.new(cents: @preview.amount_cents, currency_code: @group.currency_code) %>.</p>
       <ul><% @preview.shares.each do |share| %><li><%= @group.memberships.find { |membership| membership.user_id == share.fetch(:user_id) }&.user&.email %>: <%= render MoneyComponent.new(cents: share.fetch(:amount_owed_cents), currency_code: @group.currency_code) %></li><% end %></ul>
       <p>Esta é uma revisão derivada. Nenhuma despesa foi registrada.</p>
+      <%= form_with url: group_expenses_path(@group), scope: :expense, class: "expense-preview__confirmation", data: { turbo_stream: true } do |form| %>
+        <%= form.hidden_field :description, value: @submitted_expense.fetch("description") %>
+        <%= form.hidden_field :occurred_on, value: @submitted_expense.fetch("occurred_on") %>
+        <%= form.hidden_field :amount_text, value: @submitted_expense.fetch("amount_text") %>
+        <%= form.hidden_field :paid_by_user_id, value: @submitted_expense.fetch("paid_by_user_id") %>
+        <%= form.hidden_field :split_type, value: @submitted_expense.fetch("split_type") %>
+        <% Array(@submitted_expense["participant_user_ids"]).each do |user_id| %><%= hidden_field_tag "expense[participant_user_ids][]", user_id %><% end %>
+        <% raw_shares = @submitted_expense["shares"] || {} %>
+        <% raw_shares.each do |index, share| %><%= hidden_field_tag "expense[shares][#{index}][user_id]", share["user_id"] %><%= hidden_field_tag "expense[shares][#{index}][amount_text]", share["amount_text"] %><% end %>
+        <%= form.submit "Confirmar despesa", class: "ui-button ui-button--primary" %>
+      <% end %>
     </section>
   <% end %>
 </turbo-frame>
