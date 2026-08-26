@@ -19,6 +19,9 @@ RSpec.describe "Landing pública" do
     expect(document.at_css("meta[property='og:image']")["content"]).to match(/hero-friends-og(?:-[a-f0-9]+)?\.webp/)
     expect(document.at_css(".landing-hero picture img")["alt"]).to include("Quatro amigos")
     expect(section_ids).to eq(%w[como-funciona estados produto engenharia confianca comecar])
+    expect(document.at_css(".landing-product img")&.[]("src")).to match(/dashboard-summary(?:-[a-f0-9]+)?\.webp/)
+    expect(document.css(".landing-dashboard-preview")).to be_empty
+    expect(document.css(".eyebrow").count).to be <= 3
     expect(response.body).not_to match(/preços|depoimentos|clientes atendidos/i)
   end
 

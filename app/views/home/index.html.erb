@@ -48,7 +48,6 @@
 
 <section id="estados" class="landing-section landing-explainer" aria-labelledby="states-title">
   <div>
-    <p class="eyebrow">Sem misturar estados</p>
     <h2 id="states-title">Cada valor responde uma pergunta diferente.</h2>
   </div>
   <dl class="landing-definitions">
@@ -60,22 +59,16 @@
 
 <section id="produto" class="landing-section landing-product" aria-labelledby="product-title">
   <div>
-    <p class="eyebrow">Visão do grupo</p>
     <h2 id="product-title">O que aconteceu, o que falta e por quê.</h2>
     <p>O painel combina saldos, pendências e o plano atual em uma leitura que também funciona sem JavaScript.</p>
   </div>
-  <figure class="landing-dashboard-preview">
-    <div class="landing-dashboard-preview__bar"><span>Quitando</span><span>Resumo do grupo</span></div>
-    <div class="landing-dashboard-preview__body">
-      <div><small>Saldo projetado</small><strong>R$ 24,00 a receber</strong><span>Inclui uma pendência.</span></div>
-      <div><small>Próxima sugestão</small><strong>Bruno envia R$ 24,00 para Ana</strong><span>Reduz duas relações históricas.</span></div>
-    </div>
-    <figcaption>Prévia do dashboard do Quitando. A captura do cenário normativo é atualizada junto do gate visual.</figcaption>
+  <figure class="landing-dashboard-screenshot">
+    <%= image_tag "landing/dashboard-summary.webp", alt: "Resumo real de um grupo com saldos, plano líquido e tabela de transferências.", width: 1009, height: 757, loading: "lazy" %>
+    <figcaption>Resumo real do Quitando no cenário visual de Ana, Bruno e Carla.</figcaption>
   </figure>
 </section>
 
 <section id="engenharia" class="landing-section landing-engineering" aria-labelledby="engineering-title">
-  <p class="eyebrow">Feito para explicar</p>
   <h2 id="engineering-title">Cuidado com os fatos, cuidado com a interface.</h2>
   <ul>
     <li>Valores em centavos inteiros, sem arredondamento invisível.</li>

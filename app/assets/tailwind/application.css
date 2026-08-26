@@ -406,6 +406,19 @@ a {
   font-size: clamp(3.25rem, 7vw, 6.4rem);
 }
 
+@media (min-width: 768px) {
+  .landing-hero {
+    grid-template-columns: minmax(0, 1.35fr) minmax(18rem, 0.65fr);
+    gap: clamp(2rem, 4vw, 3.5rem);
+    padding-block: clamp(1.5rem, 4vw, 3rem);
+  }
+
+  .landing-hero h1 {
+    max-width: none;
+    font-size: clamp(3rem, 3.6vw, 4.2rem);
+  }
+}
+
 .landing-hero__lede {
   max-width: 39rem;
   margin: 1.5rem 0 0;
@@ -526,7 +539,7 @@ a {
   line-height: 1.55;
 }
 
-.landing-dashboard-preview {
+.landing-dashboard-screenshot {
   overflow: hidden;
   margin: 0;
   border: 1px solid var(--color-border);
@@ -535,21 +548,8 @@ a {
   box-shadow: var(--shadow-surface);
 }
 
-.landing-dashboard-preview__bar {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1rem 1.2rem;
-  border-bottom: 1px solid var(--color-border);
-  font-weight: 670;
-}
-
-.landing-dashboard-preview__body { display: grid; gap: 1rem; padding: 1.2rem; }
-.landing-dashboard-preview__body div { display: grid; gap: 0.45rem; border-radius: var(--radius-control); padding: 1rem; background: var(--color-surface-secondary); }
-.landing-dashboard-preview small,
-.landing-dashboard-preview span { color: var(--color-text-secondary); }
-.landing-dashboard-preview strong { font-size: 1.12rem; }
-.landing-dashboard-preview figcaption { padding: 0 1.2rem 1.2rem; color: var(--color-text-secondary); font-size: 0.85rem; }
+.landing-dashboard-screenshot img { display: block; width: 100%; height: auto; }
+.landing-dashboard-screenshot figcaption { padding: 0.9rem 1.2rem 1.2rem; color: var(--color-text-secondary); font-size: 0.85rem; }
 
 .landing-engineering ul {
   display: grid;
