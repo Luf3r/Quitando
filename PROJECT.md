@@ -253,7 +253,7 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 - **Última fase concluída:** Fase 12 — Turbo Frames, Streams e Action Cable.
 - **Fase atual:** Fase 13, experiência visual, landing e acessibilidade.
 - **Status atual:** gate reaberto. As entregas 13.1 a 13.6 permanecem verificadas, mas a fase só volta a concluir depois de landing, redesign integral, temas, previews, histórico, configurações, ativos e novo gate acessível.
-- **Trabalho executável atual:** Fase 13.8 a 13.12 têm fatias implementadas: landing, conta, shell, destinos, preview obrigatório de despesas e correções e paginação inicial do histórico. O gate permanece aberto, pois ainda faltam a auditoria visual completa, configurações, ativos e a evidência integrada. A fundação visual 13.7 foi verificada; a Fase 14 retorna ao Backlog até o novo gate.
+- **Trabalho executável atual:** Fase 13.8 a 13.14 têm fatias implementadas: landing e conta, shell e destinos, preview obrigatório de despesas e correções, paginação e detalhes auditáveis, ações de memberships, fotografia editorial, páginas de erro e temas. `bin/ci` e a verificação da imagem de produção passaram sobre o diff recente. O gate permanece aberto pelas evidências visuais e de performance ainda pendentes; a Fase 14 retorna ao Backlog até o novo gate.
 - **Gate integrado da Fase 0:** `bin/ci` executa localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação. O hardening adicional da PR #38 também foi aprovado nos checks remotos atuais.
 
 **Integrado e verificado até agora:**
@@ -359,11 +359,11 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 
 **Pendente no gate reaberto da Fase 13:**
 
-- refinamento do shell responsivo, cards de grupos e convites;
-- aprofundamento dos destinos Resumo, Plano, Histórico e Configurações;
-- preview e revisão obrigatória de despesas e correções;
-- histórico paginado e detalhes auditáveis completos;
-- ativos reais, páginas de erro, screenshots, Lighthouse e verificações integrais frescas.
+- refinamento integral dos quatro destinos e de seus estados/explicações contra todos os critérios UX;
+- acabamento acessível de erros de formulário, ações bloqueadas e confirmações;
+- screenshots reais claro/escuro do cenário Ana, Bruno e Carla em 360, 768 e 1440 px;
+- Lighthouse mobile da landing e do Resumo autenticado;
+- pre-flight de design/acessibilidade, reconciliação final de issues/Project e evidência fresca do gate completo.
 
 Atualize esta seção e o [GitHub Project](https://github.com/users/Luf3r/projects/2) sempre que a tarefa ativa, uma entrega verificável, pendência, fase ou gate mudar. O estado detalhado e os critérios de saída ficam no [roadmap de implementação](./docs/05-quitando-roadmap-implementacao.md).
 
