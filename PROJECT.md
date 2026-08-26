@@ -253,7 +253,7 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 - **Última fase concluída:** Fase 12 — Turbo Frames, Streams e Action Cable.
 - **Fase atual:** Fase 13, experiência visual, landing e acessibilidade.
 - **Status atual:** gate reaberto. As entregas 13.1 a 13.6 permanecem verificadas, mas a fase só volta a concluir depois de landing, redesign integral, temas, previews, histórico, configurações, ativos e novo gate acessível.
-- **Trabalho executável atual:** Fase 13.8 em andamento para entregar landing pública, autenticação localizada e conta pessoal. A fundação visual 13.7 foi verificada; a Fase 14 retorna ao Backlog até o novo gate.
+- **Trabalho executável atual:** Fase 13.8 a 13.12 têm fatias implementadas: landing, conta, shell, destinos, preview obrigatório de despesas e correções e paginação inicial do histórico. O gate permanece aberto, pois ainda faltam a auditoria visual completa, configurações, ativos e a evidência integrada. A fundação visual 13.7 foi verificada; a Fase 14 retorna ao Backlog até o novo gate.
 - **Gate integrado da Fase 0:** `bin/ci` executa localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação. O hardening adicional da PR #38 também foi aprovado nos checks remotos atuais.
 
 **Integrado e verificado até agora:**
@@ -359,8 +359,8 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 
 **Pendente no gate reaberto da Fase 13:**
 
-- shell responsivo, cards de grupos e convites;
-- destinos Resumo, Plano, Histórico e Configurações;
+- refinamento do shell responsivo, cards de grupos e convites;
+- aprofundamento dos destinos Resumo, Plano, Histórico e Configurações;
 - preview e revisão obrigatória de despesas e correções;
 - histórico paginado e detalhes auditáveis completos;
 - ativos reais, páginas de erro, screenshots, Lighthouse e verificações integrais frescas.
