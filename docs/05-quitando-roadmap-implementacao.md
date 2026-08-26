@@ -798,7 +798,7 @@ Dois navegadores podem observar mudanças em tempo real, mas o sistema continua 
 
 ## 16. Fase 13 — Visualização, explicação e acessibilidade
 
-**Estado da fase:** reaberta para concluir a experiência visual integral. As entregas de visualização 13.1 a 13.6 permanecem concluídas, mas o gate só volta a fechar depois das entregas 13.7 a 13.14. Até lá, a Fase 12 é a última fase integralmente concluída e a Fase 14 permanece no Backlog.
+**Estado da fase:** concluída após o gate reaberto. As entregas de visualização 13.1 a 13.6 e 13.7 a 13.14 estão verificadas. A Fase 14 está `Ready` para o hardening operacional e o deploy.
 
 ### 16.1 Objetivo
 
@@ -861,6 +861,7 @@ Preparar operacionalmente o MVP visualmente concluído para demonstração públ
 
 - logs estruturados sem dados financeiros desnecessários;
 - monitoramento de jobs, broadcasts e invariantes;
+- RUM ou consulta CrUX para INP de campo, com acompanhamento do p75 por rota e dispositivo;
 - seeds ou cenário de demonstração;
 - proteção de rate limit onde aplicável;
 - backups e configuração de produção;
@@ -877,10 +878,11 @@ Preparar operacionalmente o MVP visualmente concluído para demonstração públ
 - jobs e broadcasts falhos não corrompem comandos já confirmados;
 - página inicial e fluxo principal funcionam após deploy limpo;
 - o cenário demo pode ser recriado de forma determinística.
+- o INP de campo do fluxo principal móvel permanece abaixo de 200 ms no p75.
 
 ### 17.4 Gate de saída
 
-O ambiente público possui observabilidade, proteção operacional, backups, configuração reproduzível, smoke tests e rollback demonstrado. Nenhuma tela ou fluxo visual conhecido fica postergado para esta fase.
+O ambiente público possui observabilidade, proteção operacional, backups, configuração reproduzível, smoke tests, rollback demonstrado e INP de campo do fluxo principal móvel abaixo de 200 ms no p75. Nenhuma tela ou fluxo visual conhecido fica postergado para esta fase.
 
 ---
 

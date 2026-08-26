@@ -112,6 +112,6 @@ Screenshots reais usam Ana, Bruno e Carla no cenário normativo, em claro e escu
 
 ## Gate
 
-O gate é demonstrado somente quando landing, shell e todas as jornadas do MVP atendem os contratos em HTTP sem JavaScript, com melhorias progressivas verificadas, assets reais, responsividade e acessibilidade. Os comandos obrigatórios são os definidos no plano da mesma data, além de Lighthouse mobile na landing e no Resumo autenticado com LCP abaixo de 2,5 s, CLS abaixo de 0,1, INP abaixo de 200 ms e nenhuma falha crítica de acessibilidade.
+O gate é demonstrado somente quando landing, shell e todas as jornadas do MVP atendem os contratos em HTTP sem JavaScript, com melhorias progressivas verificadas, assets reais, responsividade e acessibilidade. Os comandos obrigatórios são os definidos no plano da mesma data, além de Lighthouse mobile na landing e no Resumo autenticado com LCP abaixo de 2,5 s, CLS abaixo de 0,1 e nenhuma falha crítica de acessibilidade. A medição de INP de campo, por RUM ou CrUX depois do deploy, pertence à Fase 14.
 
 Depois disso a Fase 14 pode voltar a `Ready`, restrita a observabilidade operacional, rate limit, secrets, backups, produção, cenário de demonstração, Kamal, smoke tests, rollback e deploy real.

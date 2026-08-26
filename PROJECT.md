@@ -250,10 +250,10 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 
 ## 11. Milestone atual
 
-- **Última fase concluída:** Fase 12 — Turbo Frames, Streams e Action Cable.
-- **Fase atual:** Fase 13, experiência visual, landing e acessibilidade.
-- **Status atual:** gate reaberto. As entregas 13.1 a 13.6 permanecem verificadas, mas a fase só volta a concluir depois de landing, redesign integral, temas, previews, histórico, configurações, ativos e novo gate acessível.
-- **Trabalho executável atual:** Fase 13.8 a 13.14 têm fatias implementadas: landing e conta, shell e destinos, preview obrigatório de despesas e correções, paginação e detalhes auditáveis, ações de memberships, fotografia editorial, páginas de erro e temas. A landing e o Resumo autenticado foram inspecionados em 360, 768 e 1440 px nos temas claro e escuro, sem overflow horizontal; capturas representativas do Resumo foram registradas no Chromium com Ana, Bruno e Carla. Na imagem de produção, Lighthouse mobile mediu LCP de 1,89 s e CLS de 0,043 na landing, e LCP de 1,82 s e CLS de 0,017 no Resumo autenticado, ambos com acessibilidade 1,0. O Lighthouse headless não produziu INP; portanto o gate permanece aberto. A Fase 14 retorna ao Backlog até o novo gate.
+- **Última fase concluída:** Fase 13 — experiência visual, landing e acessibilidade.
+- **Fase atual:** Fase 14, hardening, observabilidade e deploy.
+- **Status atual:** Fase 13 concluída após o gate reaberto. A Fase 14 está `Ready` e recebe a medição de INP de campo por RUM ou CrUX depois do deploy, com alvo p75 abaixo de 200 ms para o fluxo principal móvel.
+- **Evidência final da Fase 13:** landing, shell e jornadas do MVP funcionam por HTTP sem JavaScript, com melhorias progressivas verificadas. A landing e o Resumo autenticado foram inspecionados em 360, 768 e 1440 px nos temas claro e escuro, sem overflow horizontal; capturas representativas do Resumo foram registradas no Chromium com Ana, Bruno e Carla. Na imagem de produção, Lighthouse mobile mediu LCP de 1,89 s e CLS de 0,043 na landing, e LCP de 1,82 s e CLS de 0,017 no Resumo autenticado, ambos com acessibilidade 1,0. RSpec completo, Tailwind, `bin/ci`, imagem de produção e `git diff --check` passaram. INP não é produzido pelo Lighthouse headless e foi movido explicitamente para a Fase 14.
 - **Gate integrado da Fase 0:** `bin/ci` executa localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação. O hardening adicional da PR #38 também foi aprovado nos checks remotos atuais.
 
 **Integrado e verificado até agora:**
@@ -357,11 +357,12 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 - Tailwind é construído explicitamente no `bin/ci`, e auditoria do importmap cobre o módulo mínimo `d3-selection` fixado localmente e carregado somente quando a visualização conecta.
 - a leitura concorrente do dashboard é delimitada pela `financial_state_version`: uma alteração financeira confirmada entre o plano e as obrigações descarta a composição parcial e retorna uma composição integral da versão nova, demonstrada em PostgreSQL real.
 
-**Pendente no gate reaberto da Fase 13:**
+**Concluído no gate reaberto da Fase 13 (13.7 a 13.14):**
 
-- refinamento integral dos quatro destinos e de seus estados/explicações contra todos os critérios UX;
-- acabamento acessível de erros de formulário, ações bloqueadas e confirmações;
-- pre-flight de design/acessibilidade, reconciliação final de issues/Project e evidência fresca do gate completo.
+- landing, autenticação, conta pessoal, shell e quatro destinos por grupo foram redesenhados e cobertos por jornadas HTTP, Turbo e Action Cable;
+- previews e revisões de despesas, histórico auditável, configurações, bloqueios explicáveis, ativos, páginas de erro e temas foram integrados sem alterar os invariantes financeiros;
+- pre-flight visual e de acessibilidade, capturas responsivas, Lighthouse mobile, suíte, Tailwind, `bin/ci`, imagem de produção e integridade do diff foram reconciliados;
+- a medição de INP de campo foi movida para a Fase 14, onde haverá RUM ou CrUX depois do deploy.
 
 Atualize esta seção e o [GitHub Project](https://github.com/users/Luf3r/projects/2) sempre que a tarefa ativa, uma entrega verificável, pendência, fase ou gate mudar. O estado detalhado e os critérios de saída ficam no [roadmap de implementação](./docs/05-quitando-roadmap-implementacao.md).
 
