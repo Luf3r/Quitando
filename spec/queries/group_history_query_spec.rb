@@ -21,4 +21,16 @@ RSpec.describe GroupHistoryQuery do
 
     expect(entry.cycles).to contain_exactly(:voided, :replacement)
   end
+
+  it "pagina vinte e cinco fatos com ordem estável por timestamp e identificador" do
+    group = create(:group)
+    expenses = create_list(:expense, 26, group:, created_at: Time.zone.parse("2026-08-25 10:00:00"))
+
+    first_page = described_class.page(group:, number: 1)
+    second_page = described_class.page(group:, number: 2)
+
+    expect(first_page).to have_attributes(number: 1, total_pages: 2, total_facts: 26)
+    expect(first_page.entries.length).to eq(25)
+    expect(second_page.entries.map(&:record)).to eq([ expenses.min_by(&:id) ])
+  end
 end
