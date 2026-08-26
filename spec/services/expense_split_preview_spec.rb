@@ -15,7 +15,7 @@ RSpec.describe ExpenseSplitPreview do
 
     expect(result.amount_cents).to eq(1001)
     expect(result.shares).to eq([ { user_id: ana.id, amount_owed_cents: 501 }, { user_id: bruno.id, amount_owed_cents: 500 } ])
-    expect(Expense.count).to eq(0)
+    expect(group.expenses).to be_empty
   end
 
   it "rejeita shares exatas que não somam o total" do

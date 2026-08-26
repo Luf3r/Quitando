@@ -156,7 +156,7 @@ RSpec.describe "Expenses" do
 
     expect(response).to have_http_status(:conflict)
     expect(response.body).to include("Mercado corrigido")
-    expect(response.body).to include("Plano líquido")
+    expect(response.body).to include("Ver plano completo")
     expect(expense.reload.voided_at).to be_nil
   end
 
