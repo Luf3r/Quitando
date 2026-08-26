@@ -1,4 +1,7 @@
 pt-BR:
+  date:
+    formats:
+      default: "%d/%m/%Y"
   time:
     formats:
       short: "%d/%m/%Y às %H:%M"

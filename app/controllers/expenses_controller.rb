@@ -171,6 +171,6 @@ class ExpensesController < ApplicationController
   end
 
   def load_expense_detail(group)
-    @expense = group.expenses.includes(:paid_by_user, :created_by_user, :expense_shares, :replaces_expense, :replacement_expenses).find(params[:id])
+    @expense = group.expenses.includes(:paid_by_user, :created_by_user, :voided_by_user, expense_shares: :user, expense_description_revisions: :actor_user, replaces_expense: [], replacement_expenses: []).find(params[:id])
   end
 end
