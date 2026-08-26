@@ -104,6 +104,7 @@ class GroupsController < ApplicationController
 
   def archive_reason
     return "grupo não pode ser arquivado" unless %i[empty settled].include?(GroupFinancialStatusResolver.call(@group))
-    return "grupo possui convite pendente" if @group.group_invitations.pending.where(expires_at: Time.current..).exists?
+
+    "grupo possui convite pendente" if @group.group_invitations.pending.where(expires_at: Time.current..).exists?
   end
 end
