@@ -2,9 +2,12 @@
 
 <div class="space-y-4">
   <%= link_to "Voltar ao grupo", group_path(@payment.group), class: "text-sm underline" %>
-  <h1 class="text-2xl font-semibold">Pagamento <%= @payment.status %></h1>
+  <h1 class="text-2xl font-semibold">Pagamento <%= payment_status_label(@payment.status) %></h1>
   <p><%= @payment.from_user.email %> para <%= @payment.to_user.email %>: <%= render MoneyComponent.new(cents: @payment.amount_cents, currency_code: @payment.group.currency_code) %></p>
   <p>Reportado por <%= @payment.reported_by_user.email %>.</p>
+  <p>Declarado em <%= l(@payment.reported_at, format: :short) %>.</p>
+  <% if @payment.confirmed? %><p>Confirmado por <%= @payment.confirmed_by_user.email %> em <%= l(@payment.confirmed_at, format: :short) %>.</p><% end %>
+  <% if @payment.cancelled? %><p>Cancelado por <%= @payment.cancelled_by_user.email %> em <%= l(@payment.cancelled_at, format: :short) %>. Motivo: <%= @payment.cancellation_reason %>.</p><% end %>
   <% if @payment.reported? && !@payment.group.archived_at? && @payment.to_user_id == current_user.id %>
     <%= button_to "Confirmar pagamento", "/groups/#{@payment.group_id}/payments/#{@payment.id}/confirm", params: { payment: { idempotency_key: SecureRandom.uuid } }, form: { data: { turbo_stream: true } }, class: "rounded bg-slate-900 px-3 py-1 text-white" %>
   <% end %>

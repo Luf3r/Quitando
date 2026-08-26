@@ -1,4 +1,7 @@
 pt-BR:
+  time:
+    formats:
+      short: "%d/%m/%Y às %H:%M"
   app:
     name: Quitando
   financial_visualization:
