@@ -380,7 +380,7 @@ Correções de despesa aparecem como cadeia:
 Despesa original anulada -> motivo -> despesa substituta
 ```
 
-Convites usam histórico próprio, sem se misturar a fatos financeiros: `/invitations?page=N` separa **Pendentes** de **Encerrados** para o usuário convidado, e Configurações mostra ao owner ativo o histórico enviado. Cada entrada apresenta grupo, contraparte, estado localizado e timestamp terminal. Ambas as listas paginam 25 itens, em ordem decrescente de timestamp terminal e identificador; página malformada retorna `422` antes de qualquer consulta. Somente convites pendentes mostram ações.
+Convites usam histórico próprio, sem se misturar a fatos financeiros: `/invitations?page=N` separa **Pendentes** de **Encerrados** para o usuário convidado, e Configurações mostra ao owner ativo o histórico enviado. Cada entrada apresenta grupo, contraparte e estado localizado; pendentes mostram `created_at`, enquanto encerrados mostram o timestamp terminal correspondente. Ambas as listas paginam 25 itens: Pendentes usam `created_at` decrescente e identificador como desempate; Encerrados usam timestamp terminal decrescente e identificador como desempate. Página malformada retorna `422` antes de qualquer consulta. Somente convites pendentes mostram ações.
 
 ---
 

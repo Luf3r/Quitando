@@ -850,7 +850,7 @@ Entregar uma experiência pública e autenticada completa, coerente, responsiva 
 ### 16.4 Entrega 13.15 — Histórico auditável de convites
 
 - `GroupInvitationPolicy::Scope` inclui todos os convites recebidos; a separação entre pendentes e terminais ocorre explicitamente na consulta e apresentação;
-- `/invitations?page=N` apresenta as seções Pendentes e Encerrados, com 25 itens por página, ordenação decrescente por timestamp terminal e identificador e `422` para página malformada antes da consulta;
+- `/invitations?page=N` apresenta as seções Pendentes e Encerrados, com 25 itens por página: Pendentes usam `created_at` decrescente e identificador como desempate; Encerrados usam timestamp terminal decrescente e identificador como desempate. Página malformada retorna `422` antes da consulta;
 - somente o owner ativo consulta em Configurações o histórico de convites enviados; apenas convites pendentes exibem ações.
 
 As specs demonstram escopo recebido com convite terminal, paginação e ordenação, `422` antes de consulta sensível e autorização do histórico enviado. Esta entrega não altera estados de convite, participação financeira, ledger ou permissões de comandos financeiros.
