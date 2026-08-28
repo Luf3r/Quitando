@@ -4,6 +4,7 @@ RSpec.describe "Preview de despesa" do
   it "retorna shares sem criar despesa e devolve 422 para entrada inválida" do
     ana = create(:user)
     bia = create(:user)
+    outsider = create(:user)
     group = GroupCreator.call(owner_user_id: ana.id, name: "Casa")
     create(:membership, group:, user: bia, position: 1)
     post user_session_path, params: { user: { email: ana.email, password: ana.password } }
@@ -15,6 +16,11 @@ RSpec.describe "Preview de despesa" do
     expect(response.body).to include("Revise a divisão")
     expect(response.body).to include("Confirmar despesa")
     expect(response.body).to include('name="expense[description]"')
+
+    post group_expenses_preview_path(group), params: { expense: { description: "Mercado", occurred_on: Date.current.iso8601, amount_text: "10,00", split_type: "equal", paid_by_user_id: outsider.id, participant_user_ids: [ ana.id, bia.id ] } }
+    expect(response).to have_http_status(:unprocessable_content)
+    expect(response.body).to include("membership ativa obrigatória")
+    expect(response.body).not_to include("Confirmar despesa")
 
     post group_expenses_preview_path(group), params: { expense: { description: "Mercado", occurred_on: Date.current.iso8601, amount_text: "10,00", split_type: "equal", paid_by_user_id: ana.id, participant_user_ids: [ ana.id ] } }
     expect(response).to have_http_status(:unprocessable_content)

@@ -152,12 +152,27 @@ RSpec.describe "Expenses" do
     expense = ExpenseCreator.call(group_id: group.id, created_by_user_id: owner.id, paid_by_user_id: owner.id, description: "Mercado", occurred_on: Date.new(2026, 8, 14), amount_text: "20,00", split: { type: :equal, participant_user_ids: [ owner.id, member.id ] })
 
     post user_session_path, params: { user: { email: owner.email, password: owner.password } }
-    post "/groups/#{group.id}/expenses/#{expense.id}/correct", params: { correction: { reason: "Valor correto", description: "Mercado corrigido", amount_text: "25,00", paid_by_user_id: owner.id, split_type: "equal", participant_user_ids: [ owner.id, member.id ], expected_financial_state_version: group.reload.financial_state_version - 1, idempotency_key: SecureRandom.uuid } }
+    post "/groups/#{group.id}/expenses/#{expense.id}/correct", params: { correction: { reason: "Valor correto", description: "Mercado corrigido", amount_text: "25,00", paid_by_user_id: owner.id, split_type: "equal", participant_user_ids: [ owner.id, member.id ], expected_financial_state_version: group.reload.financial_state_version - 1, idempotency_key: SecureRandom.uuid } }, headers: { "Turbo-Frame" => "correction_preview" }
 
     expect(response).to have_http_status(:conflict)
-    expect(response.body).to include("Mercado corrigido")
-    expect(response.body).to include("Ver plano completo")
+    expect(response.body).to include('<turbo-frame id="correction_preview">')
+    expect(response.body).to include("estado financeiro desatualizado")
     expect(expense.reload.voided_at).to be_nil
+  end
+
+  it "mantém o erro da confirmação de despesa no frame de revisão" do
+    owner = create(:user, email: "ana@example.com")
+    member = create(:user, email: "bia@example.com")
+    group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
+    create(:membership, group:, user: member, position: 1)
+    GroupArchiver.call(group_id: group.id, actor_user_id: owner.id)
+
+    post user_session_path, params: { user: { email: owner.email, password: owner.password } }
+    post group_expenses_path(group), params: { expense: { description: "Mercado", occurred_on: Date.new(2026, 8, 14), amount_text: "20,00", paid_by_user_id: owner.id, split_type: "equal", participant_user_ids: [ owner.id, member.id ] } }, headers: { "Turbo-Frame" => "expense_preview" }
+
+    expect(response).to have_http_status(:unprocessable_content)
+    expect(response.body).to include('<turbo-frame id="expense_preview">')
+    expect(response.body).to include("grupo arquivado")
   end
 
   it "edita a descrição com revisão auditável" do

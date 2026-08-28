@@ -135,7 +135,10 @@ class ExpensesController < ApplicationController
     @pending_invitations = @group.group_invitations.pending.where(expires_at: Time.current..).includes(:invited_user) if policy(@group).invite?
     @expense_form = ExpenseForm.new(**expense_params.to_h.symbolize_keys)
     flash.now[:alert] = error.message
-    if turbo_frame_request?
+    if turbo_frame_request? && request.headers["Turbo-Frame"] == "expense_preview"
+      @preview_error = error.message
+      render :preview, formats: :html, status: :unprocessable_entity, layout: false
+    elsif turbo_frame_request?
       render :new_dialog, formats: :html, status: :unprocessable_entity, layout: false
     else
       render :new, status: :unprocessable_entity
@@ -149,7 +152,11 @@ class ExpensesController < ApplicationController
     @dashboard = GroupDashboardQuery.call(group:, viewer: current_user)
     @current_financial_state_version = group.financial_state_version
     flash.now[:alert] = error.message
-    if turbo_frame_request?
+    if turbo_frame_request? && request.headers["Turbo-Frame"] == "correction_preview"
+      @group = group
+      @preview_error = error.message
+      render :correction_preview, formats: :html, status: Http::DomainErrorMapper.call(error).status, layout: false
+    elsif turbo_frame_request?
       @group = group
       render :correction_dialog, formats: :html, status: Http::DomainErrorMapper.call(error).status, layout: false
     else

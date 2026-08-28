@@ -22,6 +22,7 @@ class ExpenseSplitPreview
   end
 
   def call
+    validate_payer!
     amount_cents = MoneyParser.parse_cents(amount_text)
     computed_shares = split_type == "equal" ? equal_shares(amount_cents) : exact_shares(amount_cents)
     validate_non_payer_obligation!(computed_shares)
@@ -73,5 +74,9 @@ class ExpenseSplitPreview
     unless computed_shares.any? { |share| share.fetch(:user_id) != paid_by_user_id }
       raise InvalidPreview, "despesa deve gerar obrigação para não pagador"
     end
+  end
+
+  def validate_payer!
+    raise InvalidPreview, "membership ativa obrigatória" unless memberships.any? { |membership| membership.user_id == paid_by_user_id }
   end
 end
