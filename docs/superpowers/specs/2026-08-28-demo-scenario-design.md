@@ -10,7 +10,7 @@ Impacto documental: escopo, fase, gate, comportamento e arquitetura operacional.
 
 ## Histórico de convites
 
-`GroupInvitationPolicy::Scope` passa a incluir todos os convites recebidos pelo usuário; controllers filtram explicitamente pendentes e terminais. `/invitations?page=N` mostra seções Pendentes e Encerrados; somente pendentes exibem ações. Um owner ativo vê em Configurações o histórico dos convites enviados. Entradas mostram grupo, contraparte, estado localizado e timestamp terminal. Os históricos usam 25 itens por página, em ordem decrescente de timestamp terminal e ID; página malformada retorna `422` antes da consulta. O histórico enviado permanece restrito ao owner ativo.
+`GroupInvitationPolicy::Scope` passa a incluir todos os convites recebidos pelo usuário; controllers filtram explicitamente pendentes e terminais. `/invitations?page=N` mostra seções Pendentes e Encerrados; somente pendentes exibem ações. Um owner ativo vê em Configurações o histórico dos convites enviados. Entradas mostram grupo, contraparte e estado localizado: pendentes mostram `created_at`, enquanto terminais mostram seu timestamp terminal. Os históricos usam 25 itens por página; Pendentes usam `created_at` decrescente e ID como desempate, enquanto Encerrados usam timestamp terminal decrescente e ID como desempate. Página malformada retorna `422` antes da consulta. O histórico enviado permanece restrito ao owner ativo.
 
 ## Cenário canônico
 

@@ -43,7 +43,7 @@
 
 **Consumes:** Convites terminais existentes e `GroupInvitationExpirer` idempotente.
 
-**Produces:** `GroupInvitationHistoryQuery::Page`, com 25 itens, ordem terminal timestamp/ID e paginação validada.
+**Produces:** `GroupInvitationHistoryQuery::Page`, com 25 itens por página e paginação validada: pendentes em ordem decrescente de `created_at`/ID e terminais em ordem decrescente de timestamp terminal/ID.
 
 - [ ] Escrever spec Red para política recebida incluir convite terminal e a página recebida separar pendentes de encerrados.
 - [ ] Rodar a spec e confirmar falha por o escopo ainda filtrar `pending`.
