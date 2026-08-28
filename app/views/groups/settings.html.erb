@@ -23,13 +23,31 @@
       <% end %>
     </section>
   <% end %>
-  <% if policy(@group).invite? && !@group.archived_at? %>
+  <% if policy(@group).invite? %>
     <section class="settings-section" aria-labelledby="invitations-title">
-      <h2 id="invitations-title">Convidar pessoa</h2>
-      <%= form_with url: group_invitations_path(@group), scope: :invitation, class: "group-create__form" do |form| %>
-        <%= form.label :email, "E-mail", class: "sr-only" %><%= form.email_field :email, required: true, class: "ui-field__control", placeholder: "pessoa@exemplo.com" %><%= form.submit "Enviar convite", class: "ui-button ui-button--primary" %>
+      <h2 id="invitations-title">Histórico de convites enviados</h2>
+      <% unless @group.archived_at? %>
+        <h3>Convidar pessoa</h3>
+        <%= form_with url: group_invitations_path(@group), scope: :invitation, class: "group-create__form" do |form| %>
+          <%= form.label :email, "E-mail", class: "sr-only" %><%= form.email_field :email, required: true, class: "ui-field__control", placeholder: "pessoa@exemplo.com" %><%= form.submit "Enviar convite", class: "ui-button ui-button--primary" %>
+        <% end %>
       <% end %>
-      <% if @pending_invitations.any? %><ul class="audit-list"><% @pending_invitations.each do |invitation| %><li><%= invitation.invited_user.email %><%= button_to "Revogar convite", "/groups/#{@group.id}/invitations/#{invitation.id}/revoke", class: "ui-button ui-button--secondary" %></li><% end %></ul><% else %><p>Nenhum convite pendente.</p><% end %>
+
+      <h3>Pendentes</h3>
+      <% if @sent_pending_page.entries.any? %>
+        <ul class="audit-list"><% @sent_pending_page.entries.each do |invitation| %><li><strong><%= invitation.group.name %></strong>. <%= invitation.invited_user.email %>. <%= invitation_status_label(invitation.status) %> em <time datetime="<%= invitation.created_at.iso8601 %>"><%= l(invitation.created_at, format: :short) %></time>.<% unless @group.archived_at? %> <%= button_to "Revogar convite", "/groups/#{@group.id}/invitations/#{invitation.id}/revoke", class: "ui-button ui-button--secondary" %><% end %></li><% end %></ul>
+      <% else %>
+        <p>Nenhum convite pendente.</p>
+      <% end %>
+      <% if @sent_pending_page.total_pages > 1 %><nav class="pagination" aria-label="Paginação dos convites enviados pendentes"><% if @sent_pending_page.number > 1 %><%= link_to "Anterior", group_settings_path(@group, page: @sent_pending_page.number - 1) %><% end %><span>Página <%= @sent_pending_page.number %> de <%= @sent_pending_page.total_pages %></span><% if @sent_pending_page.number < @sent_pending_page.total_pages %><%= link_to "Próxima", group_settings_path(@group, page: @sent_pending_page.number + 1) %><% end %></nav><% end %>
+
+      <h3>Encerrados</h3>
+      <% if @sent_terminal_page.entries.any? %>
+        <ul class="audit-list"><% @sent_terminal_page.entries.each do |invitation| %><% terminal_at = invitation_terminal_at(invitation) %><li><strong><%= invitation.group.name %></strong>. <%= invitation.invited_user.email %>. <%= invitation_status_label(invitation.status) %> em <time datetime="<%= terminal_at.iso8601 %>"><%= l(terminal_at, format: :short) %></time>.</li><% end %></ul>
+      <% else %>
+        <p>Nenhum convite encerrado.</p>
+      <% end %>
+      <% if @sent_terminal_page.total_pages > 1 %><nav class="pagination" aria-label="Paginação dos convites enviados encerrados"><% if @sent_terminal_page.number > 1 %><%= link_to "Anterior", group_settings_path(@group, page: @sent_terminal_page.number - 1) %><% end %><span>Página <%= @sent_terminal_page.number %> de <%= @sent_terminal_page.total_pages %></span><% if @sent_terminal_page.number < @sent_terminal_page.total_pages %><%= link_to "Próxima", group_settings_path(@group, page: @sent_terminal_page.number + 1) %><% end %></nav><% end %>
     </section>
   <% end %>
   <% if policy(@group).update? && !@group.archived_at? %><section class="settings-section" aria-labelledby="group-name-title"><h2 id="group-name-title">Nome do grupo</h2><%= form_with model: @group, class: "group-create__form" do |form| %><%= form.label :name, "Nome", class: "sr-only" %><%= form.text_field :name, required: true, class: "ui-field__control" %><%= form.submit "Salvar nome", class: "ui-button ui-button--primary" %><% end %></section><% end %>

@@ -4,7 +4,23 @@ RSpec.describe "Group invitations" do
   include ActiveSupport::Testing::TimeHelpers
 
   describe "GET /invitations" do
-    it "mostra somente convites pending do usuário autenticado" do
+    it "separa os convites pendentes e terminais recebidos, sem ações nos terminais" do
+      invited_user = create(:user, email: "bia@example.com")
+      pending = create(:group_invitation, invited_user:, expires_at: 2.days.from_now)
+      terminal = create(:group_invitation, :declined, invited_user:)
+
+      post user_session_path, params: { user: { email: invited_user.email, password: invited_user.password } }
+      get "/invitations"
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Pendentes", pending.group.name)
+      expect(response.body).to include("Encerrados", terminal.group.name)
+      expect(response.body).to include("Recusado")
+      expect(response.body).not_to include("/invitations/#{terminal.id}/accept")
+      expect(response.body).not_to include("/invitations/#{terminal.id}/decline")
+    end
+
+    it "mostra somente os convites do usuário autenticado" do
       invited_user = create(:user, email: "bia@example.com")
       visible_group = create(:group, name: "Grupo visível")
       hidden_group = create(:group, name: "Grupo oculto")
@@ -32,10 +48,22 @@ RSpec.describe "Group invitations" do
         get "/invitations"
 
         expect(response).to have_http_status(:ok)
-        expect(response.body).not_to include(own_invitation.group.name)
+        expect(response.body).to include(own_invitation.group.name, "Expirado")
+        expect(response.body).not_to include("/invitations/#{own_invitation.id}/accept")
         expect(own_invitation.reload).to be_expired
         expect(foreign_invitation.reload).to be_pending
       end
+    end
+
+    it "rejeita página malformada antes de consultar convites" do
+      invited_user = create(:user, email: "bia@example.com")
+      create(:group_invitation, invited_user:)
+
+      post user_session_path, params: { user: { email: invited_user.email, password: invited_user.password } }
+      queries = sql_queries_for("group_invitations") { get "/invitations", params: { page: "zero" } }
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(queries).to be_empty
     end
   end
 

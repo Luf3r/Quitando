@@ -48,8 +48,14 @@ class GroupsController < ApplicationController
   def settings
     @group = policy_scope(Group).find(params[:group_id])
     authorize @group, :show?
+    page = invitation_history_page
+    return unless page
+
     @memberships = @group.memberships.includes(:user).order(:position, :user_id)
-    @pending_invitations = @group.group_invitations.pending.where(expires_at: Time.current..).includes(:invited_user) if policy(@group).invite?
+    if policy(@group).invite?
+      @sent_pending_page = GroupInvitationHistoryQuery.pending_page(invitations: @group.group_invitations, number: page)
+      @sent_terminal_page = GroupInvitationHistoryQuery.terminal_page(invitations: @group.group_invitations, number: page)
+    end
     @membership_deactivation_reasons = membership_deactivation_reasons
     @archive_reason = archive_reason
   end
@@ -106,5 +112,13 @@ class GroupsController < ApplicationController
     return "grupo não pode ser arquivado" unless %i[empty settled].include?(GroupFinancialStatusResolver.call(@group))
 
     "grupo possui convite pendente" if @group.group_invitations.pending.where(expires_at: Time.current..).exists?
+  end
+
+  def invitation_history_page
+    page = params.fetch(:page, "1")
+    return page.to_i if page.is_a?(String) && /\A[1-9]\d*\z/.match?(page)
+
+    render plain: t("errors.unprocessable_entity"), status: :unprocessable_content
+    nil
   end
 end
