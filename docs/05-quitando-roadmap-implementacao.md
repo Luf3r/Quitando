@@ -798,7 +798,7 @@ Dois navegadores podem observar mudanças em tempo real, mas o sistema continua 
 
 ## 16. Fase 13 — Visualização, explicação e acessibilidade
 
-**Estado da fase:** concluída após o gate reaberto. As entregas de visualização 13.1 a 13.6 e 13.7 a 13.14 estão verificadas. A Fase 14 está `Ready` para o hardening operacional e o deploy.
+**Estado da fase:** em andamento. As entregas 13.1 a 13.14 permanecem verificadas da passagem anterior; 13.15 (histórico auditável de convites) e 13.16 (cenário público demo) foram acrescentadas ao gate e ainda exigem evidência própria. A Fase 14 não absorve essas entregas.
 
 ### 16.1 Objetivo
 
@@ -820,6 +820,8 @@ Entregar uma experiência pública e autenticada completa, coerente, responsiva 
 - cards de grupos e convites orientados a ação, sem executar o simplificador na listagem;
 - preview financeiro no servidor e revisão obrigatória de despesas e correções;
 - histórico auditável paginado em 25 fatos;
+- histórico auditável de convites recebidos e enviados, sem novas transições ou permissões financeiras;
+- cenário público demo reproduzível, em banco e deploy próprios, descartável e resetado integralmente a cada seis horas;
 - ativos reais, páginas de erro e screenshots nos dois temas.
 
 ### 16.3 Specs
@@ -845,9 +847,30 @@ Entregar uma experiência pública e autenticada completa, coerente, responsiva 
 - temas claro e escuro funcionam em 360, 768 e 1440 px, por teclado e com movimento reduzido;
 - strings visíveis não contêm em dash ou en dash.
 
-### 16.4 Gate de saída
+### 16.4 Entrega 13.15 — Histórico auditável de convites
 
-Uma pessoa conhece o produto pela landing e executa todas as jornadas do MVP em uma interface coerente, responsiva e acessível, por HTTP sem JavaScript e com melhorias progressivas quando Turbo, Action Cable e o grafo estão disponíveis. O gate inclui suíte completa, build Tailwind, `bin/ci`, imagem de produção, diff limpo e Lighthouse mobile dentro dos limites documentados no design da fase.
+- `GroupInvitationPolicy::Scope` inclui todos os convites recebidos; a separação entre pendentes e terminais ocorre explicitamente na consulta e apresentação;
+- `/invitations?page=N` apresenta as seções Pendentes e Encerrados, com 25 itens por página, ordenação decrescente por timestamp terminal e identificador e `422` para página malformada antes da consulta;
+- somente o owner ativo consulta em Configurações o histórico de convites enviados; apenas convites pendentes exibem ações.
+
+As specs demonstram escopo recebido com convite terminal, paginação e ordenação, `422` antes de consulta sensível e autorização do histórico enviado. Esta entrega não altera estados de convite, participação financeira, ledger ou permissões de comandos financeiros.
+
+### 16.5 Entrega 13.16 — Cenário público demo reproduzível
+
+- com `QUITANDO_DEMO_MODE=true`, o cenário é instalado antes de aceitar tráfego por `db:prepare` e usa exclusivamente comandos reais de domínio;
+- as quatro contas públicas são Ana, Bruno, Carla e Diego; a senha pública vem de `QUITANDO_DEMO_PASSWORD`;
+- `users.demo_account` é imutável pelo fluxo demo e `demo_scenarios` registra `key`, `version`, `installed_at` e `last_reset_at`; conta demo não altera e-mail ou senha nem recebe recuperação que revele sua existência;
+- banco e deploy demo são separados e descartáveis; dados reais duráveis usam outro banco e deploy com `QUITANDO_DEMO_MODE=false`;
+- reset integral transacional ocorre a cada seis horas, sob advisory lock PostgreSQL compartilhado, com `lock_timeout=10s`, `statement_timeout=60s` e no máximo cinco novas tentativas, uma por minuto;
+- reset manual requer `CONFIRM_DEMO_RESET=quitando-demo-only` e coincidência exata entre `QUITANDO_DEMO_DATABASE_NAME` e o banco atual antes de qualquer `TRUNCATE`.
+
+O reset descobre as tabelas da base primária, exclui `schema_migrations` e `ar_internal_metadata` e mantém lock e escritas na mesma transação. Eventos operacionais de início, sucesso e falha não expõem descrições financeiras; `Solid Queue` agenda o reset somente em production demo.
+
+As specs e o verificador integrado devem provar instalação inicial e idempotente, snapshot canônico, mutação, reset real, rollback integral, recusa antes de `TRUNCATE` para banco não autorizado, concorrência sem duplicação, cleanup exato e proteção das credenciais demo. Não há fallback que simule instalação, reset ou processamento de imagem.
+
+### 16.6 Gate de saída
+
+Uma pessoa conhece o produto pela landing e executa todas as jornadas do MVP em uma interface coerente, responsiva e acessível, por HTTP sem JavaScript e com melhorias progressivas quando Turbo, Action Cable e o grafo estão disponíveis. Além das verificações já definidas, o gate exige a demonstração autorizada e paginada do histórico de convites e `bin/verify-demo-scenario` em PostgreSQL temporário validado, cobrindo o caminho principal e as falhas explícitas da entrega 13.16. O gate inclui suíte completa, build Tailwind, `bin/ci`, imagem de produção, diff limpo e Lighthouse mobile dentro dos limites documentados no design da fase.
 
 ---
 
@@ -855,20 +878,19 @@ Uma pessoa conhece o produto pela landing e executa todas as jornadas do MVP em 
 
 ### 17.1 Objetivo
 
-Preparar operacionalmente o MVP visualmente concluído para demonstração pública e piloto real.
+Preparar operacionalmente o MVP para hardening, observabilidade e deploy após a conclusão do gate da Fase 13.
 
 ### 17.2 Implementar
 
 - logs estruturados sem dados financeiros desnecessários;
 - monitoramento de jobs, broadcasts e invariantes;
 - RUM ou consulta CrUX para INP de campo, com acompanhamento do p75 por rota e dispositivo;
-- seeds ou cenário de demonstração;
 - proteção de rate limit onde aplicável;
 - backups e configuração de produção;
 - deploy com Kamal;
 - smoke tests;
 - revisão de índices e queries;
-- documentação operacional do README e cenário de demonstração reproduzível;
+- documentação operacional do README;
 - roteiro de teste com usuário para destinatário contraintuitivo e despesa registrada por terceiro.
 
 ### 17.3 Verificações
@@ -877,7 +899,6 @@ Preparar operacionalmente o MVP visualmente concluído para demonstração públ
 - erros não vazam descrições sensíveis;
 - jobs e broadcasts falhos não corrompem comandos já confirmados;
 - página inicial e fluxo principal funcionam após deploy limpo;
-- o cenário demo pode ser recriado de forma determinística.
 - o INP de campo do fluxo principal móvel permanece abaixo de 200 ms no p75.
 
 ### 17.4 Gate de saída

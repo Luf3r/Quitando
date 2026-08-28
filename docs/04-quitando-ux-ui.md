@@ -82,6 +82,8 @@ A raiz pública apresenta a landing. Depois da autenticação, a navegação pri
 
 O Resumo prioriza a posição e as ações da pessoa. O Plano concentra pendências, transferências, métricas, tabelas, grafo, explicação e trace. Histórico e Configurações deixam de competir por espaço no dashboard.
 
+Quando `QUITANDO_DEMO_MODE=true`, a landing/login e um banner global acessível apresentam os quatro e-mails públicos, a senha configurada e o próximo reset. O banner declara que o ambiente é demo-only, descartável e reiniciado integralmente a cada seis horas. A UI não apresenta a conta demo como ambiente pessoal durável nem oculta uma falha de instalação ou reset; as credenciais demo não oferecem fluxo para alterar e-mail, senha ou recuperação.
+
 ---
 
 ## 4. Vocabulário da interface
@@ -378,6 +380,8 @@ Correções de despesa aparecem como cadeia:
 Despesa original anulada -> motivo -> despesa substituta
 ```
 
+Convites usam histórico próprio, sem se misturar a fatos financeiros: `/invitations?page=N` separa **Pendentes** de **Encerrados** para o usuário convidado, e Configurações mostra ao owner ativo o histórico enviado. Cada entrada apresenta grupo, contraparte, estado localizado e timestamp terminal. Ambas as listas paginam 25 itens, em ordem decrescente de timestamp terminal e identificador; página malformada retorna `422` antes de qualquer consulta. Somente convites pendentes mostram ações.
+
 ---
 
 ## 13. Configurações, convites e memberships
@@ -389,6 +393,7 @@ Arquivar, sair e transferir ownership exigem confirmação acessível.
 - grupos usam BRL, única moeda suportada no MVP; não há seletor, conversão ou taxa de câmbio na interface;
 - owner edita nome e convida uma conta já cadastrada informando o e-mail exato, sem autocomplete público;
 - a resposta de busca não expõe uma lista de usuários e o owner pode revogar convites pendentes;
+- o owner ativo consulta o histórico dos convites enviados, inclusive encerrados, sem receber ação adicional sobre eles;
 - convidado aceita ou recusa o próprio convite;
 - owner só arquiva grupo `empty` ou `settled`, sem pendências ou convites abertos;
 - grupo arquivado é somente leitura e pode ser restaurado pelo owner sem alterar o histórico;

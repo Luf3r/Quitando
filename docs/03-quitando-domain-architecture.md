@@ -23,6 +23,7 @@ Consulte também o [índice da documentação](./00-index.md) e os [ADRs](./adr/
 - [13. Contratos de teste](#13-contratos-de-teste)
 - [14. Observabilidade mínima](#14-observabilidade-mínima)
 - [15. Decisões explicitamente adiadas](#15-decisões-explicitamente-adiadas)
+- [16. Cenário público de demonstração](#16-cenário-público-de-demonstração)
 
 ---
 
@@ -39,7 +40,7 @@ Relação entre usuário e grupo, com papel e estado. Registros com histórico f
 
 ### 1.3 Convite de grupo
 
-Solicitação para que um usuário já cadastrado entre no grupo. No MVP, o convite é interno ao aplicativo: somente depois de aceito ele cria ou reativa um membership. Convidados sem conta e links públicos continuam fora do escopo.
+Solicitação para que um usuário já cadastrado entre no grupo. No MVP, o convite é interno ao aplicativo: somente depois de aceito ele cria ou reativa um membership. Seus estados terminais permanecem no histórico auditável; isso não cria participação financeira. Convidados sem conta e links públicos continuam fora do escopo.
 
 ### 1.4 Despesa
 
@@ -706,6 +707,7 @@ O solver exato registra `financial_state_version`. O resultado só é publicado 
 - arquivamento só é permitido quando o grupo está `empty` ou `settled`, sem pendências ou convites abertos;
 - grupo arquivado é somente leitura no MVP;
 - owner pode restaurar um grupo arquivado; restaurar não altera saldos, histórico ou moeda.
+- qualquer usuário consulta seu próprio histórico recebido de convites, inclusive terminais; somente owner ativo consulta o histórico enviado do grupo. Os históricos não autorizam aceitar, recusar ou revogar um convite terminal.
 
 ### 10.2 Despesa
 
@@ -743,6 +745,8 @@ A subscription verifica membership antes de transmitir eventos. Conhecer o ident
 - eventos relevantes registram ator e timestamp;
 - payloads de broadcast contêm apenas o necessário para renderizar componentes autorizados;
 - exportação, links públicos e pagamentos externos permanecem fora do MVP.
+
+O deploy público de demonstração não é um ambiente de dados reais: quando `QUITANDO_DEMO_MODE=true`, ele usa banco e deploy separados, dados descartáveis e reset integral do cenário a cada seis horas. Dados reais duráveis exigem banco e deploy distintos com `QUITANDO_DEMO_MODE=false`. O reset só pode operar no banco demo configurado e não pode ser convertido em sucesso por fallback quando faltar configuração, confirmação ou autorização operacional.
 
 Quando links públicos forem adicionados, exigirão token armazenado como digest, expiração, revogação, escopo mínimo e prevenção de replay.
 
@@ -860,3 +864,11 @@ Para pagamentos reportados aleatórios válidos:
 - API e webhooks externos;
 - modo alternativo de acerto direto que preserve relações históricas em vez de minimizar transferências.
 - suporte a múltiplos idiomas: locale é uma preocupação de apresentação e não modifica fórmulas, sinais, armazenamento monetário ou a moeda do grupo.
+
+---
+
+## 16. Cenário público de demonstração
+
+O cenário demo é uma camada operacional, não uma alteração do domínio financeiro. Ele instala de modo idempotente quatro contas públicas — Ana, Bruno, Carla e Diego — e um conjunto canônico que exercita os fatos e estados já definidos. `users.demo_account` identifica essas contas e `demo_scenarios` registra a instalação e o último reset; nenhum desses registros entra no ledger, altera `financial_state_version` ou muda as regras de autorização financeira.
+
+O instalador e o resetter usam os comandos reais de domínio, executam em transação e compartilham advisory lock PostgreSQL. Reset usa `lock_timeout` de 10 segundos, `statement_timeout` de 60 segundos e até cinco novas tentativas, uma por minuto. O reset integral é programado a cada seis horas; falha de instalação, reset, banco incorreto, modo demo desligado ou confirmação manual ausente permanece explícita e observável, sem expor descrições financeiras.

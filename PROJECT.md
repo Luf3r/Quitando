@@ -250,10 +250,10 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 
 ## 11. Milestone atual
 
-- **Última fase concluída:** Fase 13 — experiência visual, landing e acessibilidade.
-- **Fase atual:** Fase 14, hardening, observabilidade e deploy.
-- **Status atual:** Fase 13 concluída após o gate reaberto. A Fase 14 está `Ready` e recebe a medição de INP de campo por RUM ou CrUX depois do deploy, com alvo p75 abaixo de 200 ms para o fluxo principal móvel.
-- **Evidência final da Fase 13:** landing, shell e jornadas do MVP funcionam por HTTP sem JavaScript, com melhorias progressivas verificadas. A landing e o Resumo autenticado foram inspecionados em 360, 768 e 1440 px nos temas claro e escuro, sem overflow horizontal; capturas representativas do Resumo foram registradas no Chromium com Ana, Bruno e Carla. Na imagem de produção, Lighthouse mobile mediu LCP de 1,89 s e CLS de 0,043 na landing, e LCP de 1,82 s e CLS de 0,017 no Resumo autenticado, ambos com acessibilidade 1,0. RSpec completo, Tailwind, `bin/ci`, imagem de produção e `git diff --check` passaram. INP não é produzido pelo Lighthouse headless e foi movido explicitamente para a Fase 14.
+- **Última entrega preservada:** Fase 13.14 — experiência visual, landing e acessibilidade.
+- **Fase atual:** Fase 13, reaberta para as entregas 13.15 e 13.16.
+- **Status atual:** 13.15 (histórico auditável de convites) está em execução; 13.16 (cenário público demo reproduzível) depende dela. A Fase 14 permanece posterior e limitada a hardening, observabilidade e deploy; a medição de INP de campo por RUM ou CrUX continua nela, com alvo p75 abaixo de 200 ms para o fluxo principal móvel.
+- **Gate pendente da Fase 13:** além da evidência preservada de 13.1 a 13.14, faltam demonstrar o histórico de convites autorizado e paginado e o cenário demo descartável: banco/deploy separados com `QUITANDO_DEMO_MODE=true`, reset integral a cada seis horas e `bin/verify-demo-scenario`. Dados reais duráveis exigem banco e deploy separados com `QUITANDO_DEMO_MODE=false`; nenhuma verificação nova é declarada concluída neste registro.
 - **Gate integrado da Fase 0:** `bin/ci` executa localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação. O hardening adicional da PR #38 também foi aprovado nos checks remotos atuais.
 
 **Integrado e verificado até agora:**
@@ -357,7 +357,7 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 - Tailwind é construído explicitamente no `bin/ci`, e auditoria do importmap cobre o módulo mínimo `d3-selection` fixado localmente e carregado somente quando a visualização conecta.
 - a leitura concorrente do dashboard é delimitada pela `financial_state_version`: uma alteração financeira confirmada entre o plano e as obrigações descarta a composição parcial e retorna uma composição integral da versão nova, demonstrada em PostgreSQL real.
 
-**Concluído no gate reaberto da Fase 13 (13.7 a 13.14):**
+**Verificado e preservado da passagem reaberta da Fase 13 (13.7 a 13.14):**
 
 - landing, autenticação, conta pessoal, shell e quatro destinos por grupo foram redesenhados e cobertos por jornadas HTTP, Turbo e Action Cable;
 - previews e revisões de despesas, histórico auditável, configurações, bloqueios explicáveis, ativos, páginas de erro e temas foram integrados sem alterar os invariantes financeiros;

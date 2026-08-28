@@ -35,6 +35,8 @@ Este arquivo resume decisões que precisam permanecer consistentes entre produto
 - Previews de divisão são derivados no servidor, usam centavos inteiros e nunca persistem fatos antes da confirmação final.
 - O tema aceita Sistema, Claro e Escuro e é uma preferência de apresentação local. Ele não altera domínio ou persistência financeira.
 - A conta pessoal permite atualização autenticada de e-mail e senha; exclusão de conta permanece fora do MVP.
+- O histórico recebido inclui convites pendentes e terminais; o histórico enviado é restrito ao owner ativo. A apresentação paginada torna fatos de convite auditáveis, sem criar transição nova nem permissão para agir sobre estado terminal.
+- A produção pública demo é demo-only e descartável: usa banco e deploy separados, `QUITANDO_DEMO_MODE=true` e reset integral a cada seis horas. Dados reais duráveis exigem banco e deploy distintos com `QUITANDO_DEMO_MODE=false`.
 
 ### Domínio
 
@@ -73,6 +75,7 @@ Este arquivo resume decisões que precisam permanecer consistentes entre produto
 - PostgreSQL 18 gera todas as PKs com default explícito `uuidv7()`; o default UUID v4 implícito do adapter Rails não satisfaz o contrato.
 - Ruby representa identificadores persistentes como strings UUID v7 canônicas e minúsculas.
 - Empates do `DebtSimplifier` usam ordem lexicográfica crescente dos UUIDs.
+- O cenário demo usa os comandos reais do domínio, transação e advisory lock compartilhado; ele não modifica fórmulas, estados financeiros, `financial_state_version` ou autorização financeira.
 
 ---
 

@@ -383,6 +383,10 @@ A combinação Solid Queue + Solid Cable mantém a arquitetura inicial sem Redis
 
 A experiência do MVP inclui landing pública, autenticação em português, conta pessoal sem exclusão, lista de grupos e convites, quatro destinos por grupo (Resumo, Plano, Histórico e Configurações), previews financeiros calculados no servidor e temas claro e escuro. O HTML é o caminho completo; Turbo, Action Cable e grafo são melhorias progressivas.
 
+Convites recebidos têm histórico paginado de pendentes e encerrados; o owner ativo consulta, em Configurações, o histórico dos convites que enviou. Esses históricos tornam transições já existentes explicáveis e auditáveis, mas não criam novo estado de convite, participação financeira nem autorização para agir sobre convite terminal.
+
+A demonstração pública é um perfil operacional separado do piloto real. Com `QUITANDO_DEMO_MODE=true`, ela usa banco e deploy próprios, dados descartáveis e um cenário canônico reproduzível; um reset integral ocorre a cada seis horas. Dados reais duráveis exigem outro banco e deploy com `QUITANDO_DEMO_MODE=false`.
+
 O primeiro release fecha o ciclo completo:
 
 1. cadastro e autenticação;
@@ -395,9 +399,10 @@ O primeiro release fecha o ciclo completo:
 8. confirmação ou cancelamento pelo participante autorizado;
 9. inativação e reativação segura de memberships;
 10. histórico de despesas e pagamentos;
-11. visualização textual obrigatória e grafo complementar;
-12. atualização por Turbo Streams como melhoria progressiva;
-13. testes das regras centrais, concorrência e invariantes.
+11. histórico auditável de convites recebidos e enviados, respeitando as permissões já existentes;
+12. visualização textual obrigatória e grafo complementar;
+13. atualização por Turbo Streams como melhoria progressiva;
+14. testes das regras centrais, concorrência e invariantes.
 
 ### 9.1 Critérios de sucesso
 

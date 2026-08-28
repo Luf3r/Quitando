@@ -73,6 +73,7 @@ Os ADRs ficam em [`adr/`](./adr/) e são curtos, focados e históricos.
 13. [ADR-0013 — Internacionalização como responsabilidade de apresentação](./adr/0013-internationalization-is-presentation-only.md)
 14. [ADR-0014 — Identificadores UUID v7 gerados pelo PostgreSQL](./adr/0014-postgresql-uuid-v7-identifiers.md)
 15. [ADR-0015 — BRL é a única moeda suportada no MVP](./adr/0015-brl-is-the-only-mvp-currency.md)
+16. [ADR-0016 — Produção demo é descartável](./adr/0016-demo-production-is-discardable.md)
 
 ---
 
