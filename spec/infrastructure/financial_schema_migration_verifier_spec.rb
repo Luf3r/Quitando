@@ -72,7 +72,7 @@ RSpec.describe "Financial schema migration verifier safety" do
                 options = arguments.last.is_a?(Hash) ? arguments.pop : {}
                 command = arguments.join(" ")
                 File.open(ENV.fetch("PROCESS_FAKE_LOG"), "a") do |log|
-                  log.puts("SPAWN pgroup=#{options[:pgroup].inspect} #{command}")
+                  log.puts("SPAWN pgroup=#{options[:pgroup].inspect} verification=#{environment["FINANCIAL_MIGRATION_VERIFICATION"].inspect} #{command}")
                 end
                 @fake_pid += 1
                 @commands[@fake_pid] = [ environment, command ]
@@ -200,6 +200,20 @@ RSpec.describe "Financial schema migration verifier safety" do
     with_fake_migration_dependencies do |_stdout, _stderr, status, _statements, orchestration|
       expect(status).to be_success
       expect(orchestration).to include(a_string_including("lock_timeout was not restored after phase 10 group schema migration"))
+    end
+  end
+
+  it "runs the populated-users demo migration assertion before the structural RSpec suite" do
+    with_fake_migration_dependencies do |_stdout, _stderr, status, _statements, orchestration|
+      expect(status).to be_success
+      expect(orchestration).to include(a_string_including("demo scenario migration attempted to rewrite existing users"))
+    end
+  end
+
+  it "marks child migration commands so their temporary trigger cannot be dumped into the shared schema" do
+    with_fake_migration_dependencies do |_stdout, _stderr, status, _statements, orchestration|
+      expect(status).to be_success
+      expect(orchestration.grep(/^SPAWN /)).to all(include('verification="true"'))
     end
   end
 

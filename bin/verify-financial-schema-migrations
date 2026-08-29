@@ -11,6 +11,7 @@ FINANCIAL_MIGRATION_VERSIONS = %w[20260721160000 20260721161000 20260721165000 2
 MEMBERSHIP_POSITION_MIGRATION_VERSION = "20260727120000".freeze
 PHASE_NINE_MIGRATION_VERSION = "20260803170000".freeze
 PHASE_TEN_MIGRATION_VERSION = "20260808210000".freeze
+DEMO_SCENARIO_MIGRATION_VERSION = "20260828120000".freeze
 COMMAND_TIMEOUT_SECONDS = Float(ENV.fetch("FINANCIAL_MIGRATION_COMMAND_TIMEOUT_SECONDS", "900"))
 COMMAND_TERMINATION_GRACE_SECONDS = Float(ENV.fetch("FINANCIAL_MIGRATION_TERMINATION_GRACE_SECONDS", "5"))
 DATABASE_TIMEOUT_SECONDS = Integer(ENV.fetch("FINANCIAL_MIGRATION_DATABASE_TIMEOUT_SECONDS", "30"), 10)
@@ -219,6 +220,53 @@ PHASE_TEN_GROUP_SCHEMA_MIGRATION_ASSERTION = <<~'RUBY'.freeze
     abort "membership position constraint must be deferrable initially immediate: #{position_constraint.inspect}"
   end
 RUBY
+DEMO_SCENARIO_MIGRATION_FIXTURE = <<~'RUBY'.freeze
+  connection = ApplicationRecord.connection
+  timestamp = connection.quote(Time.current)
+  email = "demo-scenario-preexisting@example.test"
+  connection.execute(<<~SQL)
+    INSERT INTO users (id, email, encrypted_password, created_at, updated_at)
+    VALUES (uuidv7(), #{connection.quote(email)}, 'x', #{timestamp}, #{timestamp})
+  SQL
+  connection.execute(<<~SQL)
+    DROP TRIGGER IF EXISTS users_demo_scenario_metadata_only ON users;
+    DROP FUNCTION IF EXISTS reject_demo_scenario_user_rewrite();
+    CREATE FUNCTION reject_demo_scenario_user_rewrite() RETURNS trigger LANGUAGE plpgsql AS $$
+    BEGIN
+      RAISE EXCEPTION 'demo scenario migration attempted to rewrite existing users' USING ERRCODE = '55000';
+    END;
+    $$;
+    CREATE TRIGGER users_demo_scenario_metadata_only
+    BEFORE UPDATE ON users
+    FOR EACH ROW EXECUTE FUNCTION reject_demo_scenario_user_rewrite();
+  SQL
+RUBY
+DEMO_SCENARIO_MIGRATION_ASSERTION = <<~'RUBY'.freeze
+  connection = ApplicationRecord.connection
+  email = "demo-scenario-preexisting@example.test"
+  demo_account = connection.select_value(<<~SQL)
+    SELECT demo_account::text
+    FROM users
+    WHERE email = #{connection.quote(email)}
+  SQL
+  abort "demo scenario migration left a NULL demo_account on the preexisting user" if demo_account.nil?
+  abort "demo scenario migration defaulted the preexisting user incorrectly: #{demo_account.inspect}" unless demo_account == "false"
+
+  column = connection.columns(:users).find { |candidate| candidate.name == "demo_account" }
+  abort "demo scenario migration did not create users.demo_account" unless column
+  abort "demo scenario migration left users.demo_account nullable" if column.null
+  abort "demo scenario migration default is not false: #{column.default.inspect}" unless [ false, "false" ].include?(column.default)
+
+  inserted_demo_account = connection.select_value(<<~SQL)
+    INSERT INTO users (id, email, encrypted_password, created_at, updated_at)
+    VALUES (uuidv7(), #{connection.quote("demo-scenario-default-#{SecureRandom.hex(12)}@example.test")}, 'x', #{connection.quote(Time.current)}, #{connection.quote(Time.current)})
+    RETURNING demo_account::text
+  SQL
+  abort "demo scenario migration did not apply false to a newly inserted user: #{inserted_demo_account.inspect}" unless inserted_demo_account == "false"
+
+  connection.execute("DROP TRIGGER users_demo_scenario_metadata_only ON users")
+  connection.execute("DROP FUNCTION reject_demo_scenario_user_rewrite()")
+RUBY
 
 class CommandFailure < StandardError
   attr_reader :termination_unconfirmed
@@ -312,6 +360,7 @@ temporary_database_url = replace_database_name(source_uri, temporary_database_na
 maintenance_database_url = replace_database_name(source_uri, "postgres")
 child_environment = {
   "DATABASE_URL" => temporary_database_url,
+  "FINANCIAL_MIGRATION_VERIFICATION" => "true",
   "TEST_DATABASE_URL" => temporary_database_url,
   "RAILS_ENV" => "test"
 }.freeze
@@ -377,6 +426,16 @@ begin
     environment: child_environment.merge("VERSION" => PHASE_TEN_MIGRATION_VERSION)
   )
   run!("bin/rails", "runner", PHASE_TEN_GROUP_SCHEMA_MIGRATION_ASSERTION, environment: child_environment)
+  run!(
+    "bin/rails", "db:migrate:down",
+    environment: child_environment.merge("VERSION" => DEMO_SCENARIO_MIGRATION_VERSION)
+  )
+  run!("bin/rails", "runner", DEMO_SCENARIO_MIGRATION_FIXTURE, environment: child_environment)
+  run!(
+    "bin/rails", "db:migrate:up",
+    environment: child_environment.merge("VERSION" => DEMO_SCENARIO_MIGRATION_VERSION)
+  )
+  run!("bin/rails", "runner", DEMO_SCENARIO_MIGRATION_ASSERTION, environment: child_environment)
   run!(
     "bundle", "exec", "rspec", "spec/database/financial_schema_contract_spec.rb",
     environment: child_environment.merge("CI" => "true")
