@@ -210,6 +210,13 @@ RSpec.describe "Financial schema migration verifier safety" do
     end
   end
 
+  it "runs the demo migration physical-rewrite assertion before the structural RSpec suite" do
+    with_fake_migration_dependencies do |_stdout, _stderr, status, _statements, orchestration|
+      expect(status).to be_success
+      expect(orchestration).to include(a_string_including("demo scenario migration rewrote users relation"))
+    end
+  end
+
   it "marks child migration commands so their temporary trigger cannot be dumped into the shared schema" do
     with_fake_migration_dependencies do |_stdout, _stderr, status, _statements, orchestration|
       expect(status).to be_success

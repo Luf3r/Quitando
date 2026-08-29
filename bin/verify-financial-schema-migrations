@@ -225,6 +225,14 @@ DEMO_SCENARIO_MIGRATION_FIXTURE = <<~'RUBY'.freeze
   timestamp = connection.quote(Time.current)
   email = "demo-scenario-preexisting@example.test"
   connection.execute(<<~SQL)
+    DROP TABLE IF EXISTS demo_scenario_migration_verification;
+    CREATE TABLE demo_scenario_migration_verification (users_relfilenode oid NOT NULL);
+    INSERT INTO demo_scenario_migration_verification (users_relfilenode)
+    SELECT relfilenode
+    FROM pg_class
+    WHERE oid = 'users'::regclass;
+  SQL
+  connection.execute(<<~SQL)
     INSERT INTO users (id, email, encrypted_password, created_at, updated_at)
     VALUES (uuidv7(), #{connection.quote(email)}, 'x', #{timestamp}, #{timestamp})
   SQL
@@ -244,6 +252,13 @@ RUBY
 DEMO_SCENARIO_MIGRATION_ASSERTION = <<~'RUBY'.freeze
   connection = ApplicationRecord.connection
   email = "demo-scenario-preexisting@example.test"
+  before_relfilenode = connection.select_value("SELECT users_relfilenode::text FROM demo_scenario_migration_verification")
+  after_relfilenode = connection.select_value("SELECT relfilenode::text FROM pg_class WHERE oid = 'users'::regclass")
+  abort "demo scenario migration did not capture users relfilenode" if before_relfilenode.nil? || after_relfilenode.nil?
+  unless before_relfilenode == after_relfilenode
+    abort "demo scenario migration rewrote users relation: before=#{before_relfilenode.inspect}, after=#{after_relfilenode.inspect}"
+  end
+
   demo_account = connection.select_value(<<~SQL)
     SELECT demo_account::text
     FROM users
@@ -266,6 +281,7 @@ DEMO_SCENARIO_MIGRATION_ASSERTION = <<~'RUBY'.freeze
 
   connection.execute("DROP TRIGGER users_demo_scenario_metadata_only ON users")
   connection.execute("DROP FUNCTION reject_demo_scenario_user_rewrite()")
+  connection.execute("DROP TABLE demo_scenario_migration_verification")
 RUBY
 
 class CommandFailure < StandardError
