@@ -32,6 +32,31 @@ RSpec.describe "Groups" do
       expect(headings.index("Convites recebidos")).to be < headings.index("Seus grupos")
       expect(response.body).to include('href="/invitations"')
     end
+
+    it "não mostra convite terminal no resumo nem expõe suas ações" do
+      user = create(:user, email: "ana@example.com")
+      invitation = create(:group_invitation, :declined, invited_user: user)
+
+      post user_session_path, params: { user: { email: user.email, password: user.password } }
+      get "/groups"
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include(invitation.group.name)
+      expect(response.body).not_to include("/invitations/#{invitation.id}/accept")
+      expect(response.body).not_to include("/invitations/#{invitation.id}/decline")
+    end
+
+    it "ignora convite terminal com expires_at passado sem alterar seu estado" do
+      user = create(:user, email: "ana@example.com")
+      invitation = create(:group_invitation, :declined, invited_user: user, expires_at: 1.minute.ago)
+      declined_at = invitation.declined_at
+
+      post user_session_path, params: { user: { email: user.email, password: user.password } }
+      get "/groups"
+
+      expect(response).to have_http_status(:ok)
+      expect(invitation.reload).to have_attributes(status: "declined", declined_at:)
+    end
   end
 
   describe "POST /groups" do
