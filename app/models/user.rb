@@ -1,6 +1,8 @@
 class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :recoverable, :rememberable, :validatable
 
+  attr_readonly :demo_account
+
   has_many :memberships, dependent: :restrict_with_exception
   has_many :group_invitations_received, class_name: "GroupInvitation", foreign_key: :invited_user_id, dependent: :restrict_with_exception
   has_many :group_invitations_sent, class_name: "GroupInvitation", foreign_key: :invited_by_user_id, dependent: :restrict_with_exception

@@ -1,0 +1,2 @@
+class DemoScenario < ApplicationRecord
+end

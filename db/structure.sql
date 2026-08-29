@@ -121,6 +121,21 @@ CREATE TABLE public.ar_internal_metadata (
 
 
 --
+-- Name: demo_scenarios; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.demo_scenarios (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    key character varying NOT NULL,
+    version integer NOT NULL,
+    installed_at timestamp(6) without time zone NOT NULL,
+    last_reset_at timestamp(6) without time zone NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
 -- Name: expense_description_revisions; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -302,7 +317,8 @@ CREATE TABLE public.users (
     reset_password_sent_at timestamp(6) without time zone,
     remember_created_at timestamp(6) without time zone,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    demo_account boolean DEFAULT false CONSTRAINT users_demo_account_not_null1 NOT NULL
 );
 
 
@@ -312,6 +328,14 @@ CREATE TABLE public.users (
 
 ALTER TABLE ONLY public.ar_internal_metadata
     ADD CONSTRAINT ar_internal_metadata_pkey PRIMARY KEY (key);
+
+
+--
+-- Name: demo_scenarios demo_scenarios_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.demo_scenarios
+    ADD CONSTRAINT demo_scenarios_pkey PRIMARY KEY (id);
 
 
 --
@@ -407,6 +431,13 @@ ALTER TABLE ONLY public.users
 --
 
 CREATE INDEX idx_on_expense_id_created_at_4bec3b7817 ON public.expense_description_revisions USING btree (expense_id, created_at);
+
+
+--
+-- Name: index_demo_scenarios_on_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_demo_scenarios_on_key ON public.demo_scenarios USING btree (key);
 
 
 --
@@ -837,6 +868,7 @@ ALTER TABLE ONLY public.group_invitations
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260828120000'),
 ('20260808210000'),
 ('20260803170000'),
 ('20260802150000'),
