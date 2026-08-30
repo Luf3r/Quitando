@@ -1,4 +1,6 @@
 require "rails_helper"
+require "pg"
+require "timeout"
 
 RSpec.describe DemoScenario::Resetter do
   let(:environment) do
@@ -62,6 +64,62 @@ RSpec.describe DemoScenario::Resetter do
     expect(resetter).to have_received(:reset_once!).exactly(3).times
   end
 
+  it "waits on the shared PostgreSQL lock before it can truncate" do
+    lock_ready = Queue.new
+    release_lock = Queue.new
+    reset_started = Queue.new
+    reset_result = Queue.new
+    backend_pids = Queue.new
+    scenario = instance_double(DemoScenario, update!: true)
+    resetter = described_class.new(config:, sleeper: ->(_) {}, installer: -> { scenario })
+    allow(resetter).to receive(:truncate_primary_tables!)
+
+    holder = Thread.new do
+      holder_connection = PG.connect(ENV.fetch("TEST_DATABASE_URL"))
+      backend_pids << holder_connection.exec("SELECT pg_backend_pid()").getvalue(0, 0).to_i
+      holder_connection.exec("BEGIN")
+      holder_connection.exec("SELECT pg_advisory_xact_lock(#{DemoScenario::Lock::LOCK_KEY})")
+      lock_ready << true
+      release_lock.pop
+      holder_connection.exec("COMMIT")
+    rescue StandardError => error
+      lock_ready << error
+    ensure
+      holder_connection&.close
+    end
+
+    first_pid = Timeout.timeout(5) { backend_pids.pop }
+    first_ready = Timeout.timeout(5) { lock_ready.pop }
+    raise first_ready if first_ready.is_a?(StandardError)
+    ActiveRecord::Base.connection_pool.release_connection
+
+    contender = Thread.new do
+      ActiveRecord::Base.connection_pool.with_connection do |connection|
+        backend_pids << connection.select_value("SELECT pg_backend_pid()").to_i
+        reset_started << true
+        reset_result << resetter.call(manual: true)
+      end
+    rescue StandardError => error
+      reset_result << error
+    end
+
+    Timeout.timeout(5) { reset_started.pop }
+    second_pid = Timeout.timeout(5) { backend_pids.pop }
+    expect(second_pid).not_to eq(first_pid)
+    expect(wait_for_lock(second_pid)).to eq("Lock")
+    expect(resetter).not_to have_received(:truncate_primary_tables!)
+
+    release_lock << true
+    expect(holder.join(5)).to eq(holder)
+    expect(contender.join(5)).to eq(contender)
+    expect(Timeout.timeout(5) { reset_result.pop }).to eq(scenario)
+    expect(resetter).to have_received(:truncate_primary_tables!).once
+  ensure
+    release_lock << true if release_lock
+    [ holder, contender ].compact.each { |thread| thread.kill if thread.alive? }
+    [ holder, contender ].compact.each { |thread| thread.join(1) }
+  end
+
   it "emits sanitised lifecycle events" do
     preserved_user = create(:user, email: "preserve-on-reset-failure@example.test")
     events = []
@@ -92,5 +150,19 @@ RSpec.describe DemoScenario::Resetter do
     expect(scenario).to have_attributes(key: DemoScenario::Installer::SCENARIO_KEY, version: DemoScenario::Installer::SCENARIO_VERSION)
     expect(User.where(id: mutated_user.id)).to be_empty
     expect(DemoScenario.count).to eq(1)
+  end
+
+  def wait_for_lock(backend_pid)
+    monitor = PG.connect(ENV.fetch("TEST_DATABASE_URL"))
+    Timeout.timeout(5) do
+      loop do
+        event = monitor.exec_params("SELECT wait_event_type FROM pg_stat_activity WHERE pid = $1", [ backend_pid ]).getvalue(0, 0)
+        return event if event == "Lock"
+
+        sleep 0.02
+      end
+    end
+  ensure
+    monitor&.close
   end
 end
