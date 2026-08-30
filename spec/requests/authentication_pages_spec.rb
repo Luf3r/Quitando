@@ -38,6 +38,20 @@ RSpec.describe "Páginas de autenticação" do
     expect([ response.status, response.location, flash[:notice] ]).to eq(demo_response)
   end
 
+  it "não emite recuperação quando o e-mail demo usa maiúsculas ou espaços do Devise" do
+    demo_user = create(:user, :demo_account, email: "ana-demo-#{SecureRandom.hex(4)}@example.com")
+
+    post user_password_path, params: { user: { email: "ausente@example.com" } }
+    unknown_response = [ response.status, response.location, flash[:notice] ]
+
+    [ demo_user.email.upcase, "  #{demo_user.email.upcase}  " ].each do |email|
+      post user_password_path, params: { user: { email: } }
+
+      expect([ response.status, response.location, flash[:notice] ]).to eq(unknown_response)
+      expect(demo_user.reload.reset_password_token).to be_nil
+    end
+  end
+
   it "não permite que um token de recuperação existente altere a senha demo" do
     demo_user = create(:user, :demo_account, email: "ana-demo-#{SecureRandom.hex(4)}@example.com", password: "senha-publica")
     token = demo_user.send_reset_password_instructions

@@ -79,6 +79,42 @@ RSpec.describe "Conta pessoal" do
     expect(user.valid_password?("senha-publica")).to be(true)
   end
 
+  it "bloqueia a rota Devise de atualização para uma conta demo" do
+    user = create(:user, :demo_account, email: "ana-demo-#{SecureRandom.hex(4)}@example.com", password: "senha-publica")
+    sign_in_as user
+
+    patch user_registration_path, params: {
+      user: {
+        email: "ana.nova@example.com",
+        current_password: "senha-publica",
+        password: "nova-senha",
+        password_confirmation: "nova-senha"
+      }
+    }
+
+    expect(response).to have_http_status(:unprocessable_content)
+    expect(user.reload.email).to eq(user.email)
+    expect(user.valid_password?("senha-publica")).to be(true)
+    expect(user.valid_password?("nova-senha")).to be(false)
+  end
+
+  it "mantém a atualização Devise disponível para conta não-demo" do
+    user = create(:user, email: "bia-#{SecureRandom.hex(4)}@example.com", password: "senha-segura")
+    sign_in_as user
+
+    patch user_registration_path, params: {
+      user: {
+        email: "bia.nova@example.com",
+        current_password: "senha-segura",
+        password: "",
+        password_confirmation: ""
+      }
+    }
+
+    expect(response).to have_http_status(:found)
+    expect(user.reload.email).to eq("bia.nova@example.com")
+  end
+
   it "apresenta as credenciais demo como imutáveis sem formulário de edição" do
     user = create(:user, :demo_account, email: "ana-demo-#{SecureRandom.hex(4)}@example.com")
     sign_in_as user
