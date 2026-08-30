@@ -11,13 +11,17 @@ RSpec.describe "DemoScenario::Installer concurrency", :non_transactional do
     backend_pids = Queue.new
     results = Queue.new
     config = demo_config
+    created_resources = nil
+
+    expect(DemoScenario.where(key: DemoScenario::Installer::SCENARIO_KEY)).to be_empty
+    expect(User.where(email: DemoScenario::Installer::PUBLIC_ACCOUNTS.values)).to be_empty
 
     first_thread = Thread.new do
       ActiveRecord::Base.connection_pool.with_connection do |connection|
         backend_pids << connection.select_value("SELECT pg_backend_pid()").to_i
         connection.transaction do
           scenario = DemoScenario::Installer.call(config:)
-          ready << scenario
+          ready << [ scenario, capture_created_resources!(scenario) ]
           release_first_installation.pop
           results << scenario
         end
@@ -28,7 +32,7 @@ RSpec.describe "DemoScenario::Installer concurrency", :non_transactional do
     end
 
     first_backend_pid = Timeout.timeout(10) { backend_pids.pop }
-    first_result = Timeout.timeout(10) { ready.pop }
+    first_result, created_resources = Timeout.timeout(10) { ready.pop }
     raise first_result if first_result.is_a?(StandardError)
 
     second_thread = Thread.new do
@@ -66,11 +70,26 @@ RSpec.describe "DemoScenario::Installer concurrency", :non_transactional do
       threads = [ first_thread, second_thread ].compact
       threads.each { |thread| thread.kill if thread.alive? }
       Timeout.timeout(5) { threads.each(&:join) }
-      remove_demo_installation!
+      remove_demo_installation!(created_resources)
     rescue StandardError => cleanup_error
       warn "demo installer concurrency cleanup failed: #{cleanup_error.class}: #{cleanup_error.message}"
       raise cleanup_error unless primary_error
     end
+  end
+
+  it "leaves a pre-existing canonical marker untouched when no example resources were captured" do
+    scenario = DemoScenario.create!(
+      key: DemoScenario::Installer::SCENARIO_KEY,
+      version: DemoScenario::Installer::SCENARIO_VERSION,
+      installed_at: Time.current,
+      last_reset_at: Time.current
+    )
+
+    remove_demo_installation!
+
+    expect(DemoScenario.find(scenario.id)).to eq(scenario)
+  ensure
+    DemoScenario.where(id: scenario&.id).delete_all
   end
 
   def demo_config
@@ -96,9 +115,29 @@ RSpec.describe "DemoScenario::Installer concurrency", :non_transactional do
     end
   end
 
-  def remove_demo_installation!
-    demo_user_ids = User.where(demo_account: true).pluck(:id)
-    group_ids = Membership.where(user_id: demo_user_ids).distinct.pluck(:group_id)
+  def capture_created_resources!(scenario)
+    accounts = User.where(email: DemoScenario::Installer::PUBLIC_ACCOUNTS.values).pluck(:id, :email).to_h
+    group_ids = Membership.where(user_id: accounts.keys).distinct.pluck(:group_id)
+    groups = Group.where(id: group_ids).pluck(:id, :name).to_h
+
+    raise "contas demo incompletas" unless accounts.length == 4
+    raise "grupos demo incompletos" unless groups.length == 6
+
+    { scenario: [ scenario.id, scenario.key ], accounts:, groups: }
+  end
+
+  def remove_demo_installation!(resources = nil)
+    return unless resources
+
+    scenario_id, scenario_key = resources.fetch(:scenario)
+    accounts = resources.fetch(:accounts)
+    groups = resources.fetch(:groups)
+    account_ids = accounts.keys
+    group_ids = groups.keys
+    raise "marcador demo inesperado" unless DemoScenario.where(id: scenario_id, key: scenario_key).count == 1
+    raise "contas demo inesperadas" unless User.where(id: account_ids).pluck(:id, :email).to_h == accounts
+    raise "grupos demo inesperados" unless Group.where(id: group_ids).pluck(:id, :name).to_h == groups
+
     payment_ids = Payment.where(group_id: group_ids).pluck(:id)
     expense_ids = Expense.where(group_id: group_ids).pluck(:id)
 
@@ -111,8 +150,8 @@ RSpec.describe "DemoScenario::Installer concurrency", :non_transactional do
       GroupInvitation.where(group_id: group_ids).delete_all
       Membership.where(group_id: group_ids).delete_all
       Group.where(id: group_ids).delete_all
-      DemoScenario.where(key: DemoScenario::Installer::SCENARIO_KEY).delete_all
-      User.where(id: demo_user_ids).delete_all
+      DemoScenario.where(id: scenario_id, key: scenario_key).delete_all
+      User.where(id: account_ids).delete_all
     end
   end
 end
