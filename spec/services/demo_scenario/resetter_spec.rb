@@ -71,7 +71,7 @@ RSpec.describe DemoScenario::Resetter do
     reset_result = Queue.new
     backend_pids = Queue.new
     scenario = instance_double(DemoScenario, update!: true)
-    resetter = described_class.new(config:, sleeper: ->(_) {}, installer: -> { scenario })
+    resetter = described_class.new(config:, sleeper: ->(_) { }, installer: -> { scenario })
     allow(resetter).to receive(:truncate_primary_tables!)
 
     holder = Thread.new do
@@ -123,7 +123,7 @@ RSpec.describe DemoScenario::Resetter do
     preserved_user = create(:user, email: "preserve-on-reset-failure@example.test")
     events = []
     subscriber = ActiveSupport::Notifications.subscribe("quitando.demo_scenario.reset") { |event| events << event.payload }
-    resetter = described_class.new(config:, sleeper: ->(_) {}, installer: -> { raise "boom compra do mercado" })
+    resetter = described_class.new(config:, sleeper: ->(_) { }, installer: -> { raise "boom compra do mercado" })
 
     expect { resetter.call(manual: true) }.to raise_error(RuntimeError, "boom compra do mercado")
     expect(events.map { |event| event.fetch(:status) }).to eq(%i[start failure])

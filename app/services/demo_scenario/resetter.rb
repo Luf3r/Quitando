@@ -66,8 +66,7 @@ class DemoScenario::Resetter
     table_names = truncatable_table_names
     raise "nenhuma tabela primária encontrada para reset demo" if table_names.empty?
 
-    quoted = table_names.map { |table_name| connection.quote_table_name(table_name) }.join(", ")
-    connection.execute("TRUNCATE TABLE #{quoted} RESTART IDENTITY CASCADE")
+    connection.truncate_tables(*table_names)
   end
 
   def retry_after_contention!(attempt)
