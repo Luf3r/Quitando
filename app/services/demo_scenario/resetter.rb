@@ -15,11 +15,11 @@ class DemoScenario::Resetter
   end
 
   def call(manual:)
-    validate!(manual:)
     instrument(:start)
 
     attempt = 0
     begin
+      validate!(manual:)
       attempt += 1
       scenario = reset_once!
       instrument(:success, attempt:)

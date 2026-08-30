@@ -14,13 +14,17 @@ RSpec.describe DemoScenario::Resetter do
 
   it "rejects an unauthorized database before discovering or truncating tables" do
     observed_sql = []
+    events = []
     subscriber = ActiveSupport::Notifications.subscribe("sql.active_record") { |_event, _start, _finish, _id, payload| observed_sql << payload[:sql] }
+    event_subscriber = ActiveSupport::Notifications.subscribe("quitando.demo_scenario.reset") { |event| events << event.payload }
     resetter = described_class.new(config: DemoScenario::Config.new(environment: environment.merge("QUITANDO_DEMO_DATABASE_NAME" => "other_database")))
 
     expect { resetter.call(manual: true) }.to raise_error(DemoScenario::Config::UnauthorizedDatabase)
     expect(observed_sql.grep(/pg_tables|TRUNCATE/i)).to be_empty
+    expect(events.map { |event| event[:status] }).to eq(%i[start failure])
   ensure
     ActiveSupport::Notifications.unsubscribe(subscriber) if subscriber
+    ActiveSupport::Notifications.unsubscribe(event_subscriber) if event_subscriber
   end
 
   it "requires the literal manual confirmation before discovering or truncating tables" do

@@ -11,8 +11,8 @@ class FinancialMigrationCommandRunner
     @termination_grace_seconds = termination_grace_seconds
   end
 
-  def call(*command, environment:)
-    pid = Process.spawn(environment, *command, pgroup: true)
+  def call(*command, environment:, **spawn_options)
+    pid = Process.spawn(environment, *command, pgroup: true, **spawn_options)
     wait_for_process(pid, timeout_seconds)
   rescue Timeout::Error
     if !pid || terminate_process_group(pid)
