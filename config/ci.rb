@@ -16,6 +16,7 @@ CI.run do
   step "Tests: RSpec", "env CI=true RAILS_ENV=test DATABASE_URL=$TEST_DATABASE_URL bundle exec rspec --exclude-pattern 'spec/system/**/*_spec.rb'"
   step "Tests: System", "env CI=true RAILS_ENV=test DATABASE_URL=$TEST_DATABASE_URL bundle exec rspec spec/system"
   step "Tests: Seeds", "env RAILS_ENV=test DATABASE_URL=$TEST_DATABASE_URL bin/rails db:seed:replant"
+  step "Tests: Demo scenario verifier", "env TEST_DATABASE_URL=$TEST_DATABASE_URL bin/verify-demo-scenario"
 
   # Optional: set a green GitHub commit status to unblock PR merge.
   # Requires the `gh` CLI and `gh extension install basecamp/gh-signoff`.

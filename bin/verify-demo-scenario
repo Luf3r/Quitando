@@ -1,0 +1,87 @@
+#!/usr/bin/env ruby
+
+require "bundler/setup"
+require "open3"
+require "pg"
+require "securerandom"
+require "timeout"
+require "uri"
+
+PREFIX = "quitando_demo_verifier_".freeze
+TIMEOUT_SECONDS = Integer(ENV.fetch("DEMO_SCENARIO_VERIFIER_TIMEOUT_SECONDS", "180"), 10)
+
+def fail!(message)
+  warn message
+  exit 1
+end
+
+def run!(*command, environment:)
+  stdout, stderr, status = Timeout.timeout(TIMEOUT_SECONDS) { Open3.capture3(environment, *command) }
+  return stdout if status.success?
+
+  fail!("#{command.join(" ")} failed:\n#{stdout}\n#{stderr}")
+rescue Timeout::Error
+  fail!("#{command.join(" ")} timed out after #{TIMEOUT_SECONDS}s")
+end
+
+def database_url_for(uri, database)
+  copy = uri.dup
+  copy.path = "/#{database}"
+  copy.to_s
+end
+
+source_url = ENV.fetch("TEST_DATABASE_URL") { fail!("TEST_DATABASE_URL is required") }
+source_uri = URI.parse(source_url)
+temporary_database = "#{PREFIX}#{SecureRandom.hex(8)}"
+admin_url = database_url_for(source_uri, "postgres")
+temporary_url = database_url_for(source_uri, temporary_database)
+admin = PG.connect(admin_url)
+created = false
+
+begin
+  admin.exec("CREATE DATABASE #{PG::Connection.quote_ident(temporary_database)}")
+  created = true
+  environment = {
+    "RAILS_ENV" => "test",
+    "DATABASE_URL" => temporary_url,
+    "TEST_DATABASE_URL" => temporary_url,
+    "QUITANDO_DEMO_MODE" => "true",
+    "QUITANDO_DEMO_DATABASE_NAME" => temporary_database,
+    "QUITANDO_DEMO_PASSWORD" => "senha-publica",
+    "CONFIRM_DEMO_RESET" => "quitando-demo-only"
+  }
+  run!("bin/rails", "db:prepare", environment:)
+  snapshot = run!("bin/rails", "runner", <<~RUBY, environment:).strip
+    DemoScenario::Installer.call
+    puts [User.where(demo_account: true).count, Group.count, Expense.count, Payment.count, GroupInvitation.count, Membership.count, DemoScenario.count].join(":")
+  RUBY
+  fail!("canonical installation snapshot is malformed") unless snapshot == "4:6:27:4:14:15:1"
+  after_reset = run!("bin/rails", "runner", <<~RUBY, environment:).strip
+    ana = User.find_by!(email: "ana@demo.quitando.test")
+    GroupCreator.call(owner_user_id: ana.id, name: "verifier mutation")
+    DemoScenario::Resetter.call(manual: true)
+    puts [User.where(demo_account: true).count, Group.count, Expense.count, Payment.count, GroupInvitation.count, Membership.count, DemoScenario.count, Group.where(name: "verifier mutation").count].join(":")
+  RUBY
+  fail!("reset did not restore canonical snapshot: #{after_reset.inspect}") unless after_reset == "4:6:27:4:14:15:1:0"
+  run!("bin/rails", "runner", <<~RUBY, environment:)
+    preserved = User.create!(email: "rollback-verifier@example.test", password: "password-123")
+    begin
+      DemoScenario::Resetter.new(config: DemoScenario::Config.new, installer: -> { raise "intentional reset failure" }).call(manual: true)
+    rescue RuntimeError
+    end
+    abort "rollback failed" unless User.exists?(preserved.id)
+    wrong = DemoScenario::Config.new(environment: ENV.to_h.merge("QUITANDO_DEMO_DATABASE_NAME" => "wrong"))
+    begin
+      DemoScenario::Resetter.call(config: wrong, manual: true)
+      abort "unauthorised database accepted"
+    rescue DemoScenario::Config::UnauthorizedDatabase
+    end
+  RUBY
+  puts "demo scenario verifier passed"
+ensure
+  if created
+    admin.exec_params("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = $1 AND pid <> pg_backend_pid()", [ temporary_database ])
+    admin.exec("DROP DATABASE #{PG::Connection.quote_ident(temporary_database)}")
+  end
+  admin.close if admin
+end
