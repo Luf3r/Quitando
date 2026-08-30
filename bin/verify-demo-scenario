@@ -44,8 +44,31 @@ def database_url_for(uri, database)
   copy.to_s
 end
 
+def database_uri(raw_url)
+  begin
+    uri = URI.parse(raw_url)
+    query_parameters = URI.decode_www_form(uri.query.to_s)
+  rescue URI::InvalidURIError, ArgumentError
+    raise ArgumentError, "TEST_DATABASE_URL is invalid", cause: nil
+  end
+
+  if query_parameters.any? { |key, _value| key == "dbname" }
+    raise ArgumentError, "TEST_DATABASE_URL must not contain a dbname query parameter", cause: nil
+  end
+
+  unless %w[postgres postgresql].include?(uri.scheme) && uri.path&.match?(%r{\A/[^/]+\z})
+    raise ArgumentError, "TEST_DATABASE_URL must be a PostgreSQL URL with a database name", cause: nil
+  end
+
+  uri
+end
+
 source_url = ENV.fetch("TEST_DATABASE_URL") { fail!("TEST_DATABASE_URL is required") }
-source_uri = URI.parse(source_url)
+begin
+  source_uri = database_uri(source_url)
+rescue ArgumentError => error
+  fail!(error.message)
+end
 temporary_database = "#{PREFIX}#{SecureRandom.hex(8)}"
 admin_url = database_url_for(source_uri, "postgres")
 temporary_url = database_url_for(source_uri, temporary_database)
