@@ -91,7 +91,6 @@ RSpec.describe DemoScenario::Resetter do
     first_pid = Timeout.timeout(5) { backend_pids.pop }
     first_ready = Timeout.timeout(5) { lock_ready.pop }
     raise first_ready if first_ready.is_a?(StandardError)
-    ActiveRecord::Base.connection_pool.release_connection
 
     contender = Thread.new do
       ActiveRecord::Base.connection_pool.with_connection do |connection|
