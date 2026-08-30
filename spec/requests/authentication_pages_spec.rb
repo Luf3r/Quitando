@@ -43,11 +43,15 @@ RSpec.describe "Páginas de autenticação" do
 
     post user_password_path, params: { user: { email: "ausente@example.com" } }
     unknown_response = [ response.status, response.location, flash[:notice] ]
+    unknown_error_markup = password_error_markup(response.body)
+
+    expect(unknown_error_markup).to be_present
 
     [ demo_user.email.upcase, "  #{demo_user.email.upcase}  " ].each do |email|
       post user_password_path, params: { user: { email: } }
 
       expect([ response.status, response.location, flash[:notice] ]).to eq(unknown_response)
+      expect(password_error_markup(response.body)).to eq(unknown_error_markup)
       expect(demo_user.reload.reset_password_token).to be_nil
     end
   end
@@ -97,5 +101,9 @@ RSpec.describe "Páginas de autenticação" do
       scenario.installed_at = timestamp
       scenario.last_reset_at = timestamp
     end
+  end
+
+  def password_error_markup(body)
+    Nokogiri::HTML(body).at_css("form.auth-form .ui-alert")&.to_html
   end
 end

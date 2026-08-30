@@ -2,7 +2,7 @@ class Users::PasswordsController < Devise::PasswordsController
   def create
     return super unless demo_account_email?
 
-    self.resource = resource_class.new
+    self.resource = generic_password_reset_resource
     render :new
   end
 
@@ -29,6 +29,20 @@ class Users::PasswordsController < Devise::PasswordsController
       .new(resource_class.case_insensitive_keys, resource_class.strip_whitespace_keys)
       .filter(email: password_email)
       .fetch(:email)
+  end
+
+  def generic_password_reset_resource
+    resource_class.new(normalized_password_reset_attributes).tap do |record|
+      resource_class.reset_password_keys.each { |key| record.errors.add(key, :not_found) }
+    end
+  end
+
+  def normalized_password_reset_attributes
+    attributes = resource_class.reset_password_keys.to_h { |key| [ key, resource_params[key] ] }
+
+    Devise::ParameterFilter
+      .new(resource_class.case_insensitive_keys, resource_class.strip_whitespace_keys)
+      .filter(attributes)
   end
 
   def demo_account_reset_token?
