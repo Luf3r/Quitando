@@ -9,9 +9,15 @@
     </div>
   </header>
 
-  <%= render FormErrorsComponent.new(messages: @user.errors.full_messages) if @user.errors.any? %>
+  <% if @user.demo_account? %>
+    <div class="demo-account-notice" role="status">
+      <p>As credenciais desta conta demo são públicas e não podem ser alteradas.</p>
+      <p>Use outra conta para dados pessoais duráveis.</p>
+    </div>
+  <% else %>
+    <%= render FormErrorsComponent.new(messages: @user.errors.full_messages) if @user.errors.any? %>
 
-  <%= form_with model: @user, url: account_path, method: :patch, class: "account-form" do |form| %>
+    <%= form_with model: @user, url: account_path, method: :patch, class: "account-form" do |form| %>
     <div class="ui-field">
       <%= form.label :email, "E-mail", class: "ui-field__label" %>
       <%= form.email_field :email, autocomplete: "email", class: "ui-field__control" %>
@@ -29,6 +35,7 @@
       <%= form.label :current_password, "Senha atual", class: "ui-field__label" %>
       <%= form.password_field :current_password, autocomplete: "current-password", class: "ui-field__control", required: true %>
     </div>
-    <%= form.submit "Salvar alterações", class: "ui-button ui-button--primary" %>
+      <%= form.submit "Salvar alterações", class: "ui-button ui-button--primary" %>
+    <% end %>
   <% end %>
 </section>

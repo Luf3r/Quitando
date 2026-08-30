@@ -597,6 +597,20 @@ a {
 .auth-page__links { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1.25rem; color: var(--color-text-secondary); }
 .auth-page__links a { color: var(--color-text); font-weight: 620; }
 
+.demo-banner,
+.demo-account-notice {
+  margin-bottom: 1.5rem;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 60%, var(--color-border));
+  border-radius: var(--radius-container);
+  padding: 1rem 1.25rem;
+  background: var(--color-surface-secondary);
+}
+
+.demo-banner h2 { margin: 0 0 0.65rem; font-size: 1.1rem; }
+.demo-banner p,
+.demo-account-notice p { margin: 0.4rem 0 0; color: var(--color-text-secondary); line-height: 1.45; }
+.demo-banner strong { color: var(--color-text); }
+
 .group-create,
 .group-index-section { margin-bottom: 2.5rem; }
 .group-create { border: 1px solid var(--color-border); border-radius: var(--radius-container); padding: 1.25rem; background: var(--color-surface); }

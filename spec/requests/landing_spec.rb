@@ -49,4 +49,11 @@ RSpec.describe "Landing pública" do
     expect(document.at_css("meta[property='og:description']")["content"]).to be_present
     expect(document.at_css("meta[property='og:type']")["content"]).to eq("website")
   end
+
+  it "não expõe o banner ou credenciais demo fora do modo demo" do
+    get root_path
+
+    expect(response.body).not_to include("Ambiente compartilhado de demonstração")
+    expect(response.body).not_to include("senha-publica")
+  end
 end

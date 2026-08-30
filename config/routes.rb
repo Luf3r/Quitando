@@ -5,7 +5,7 @@ Rails.application.routes.draw do
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
 
-  devise_for :users
+  devise_for :users, controllers: { passwords: "users/passwords" }
   root "home#index"
   resource :account, only: %i[show update]
   uuid_v7 = ->(*parameter_names) { CanonicalUuidV7RouteConstraint.new(*parameter_names) }
