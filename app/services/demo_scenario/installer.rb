@@ -20,6 +20,7 @@ class DemoScenario::Installer
     config.validate_installation!
 
     DemoScenario.transaction do
+      DemoScenario::Lock.acquire!
       DemoScenario.find_by(key: SCENARIO_KEY) || install!
     end
   end

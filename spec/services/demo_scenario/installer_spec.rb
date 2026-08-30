@@ -48,18 +48,26 @@ RSpec.describe "DemoScenario::Installer" do
     replacement = viagem.expenses.where(voided_at: nil).sole
     expect(replacement).to have_attributes(created_by_user_id: ana.id, paid_by_user_id: bruno.id)
     expect(replacement.replaces_expense).to have_attributes(voided_at: be_present, voided_by_user_id: ana.id)
+    expect(viagem.expenses.pluck(:occurred_on).uniq).to eq([ installed_at.to_date - 8 ])
     expect(ExpenseDescriptionRevision.where(expense: viagem.expenses).count).to eq(1)
     expect(viagem.payments.pluck(:status)).to contain_exactly("cancelled", "reported")
 
     residual_expense = contas.expenses.sole
     expect(residual_expense.expense_shares.order(:position).pluck(:amount_owed_cents)).to eq([ 334, 334, 333 ])
+    expect(residual_expense.occurred_on).to eq(installed_at.to_date - 3)
     expect(GroupFinancialStatusResolver.call(contas)).to eq(:open)
     expect(GroupFinancialStatusResolver.call(casa)).to eq(:settled)
     expect(casa.payments).to all(be_confirmed)
+    expect(casa.expenses.order(:occurred_on).pluck(:occurred_on)).to eq(
+      (30).downto(7).map { |days_before_installation| installed_at.to_date - days_before_installation }
+    )
     expect(GroupHistoryQuery.page(group: casa, number: 1)).to have_attributes(total_facts: 26, total_pages: 2)
     expect(GroupFinancialStatusResolver.call(proxima)).to eq(:empty)
     expect(proxima.group_invitations.pluck(:status)).to contain_exactly("pending", "pending", "declined")
     expect(churrasco.archived_at).to be_present
+    expired_invitation = churrasco.group_invitations.find_by!(status: :expired)
+    expect(expired_invitation.expires_at).to eq(installed_at - 1.minute)
+    expect(expired_invitation.expired_at).to be >= installed_at
     expect(configuracao.memberships.order(:position).pluck(:user_id)).to eq([ carla.id, ana.id, diego.id, bruno.id ])
     expect(configuracao.memberships.find_by!(user: diego)).to be_owner
     expect(configuracao.memberships.find_by!(user: bruno)).to be_inactive
