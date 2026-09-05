@@ -1,6 +1,19 @@
 require "rails_helper"
 
 RSpec.describe "Expenses" do
+  it "seleciona a pessoa atual como pagador inicial de uma nova despesa" do
+    owner = create(:user, email: "ana@example.com")
+    member = create(:user, email: "bia@example.com")
+    group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
+    create(:membership, group:, user: member, position: 1)
+
+    post user_session_path, params: { user: { email: member.email, password: member.password } }
+    get "/groups/#{group.id}/expenses/new"
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include(%(<option selected="selected" value="#{member.id}">#{member.email}</option>))
+  end
+
   it "renderiza a nova despesa dentro do frame de diálogo para membro ativo" do
     owner = create(:user, email: "ana@example.com")
     group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
@@ -53,6 +66,22 @@ RSpec.describe "Expenses" do
     expect(response.body).to include('<turbo-frame id="group_dialog">')
     expect(response.body).to include("Mercado especial")
     expect(response.body).to include("invalido")
+  end
+
+  it "apresenta a revisão da despesa com pagador, participantes, shares e residual" do
+    owner = create(:user, email: "ana@example.com")
+    member = create(:user, email: "bia@example.com")
+    group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
+    create(:membership, group:, user: member, position: 1)
+
+    post user_session_path, params: { user: { email: owner.email, password: owner.password } }
+    post "/groups/#{group.id}/expenses/preview", params: { expense: { description: "Mercado", occurred_on: "2026-08-14", amount_text: "10,01", paid_by_user_id: owner.id, split_type: "equal", participant_user_ids: [ owner.id, member.id ] } }, headers: { "Turbo-Frame" => "expense_preview" }
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("Pagador")
+    expect(response.body).to include("Participantes")
+    expect(response.body).to include("Residual")
+    expect(response.body).to include("Confirmar despesa")
   end
 
   it "rejeita group_id malformado na correção antes de consultar tabelas financeiras" do

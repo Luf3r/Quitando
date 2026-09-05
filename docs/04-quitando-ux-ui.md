@@ -78,11 +78,11 @@ Login/Cadastro
 
 Links públicos, participantes sem conta, disputas e pagamentos integrados ficam fora do MVP. Convites internos para contas já cadastradas fazem parte do fluxo essencial.
 
-A raiz pública apresenta a landing. Depois da autenticação, a navegação principal oferece Grupos, Convites, Conta, Tema e Sair. Dentro de cada grupo, os quatro destinos são Resumo, Plano, Histórico e Configurações.
+A raiz pública apresenta a landing. Depois da autenticação, a navegação principal oferece Grupos, Convites, Conta, Tema e Sair. Em telas menores que 768 px, esses mesmos destinos ficam em um `details` nativo compacto, portanto continuam disponíveis sem JavaScript. Dentro de cada grupo, os quatro destinos são Resumo, Plano, Histórico e Configurações; abaixo de 480 px, eles formam uma grade de duas colunas para nenhum rótulo ficar truncado.
 
-O Resumo prioriza a posição e as ações da pessoa. O Plano concentra pendências, transferências, métricas, tabelas, grafo, explicação e trace. Histórico e Configurações deixam de competir por espaço no dashboard.
+O Resumo prioriza a posição e as ações da pessoa. O Plano começa por pendências e pelo que ainda falta; métricas, tabelas, grafo, explicação e trace ficam em “Entenda o cálculo”, inicialmente recolhido. Histórico e Configurações deixam de competir por espaço no dashboard.
 
-Quando `QUITANDO_DEMO_MODE=true`, a landing/login e um banner global acessível apresentam os quatro e-mails públicos, a senha configurada e o próximo reset. O banner declara que o ambiente é demo-only, descartável e reiniciado integralmente a cada seis horas. A UI não apresenta a conta demo como ambiente pessoal durável nem oculta uma falha de instalação ou reset; as credenciais demo não oferecem fluxo para alterar e-mail, senha ou recuperação.
+Quando `QUITANDO_DEMO_MODE=true`, a landing/login apresenta de forma expandida os quatro e-mails públicos, a senha configurada e o próximo reset. Dentro do app, o mesmo conteúdo fica em um `details` acessível para reduzir a competição com a tarefa atual, sem ocultar senha ou reset. O banner declara que o ambiente é demo-only, descartável e reiniciado integralmente a cada seis horas. A UI não apresenta a conta demo como ambiente pessoal durável nem oculta uma falha de instalação ou reset; as credenciais demo não oferecem fluxo para alterar e-mail, senha ou recuperação.
 
 ---
 
@@ -109,30 +109,25 @@ Antes dos cards, a página apresenta convites pendentes recebidos, com ações d
 
 Cada card apresenta:
 
-- nome e participantes;
-- situação: sem movimentação, em aberto, aguardando confirmações ou quitado;
-- saldo oficial do usuário;
-- indicador de pendências quando existirem.
+- nome, situação e participantes, com lista localizada como “Ana, Bruno e mais 2”;
+- uma frase pessoal de situação: revisar recebimento, acompanhar envio, receber, enviar, aguardar, adicionar a primeira despesa ou grupo quitado;
+- nenhum contador genérico como “Pendências 0”.
 
-O card não executa o `DebtSimplifier`. Ele usa saldo oficial e situação derivada.
+O card não executa o `DebtSimplifier`. Ele usa saldo oficial, reports pendentes e situação derivada. A ordenação é determinística: recebimentos a revisar, envios aguardando, saldo pessoal em aberto, grupos aguardando terceiros, vazios, quitados e arquivados; a atualização decrescente e o identificador desempatam itens da mesma faixa. No cenário demo v2, a lista de Ana é o roteiro observável dessa ordem: Viagem, Configuração, Contas, Próxima viagem, Casa de praia e Churrasco, com as ações revisar recebido, acompanhar envio, marcar transferência, adicionar despesa, quitado e arquivado.
 
 Convites recebidos aparecem antes dos grupos. Na ausência de convites ou grupos, a interface oferece a próxima ação possível em vez de uma área vazia genérica.
 
-Criar grupo pode abrir Turbo Frame modal. A navegação convencional permanece disponível caso Turbo falhe.
+Criar grupo é um `details` compacto: abre para quem ainda não tem grupos e permanece recolhido para usuários recorrentes. O formulário convencional continua disponível sem JavaScript.
 
 ---
 
 ## 6. Dashboard do grupo
 
-A tela principal apresenta:
+O Resumo começa pela situação pessoal: estado, linguagem natural, saldo oficial e próxima ação. A prioridade é revisar recebimentos, acompanhar envios reportados, marcar uma sugestão como enviada, adicionar a primeira despesa, aguardar outras pessoas e grupo quitado. Grupo arquivado permanece somente para leitura.
 
-- situação geral;
-- saldo oficial do usuário;
-- bloco de pagamentos aguardando confirmação;
-- saldo projetado após pendências;
-- resumo dos participantes;
-- feed de despesas e pagamentos;
-- atalhos para despesa e plano.
+O saldo projetado aparece apenas quando difere do oficial por reports pendentes. Pendências se separam em “Você precisa revisar” e “Aguardando outra pessoa”; pendências alheias não recebem ação indevida. O panorama de participantes mostra um saldo oficial por pessoa e a projeção somente quando houver diferença.
+
+O Resumo mostra no máximo três fatos recentes e liga ao Histórico completo. Membros, convites, renomeação e arquivamento ficam em Configurações; a página principal apenas oferece o atalho. Em mobile, a barra de ação mostra no máximo duas ações de escrita, respeita a safe area e não é exibida para grupo arquivado.
 
 A lista de membros mostra saldo com o grupo, não uma dívida bilateral presumida.
 
@@ -180,16 +175,17 @@ Preview inválido retorna `422` no mesmo frame, mostra resumo focável e erro ab
 
 1. valor total;
 2. descrição;
-3. data;
-4. quem pagou;
-5. participantes incluídos;
-6. divisão igual ou por valor exato.
+3. quem pagou;
+4. data;
+5. divisão igual ou por valor exato e seus participantes incluídos.
 
 Porcentagem e partes ficam para depois.
 
 ### Comportamento
 
 - Stimulus controla campos dinâmicos, não regras financeiras;
+- em uma nova despesa, o pagador inicial é a pessoa atual; após erro, o formulário preserva o pagador e os valores submetidos, e uma correção preserva o pagador da despesa original;
+- sem JavaScript, os dois fieldsets de divisão permanecem disponíveis e o servidor considera somente o tipo selecionado;
 - servidor valida memberships, valores e soma das shares;
 - preview mostra arredondamento antes da confirmação;
 - erros aparecem no mesmo frame sem apagar dados;
@@ -215,8 +211,8 @@ A ordem da tela é:
 
 1. pagamentos aguardando confirmação;
 2. lista textual de transferências ainda sugeridas;
-3. saldo projetado restante;
-4. comparação visual e explicação.
+3. ações da pessoa no item que ela precisa enviar;
+4. “Entenda o cálculo”, recolhido inicialmente, com saldo projetado restante, métricas, tabelas, grafo, explicação e trace.
 
 ### 8.1 Plano acionável
 
@@ -361,10 +357,10 @@ Reúne despesas e pagamentos em ordem cronológica.
 
 O histórico possui rota própria, pagina 25 fatos e usa ordem total por timestamp e identificador. Página malformada retorna `422` em vez de ser coagida silenciosamente.
 
-Cada item mostra:
+Cada linha escaneável mostra:
 
 - tipo;
-- ator;
+- descrição e atores;
 - valor;
 - estado;
 - data e hora;
@@ -386,20 +382,20 @@ Convites usam histórico próprio, sem se misturar a fatos financeiros: `/invita
 
 ## 13. Configurações, convites e memberships
 
-A página de Configurações reúne nome, convites, memberships, ordem, ownership, saída, arquivamento e restauração. Todos os membros ativos podem acessá-la, mas cada ação continua submetida à policy correspondente. Ação indisponível permanece visível e desabilitada com motivo derivado das regras existentes.
+A página de Configurações segue a ordem nome e convite, membros, administração avançada e arquivamento. Convites encerrados e ordenação ficam inicialmente em `details`. Todos os membros ativos podem acessá-la, mas cada ação continua submetida à policy correspondente. Ação indisponível permanece visível e desabilitada, com `aria-describedby` apontando ao motivo derivado das regras existentes.
 
-Arquivar, sair e transferir ownership exigem confirmação acessível.
+Arquivar, sair e transferir responsabilidade exigem confirmação acessível. A interface chama o papel de `owner` de “Responsável pelo grupo”; o nome do domínio permanece inalterado.
 
 - grupos usam BRL, única moeda suportada no MVP; não há seletor, conversão ou taxa de câmbio na interface;
-- owner edita nome e convida uma conta já cadastrada informando o e-mail exato, sem autocomplete público;
+- responsável pelo grupo edita nome e convida uma conta já cadastrada informando o e-mail exato, sem autocomplete público;
 - a resposta de busca não expõe uma lista de usuários e o owner pode revogar convites pendentes;
-- o owner ativo consulta o histórico dos convites enviados, inclusive encerrados, sem receber ação adicional sobre eles;
+- o responsável ativo consulta o histórico dos convites enviados, inclusive encerrados, sem receber ação adicional sobre eles;
 - convidado aceita ou recusa o próprio convite;
-- owner só arquiva grupo `empty` ou `settled`, sem pendências ou convites abertos;
+- responsável só arquiva grupo `empty` ou `settled`, sem pendências ou convites abertos;
 - grupo arquivado é somente leitura e pode ser restaurado pelo owner sem alterar o histórico;
 - membro não pode ser inativado com saldo oficial/projetado diferente de zero ou pendência;
-- membership inativo pode ser reativado pelo owner sem perder histórico;
-- último owner deve transferir propriedade antes de sair;
+- membership inativo pode ser reativado pelo responsável sem perder histórico;
+- último responsável deve transferir a responsabilidade antes de sair;
 - a UI explica por que uma ação está bloqueada, em vez de apenas ocultá-la.
 
 ---

@@ -75,7 +75,7 @@ Este arquivo resume decisões que precisam permanecer consistentes entre produto
 - PostgreSQL 18 gera todas as PKs com default explícito `uuidv7()`; o default UUID v4 implícito do adapter Rails não satisfaz o contrato.
 - Ruby representa identificadores persistentes como strings UUID v7 canônicas e minúsculas.
 - Empates do `DebtSimplifier` usam ordem lexicográfica crescente dos UUIDs.
-- O cenário demo usa os comandos reais do domínio, transação e advisory lock compartilhado; ele não modifica fórmulas, estados financeiros, `financial_state_version` ou autorização financeira.
+- O cenário demo usa os comandos reais do domínio, transação e advisory lock compartilhado; ele não modifica fórmulas, estados financeiros, `financial_state_version` ou autorização financeira. O marcador canônico atual é `canonical-v2`/2; marcador incompatível falha antes de escrita e somente o reset integral autorizado troca cenário.
 
 ---
 

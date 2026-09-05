@@ -1,6 +1,21 @@
 require "rails_helper"
 
 RSpec.describe GroupHistoryQuery do
+  describe ".recent" do
+    it "hidrata somente os fatos recentes com a mesma ordenação total do histórico" do
+      group = create(:group)
+      user = create(:user)
+      older = create(:expense, group:, created_by_user: user, paid_by_user: user, created_at: 2.minutes.ago)
+      newer_payment = create(:payment, group:, from_user: user, to_user: create(:user), created_at: 1.minute.ago)
+      newest = create(:expense, group:, created_by_user: user, paid_by_user: user, created_at: Time.current)
+
+      entries = described_class.recent(group:, limit: 2)
+
+      expect(entries.map(&:record)).to eq([ newest, newer_payment ])
+      expect(entries.map(&:record)).not_to include(older)
+    end
+  end
+
   it "inclui despesas e pagamentos persistidos, mas nunca sugestões" do
     group = create(:group)
     expense = create(:expense, group:)

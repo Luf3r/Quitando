@@ -1,49 +1,46 @@
-<section id="group_dashboard_financial_summary" aria-labelledby="resumo-financeiro">
-  <h2 id="resumo-financeiro" class="text-lg font-medium">Resumo financeiro</h2>
+<% summary = local_assigns.fetch(:summary) { GroupOverviewPresenter.new(snapshot: dashboard, viewer_id: current_user.id, archived: group.archived_at?) } %>
+<section id="group_dashboard_financial_summary" class="plan-section" aria-labelledby="resumo-financeiro">
+  <h2 id="resumo-financeiro">Sua situação</h2>
   <p><%= render StatusBadgeComponent.new(status: dashboard.status) %></p>
-  <p class="mt-2">
-    <%= case dashboard.status
-        when :empty then "Ainda não há despesas. Registre a primeira para iniciar o acerto."
-        when :open then "Há saldos em aberto. Confira a sugestão prática para o grupo."
-        when :awaiting_confirmation then "Há pagamento aguardando confirmação. O saldo oficial ainda não mudou."
-        when :settled then "Tudo confirmado. O grupo está quitado."
-        end %>
-  </p>
-  <% viewer_official = dashboard.official_balances.fetch(current_user.id, 0) %>
-  <% viewer_projected = dashboard.projected_balances.fetch(current_user.id, 0) %>
-  <dl class="mt-3 space-y-1">
-    <div><dt class="inline font-medium">Seu saldo oficial:</dt> <dd class="inline"><%= render MoneyComponent.new(cents: viewer_official, currency_code: group.currency_code) %></dd></div>
-    <div><dt class="inline font-medium">Seu saldo projetado:</dt> <dd class="inline"><%= render MoneyComponent.new(cents: viewer_projected, currency_code: group.currency_code) %></dd></div>
-  </dl>
-  <ul class="mt-3 space-y-2">
-    <% dashboard.official_balances.each do |user_id, cents| %>
-      <li>Saldo oficial (<%= dashboard.participant_emails.fetch(user_id) %>): <%= render MoneyComponent.new(cents:, currency_code: group.currency_code) %></li>
+  <p class="group-summary__balance">Saldo oficial: <strong><%= render MoneyComponent.new(cents: summary.viewer_official_cents, currency_code: group.currency_code) %></strong></p>
+  <% if summary.show_viewer_projection? %><p>Saldo projetado, se as pendências forem confirmadas: <strong><%= render MoneyComponent.new(cents: summary.viewer_projected_cents, currency_code: group.currency_code) %></strong></p><% end %>
+
+  <section id="group_next_action" aria-labelledby="next-action-title">
+    <h3 id="next-action-title">Próxima ação</h3>
+    <% if summary.primary_action == :review_received %>
+      <% payment = summary.personal_pending.first.payment %><p>Revise o pagamento recebido antes de ele alterar o saldo oficial.</p><%= link_to "Revisar pagamento", group_payment_path(group, payment), class: "ui-button ui-button--primary" %>
+    <% elsif summary.primary_action == :follow_sent %>
+      <% payment = summary.waiting_pending.find { |item| item.direction == :sent }.payment %><p>Você marcou um pagamento como enviado. A confirmação ainda não alterou o saldo oficial.</p><%= link_to "Acompanhar pagamento", group_payment_path(group, payment), class: "ui-button ui-button--secondary" %>
+    <% elsif summary.primary_action == :report_transfer %>
+      <% transfer = summary.viewer_transfer %><p>Você precisa enviar <%= render MoneyComponent.new(cents: transfer.amount_cents, currency_code: group.currency_code) %> para <%= dashboard.participant_emails.fetch(transfer.to_user_id) %>.</p><%= link_to "Marcar como enviado", new_group_payment_path(group, to_user_id: transfer.to_user_id), data: { turbo_frame: "group_dialog" }, class: "ui-button ui-button--primary" %>
+    <% elsif summary.primary_action == :add_expense %>
+      <p>Este grupo ainda não tem despesas. Adicione a primeira para começar.</p><%= link_to "Adicionar despesa", new_group_expense_path(group), data: { turbo_frame: "group_dialog" }, class: "ui-button ui-button--primary" %>
+    <% elsif summary.primary_action == :wait_for_others %>
+      <p>Você está aguardando outras pessoas agirem.</p>
+    <% elsif summary.primary_action == :settled %>
+      <p>O grupo está quitado.</p>
+    <% else %>
+      <p>O grupo está arquivado e permanece disponível para consulta.</p>
     <% end %>
-    <% dashboard.projected_balances.each do |user_id, cents| %>
-      <li>Saldo projetado (<%= dashboard.participant_emails.fetch(user_id) %>): <%= render MoneyComponent.new(cents:, currency_code: group.currency_code) %></li>
-    <% end %>
-  </ul>
-  <h3 class="mt-4 font-medium">Pendências</h3>
-  <% viewer_pending_payments = dashboard.pending_payments.select { |payment| [ payment.from_user_id, payment.to_user_id ].include?(current_user.id) } %>
-  <p><%= viewer_pending_payments.size %> pagamento(s) reportado(s) envolvendo você.</p>
-  <% if dashboard.settlement_plan.any? %>
-    <section class="mt-4" aria-labelledby="suggestions-title">
-      <h3 id="suggestions-title" class="font-medium">Próximas transferências sugeridas</h3>
-      <ol class="mt-2 space-y-2">
-        <% dashboard.settlement_plan.first(3).each do |transfer| %>
-          <li>
-            <strong><%= dashboard.participant_emails.fetch(transfer.from_user_id) %></strong> deve enviar
-            <%= render MoneyComponent.new(cents: transfer.amount_cents, currency_code: group.currency_code) %>
-            para <strong><%= dashboard.participant_emails.fetch(transfer.to_user_id) %></strong>.
-            <% if transfer.from_user_id == current_user.id && !group.archived_at? %>
-              <%= link_to "Marcar como enviado", new_group_payment_path(group, to_user_id: transfer.to_user_id), data: { turbo_frame: "group_dialog" }, class: "ml-2 underline" %>
-            <% end %>
-          </li>
-        <% end %>
-      </ol>
-      <%= link_to "Ver plano completo", group_plan_path(group), class: "mt-2 inline-block underline" %>
-    </section>
-  <% else %>
-    <p class="mt-3">Não há transferências sugeridas neste estado.</p>
+  </section>
+
+  <% if !group.archived_at? && summary.primary_action != :add_expense %>
+    <p><%= link_to "Adicionar despesa", new_group_expense_path(group), data: { turbo_frame: "group_dialog" } %></p>
   <% end %>
+
+  <% if summary.primary_action == :report_transfer %>
+    <% transfer = summary.viewer_transfer %>
+    <nav id="group_mobile_actions" class="group-mobile-actions" aria-label="Ações do grupo">
+      <%= link_to "Marcar como enviado", new_group_payment_path(group, to_user_id: transfer.to_user_id), data: { turbo_frame: "group_dialog" }, class: "ui-button ui-button--primary" %>
+    </nav>
+  <% elsif summary.primary_action == :add_expense %>
+    <nav id="group_mobile_actions" class="group-mobile-actions" aria-label="Ações do grupo">
+      <%= link_to "Adicionar despesa", new_group_expense_path(group), data: { turbo_frame: "group_dialog" }, class: "ui-button ui-button--primary" %>
+    </nav>
+  <% end %>
+
+  <% if summary.personal_pending.any? %><section aria-labelledby="review-pending-title"><h3 id="review-pending-title">Você precisa revisar</h3><ul class="audit-list"><% summary.personal_pending.each do |item| %><li><%= item.payment.from_user.email %> reportou <%= render MoneyComponent.new(cents: item.payment.amount_cents, currency_code: group.currency_code) %>. <%= link_to "Revisar", group_payment_path(group, item.payment) %></li><% end %></ul></section><% end %>
+  <% if summary.waiting_pending.any? %><section aria-labelledby="waiting-pending-title"><h3 id="waiting-pending-title">Aguardando outra pessoa</h3><ul class="audit-list"><% summary.waiting_pending.each do |item| %><li><%= item.payment.from_user.email %> reportou <%= render MoneyComponent.new(cents: item.payment.amount_cents, currency_code: group.currency_code) %> para <%= item.payment.to_user.email %>.<% if item.direction == :sent %> Você aguarda a confirmação.<% end %></li><% end %></ul></section><% end %>
+
+  <section aria-labelledby="participants-title"><h3 id="participants-title">Participantes</h3><ul class="audit-list"><% summary.participants.each do |participant| %><li><strong><%= participant.email %></strong>. Saldo oficial: <%= render MoneyComponent.new(cents: participant.official_cents, currency_code: group.currency_code) %>.<% if participant.show_projection %> Projetado: <%= render MoneyComponent.new(cents: participant.projected_cents, currency_code: group.currency_code) %>.<% end %></li><% end %></ul></section>
 </section>

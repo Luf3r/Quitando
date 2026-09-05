@@ -19,16 +19,18 @@
   </section>
 
   <section class="plan-section" aria-labelledby="suggestions-title">
-    <h2 id="suggestions-title">Transferências sugeridas</h2>
+    <h2 id="suggestions-title">Ainda falta</h2>
     <% if @dashboard.settlement_plan.any? %>
-      <ol class="plan-list"><% @dashboard.settlement_plan.each do |transfer| %><li><strong><%= @dashboard.participant_emails.fetch(transfer.from_user_id) %></strong> envia <%= render MoneyComponent.new(cents: transfer.amount_cents, currency_code: @group.currency_code) %> para <strong><%= @dashboard.participant_emails.fetch(transfer.to_user_id) %></strong>.</li><% end %></ol>
+      <ol class="plan-list"><% @dashboard.settlement_plan.each do |transfer| %><li><strong><%= @dashboard.participant_emails.fetch(transfer.from_user_id) %></strong> envia <%= render MoneyComponent.new(cents: transfer.amount_cents, currency_code: @group.currency_code) %> para <strong><%= @dashboard.participant_emails.fetch(transfer.to_user_id) %></strong>.<% if transfer.from_user_id == current_user.id && !@group.archived_at? %> <%= link_to "Marcar como enviado", new_group_payment_path(@group, to_user_id: transfer.to_user_id), data: { turbo_frame: "group_dialog" } %><% end %></li><% end %></ol>
     <% else %><p>Não há transferências sugeridas neste estado.</p><% end %>
   </section>
 
-  <section class="plan-section" aria-labelledby="projected-title">
-    <h2 id="projected-title">Saldo projetado restante</h2>
-    <dl class="plan-balances"><% @dashboard.projected_balances.each do |user_id, cents| %><div><dt><%= @dashboard.participant_emails.fetch(user_id) %></dt><dd><%= render MoneyComponent.new(cents:, currency_code: @group.currency_code) %></dd></div><% end %></dl>
-  </section>
-
-  <%= render "groups/visualization", group: @group, dashboard: @dashboard %>
+  <details id="plan_explanation" class="plan-explanation">
+    <summary>Entenda o cálculo</summary>
+    <section class="plan-section" aria-labelledby="projected-title">
+      <h2 id="projected-title">Saldo projetado restante</h2>
+      <dl class="plan-balances"><% @dashboard.projected_balances.each do |user_id, cents| %><div><dt><%= @dashboard.participant_emails.fetch(user_id) %></dt><dd><%= render MoneyComponent.new(cents:, currency_code: @group.currency_code) %></dd></div><% end %></dl>
+    </section>
+    <%= render "groups/visualization", group: @group, dashboard: @dashboard %>
+  </details>
 </section>

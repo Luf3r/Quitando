@@ -8,7 +8,7 @@ CI.run do
   step "Style: Ruby", "bin/rubocop"
 
   step "Security: Gem audit", "bin/bundler-audit"
-  step "Security: Importmap vulnerability audit", "bin/importmap audit"
+  step "Security: Importmap vulnerability audit", "bin/verify-importmap-audit"
   step "Security: Brakeman code analysis", "bin/brakeman --quiet --no-pager --exit-on-warn --exit-on-error"
   step "Setup: Test database", "env RAILS_ENV=test DATABASE_URL=$TEST_DATABASE_URL bin/rails db:prepare && bin/normalize-structure-sql"
   step "Boot: Zeitwerk eager load", "env RAILS_ENV=test DATABASE_URL=$TEST_DATABASE_URL bin/rails zeitwerk:check"

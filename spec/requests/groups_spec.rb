@@ -1,6 +1,37 @@
 require "rails_helper"
 
 RSpec.describe "Groups" do
+  it "apresenta fatos do histórico em linhas escaneáveis" do
+    owner = create(:user, email: "ana@example.com")
+    group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
+    create(:expense, group:, created_by_user: owner, paid_by_user: owner, description: "Mercado", amount_cents: 1_000)
+
+    post user_session_path, params: { user: { email: owner.email, password: owner.password } }
+    get group_history_path(group)
+
+    document = response.parsed_body
+    row = document.at_css(".history-entry")
+    expect(row.text).to include("Despesa")
+    expect(row.text).to include("Mercado")
+    expect(row.text).to include("Registrado por")
+    expect(row.text).to include("Valor")
+    expect(row.text).to include("Horário")
+  end
+
+  it "usa responsável pelo grupo e associa uma ação bloqueada ao motivo" do
+    owner = create(:user, email: "ana@example.com")
+    group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
+
+    post user_session_path, params: { user: { email: owner.email, password: owner.password } }
+    get group_settings_path(group)
+
+    document = response.parsed_body
+    expect(document.text).to include("Responsável pelo grupo")
+    blocked = document.at_css("button[disabled][aria-describedby]")
+    expect(blocked).to be_present
+    expect(document.at_css("##{blocked['aria-describedby']}").text).to be_present
+  end
+
   describe "GET /groups" do
     it "redireciona visitante não autenticado para entrar" do
       get "/groups"
@@ -20,6 +51,64 @@ RSpec.describe "Groups" do
       expect(response).to have_http_status(:ok)
       expect(response.body).to include(visible_group.name)
       expect(response.body).not_to include(hidden_group.name)
+    end
+
+    it "mostra a próxima ação pessoal no card sem o contador genérico de pendências" do
+      user = create(:user, email: "ana@example.com")
+      sender = create(:user, email: "bruno@example.com")
+      group = GroupCreator.call(owner_user_id: user.id, name: "Apartamento")
+      create(:membership, group:, user: sender, position: 1)
+      create(:payment, :reported, group:, from_user: sender, to_user: user, reported_by_user: sender)
+
+      post user_session_path, params: { user: { email: user.email, password: user.password } }
+      get "/groups"
+
+      document = response.parsed_body
+      card = document.at_css("a.group-card[href='#{group_path(group)}']")
+
+      expect(card.text).to include("Você tem 1 pagamento para revisar.")
+      expect(card.text).not_to include("Pendências")
+    end
+
+    it "recolhe as credenciais demo dentro do app sem ocultar o reset ou a senha" do
+      user = create(:user, email: "ana@example.com")
+      timestamp = Time.zone.parse("2026-08-30 12:00:00")
+      scenario = DemoScenario.find_by(key: DemoScenario::Installer::SCENARIO_KEY)
+      created_scenario = scenario.nil?
+      scenario ||= DemoScenario.create!(
+        key: DemoScenario::Installer::SCENARIO_KEY,
+        version: DemoScenario::Installer::SCENARIO_VERSION,
+        installed_at: timestamp,
+        last_reset_at: timestamp
+      )
+      allow(ENV).to receive(:[]).and_call_original
+      allow(ENV).to receive(:[]).with("QUITANDO_DEMO_MODE").and_return("true")
+      allow(ENV).to receive(:[]).with("QUITANDO_DEMO_PASSWORD").and_return("senha-publica")
+
+      post user_session_path, params: { user: { email: user.email, password: user.password } }
+      get "/groups"
+
+      banner = response.parsed_body.at_css("details.demo-banner")
+      expect(banner).not_to be_nil
+      expect(banner).not_to have_attribute("open")
+      expect(banner.text).to include("senha-publica")
+      expect(banner.text).to include("Próximo reset")
+    ensure
+      DemoScenario.where(id: scenario&.id, key: DemoScenario::Installer::SCENARIO_KEY).delete_all if created_scenario
+    end
+
+    it "abre a criação somente para quem ainda não possui grupos" do
+      user = create(:user, email: "ana@example.com")
+
+      post user_session_path, params: { user: { email: user.email, password: user.password } }
+      get "/groups"
+
+      expect(response.parsed_body.at_css("details#novo-grupo")).to have_attribute("open")
+
+      GroupCreator.call(owner_user_id: user.id, name: "Apartamento")
+      get "/groups"
+
+      expect(response.parsed_body.at_css("details#novo-grupo")).not_to have_attribute("open")
     end
 
     it "coloca o acesso à caixa de convites antes da lista de grupos" do
@@ -124,8 +213,29 @@ RSpec.describe "Groups" do
       get group_path(group)
 
       document = response.parsed_body
-      expect(document.at_css("#group_dashboard_financial_summary").text).to include("bruno@example.com deve enviar")
+      expect(document.at_css("#group_dashboard_financial_summary").text.squish).to include("Você precisa enviar R$ 3,00 para ana@example.com")
       expect(document.at_css("a[href='#{new_group_payment_path(group, to_user_id: ana.id)}']").text).to include("Marcar como enviado")
+      expect(document.css("#group_mobile_actions a").length).to eq(1)
+    end
+
+    it "prioriza uma revisão recebida, limita a atividade e deixa administração nas páginas dedicadas" do
+      ana = create(:user, email: "ana@example.com")
+      bruno = create(:user, email: "bruno@example.com")
+      group = GroupCreator.call(owner_user_id: ana.id, name: "Apartamento")
+      create(:membership, group:, user: bruno, position: 1)
+      payment = create(:payment, :reported, group:, from_user: bruno, to_user: ana, reported_by_user: bruno)
+      4.times { create(:payment, :cancelled, group:, from_user: bruno, to_user: ana, reported_by_user: bruno) }
+
+      post user_session_path, params: { user: { email: ana.email, password: ana.password } }
+      get group_path(group)
+
+      document = response.parsed_body
+      action = document.at_css("#group_next_action")
+      expect(action.text).to include("Revise o pagamento recebido")
+      expect(action.at_css("a[href='#{group_payment_path(group, payment)}']").text).to include("Revisar pagamento")
+      expect(document.css("#group_recent_activity li").length).to eq(3)
+      expect(document.at_css("#group_dashboard_memberships")).to be_nil
+      expect(document.at_css("#configuracoes-grupo")).to be_nil
     end
 
     it "habilita refresh por morph apenas no shell permanente do grupo" do
@@ -163,6 +273,8 @@ RSpec.describe "Groups" do
       get group_plan_path(group)
 
       document = response.parsed_body
+      expect(document.at_css("#suggestions-title").text).to eq("Ainda falta")
+      expect(document.at_css("details#plan_explanation summary").text).to include("Entenda o cálculo")
       payload_element = document.at_css("[data-group-visualization-payload-value]")
       payload = JSON.parse(payload_element["data-group-visualization-payload-value"])
 
@@ -222,14 +334,14 @@ RSpec.describe "Groups" do
       expect(document.at_css("#visualization_table_plan").text.squish).to include("carla@example.com ana@example.com")
     end
 
-    it "oferece a ordenação de memberships por formulário HTML ao owner" do
+    it "deixa a ordenação de memberships na página de Configurações" do
       owner = create(:user, email: "ana@example.com")
       member = create(:user, email: "bia@example.com")
       group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
       create(:membership, group:, user: member, position: 1)
 
       post user_session_path, params: { user: { email: owner.email, password: owner.password } }
-      get "/groups/#{group.id}"
+      get group_settings_path(group)
 
       expect(response.body).to include("Ordenar membros")
       expect(response.body).to include("/groups/#{group.id}/memberships/order")
@@ -244,7 +356,9 @@ RSpec.describe "Groups" do
       get "/groups/#{group.id}"
 
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("Restaurar grupo")
+      expect(response.body).not_to include("Restaurar grupo")
+      expect(response.body).to include("Configurações")
+      expect(response.body).not_to include("group_mobile_actions")
       expect(response.body).not_to include("Nova despesa")
       expect(response.body).not_to include("Renomear grupo")
       expect(response.body).not_to include("Convidar pessoa")
@@ -389,12 +503,12 @@ RSpec.describe "Groups" do
     end
   end
 
-  it "mostra controles de arquivamento ao owner" do
+  it "mostra controles de arquivamento ao owner em Configurações" do
     owner = create(:user, email: "ana@example.com")
     group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
 
     post user_session_path, params: { user: { email: owner.email, password: owner.password } }
-    get "/groups/#{group.id}"
+    get group_settings_path(group)
 
     expect(response.body).to include("Arquivar grupo")
   end

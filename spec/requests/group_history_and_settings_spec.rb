@@ -13,7 +13,7 @@ RSpec.describe "Histórico e configurações do grupo" do
     get group_settings_path(group)
     expect(response).to have_http_status(:ok)
     expect(response.body).to include("Configurações")
-    expect(response.body).to include("Transfira o ownership antes de sair.")
+    expect(response.body).to include("Transfira a responsabilidade antes de sair.")
 
     get group_history_path(group, page: "zero")
     expect(response).to have_http_status(:unprocessable_content)

@@ -9,7 +9,7 @@ class ExpensesController < ApplicationController
     @group = policy_scope(Group).find(params[:group_id])
     authorize @group, :create_expense?
     @dashboard = GroupDashboardQuery.call(group: @group, viewer: current_user)
-    @expense_form = ExpenseForm.new
+    @expense_form = ExpenseForm.new(paid_by_user_id: current_user.id)
 
     render_dialog_or_page(:new)
   end

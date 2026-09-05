@@ -4,6 +4,7 @@ class GroupOverviewQuery
     :projected_balances,
     :pending_payments,
     :settlement_plan,
+    :recent_entries,
     :memberships,
     :participant_emails,
     :status
@@ -30,6 +31,7 @@ class GroupOverviewQuery
         projected_balances:,
         pending_payments:,
         settlement_plan: DebtSimplifier.new(projected_balances).call,
+        recent_entries: GroupHistoryQuery.recent(group:, limit: 3),
         memberships: memberships.select(&:active?),
         participant_emails: memberships.index_by(&:user_id).transform_values { |membership| membership.user.email },
         status: GroupFinancialStatusResolver.call(group)

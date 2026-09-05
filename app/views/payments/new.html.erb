@@ -7,7 +7,7 @@
   <%= render "payments/conflict_context", payment_conflict: @payment_conflict, dashboard: @dashboard %>
   <% if @payment_form %>
     <p><%= @dashboard.participant_emails.fetch(@payment_form.fetch(:from_user_id), "Participante indisponível") %> para <%= @dashboard.participant_emails.fetch(@payment_form.fetch(:to_user_id), "Participante indisponível") %>.</p>
-    <%= render "payments/report_form", group: @group, payment_form: @payment_form %>
+    <%= render "payments/report_form", group: @group, payment_form: @payment_form, dashboard: @dashboard %>
   <% end %>
   <% if @dashboard && (@payment_conflict || @payment_error) %><%= render "groups/financial_summary", group: @group, dashboard: @dashboard %><% end %>
 </section>

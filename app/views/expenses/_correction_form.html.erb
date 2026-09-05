@@ -2,17 +2,17 @@
 <% equal_participants = correction_form&.split_type == "equal" ? correction_form.participant_user_ids : expense.expense_shares.map(&:user_id) %>
 <% exact_shares = (correction_form&.split_type == "exact" ? correction_form.shares : expense.expense_shares.map { |share| { user_id: share.user_id, amount_text: MoneyFormatter.call(cents: share.amount_owed_cents, currency_code: group.currency_code).delete_prefix("R$ ") } }).index_by { |share| share[:user_id].to_s } %>
 
-<%= form_with url: group_expense_correction_preview_path(group, expense), scope: :correction, class: "expense-entry-form", data: { turbo_frame: "correction_preview" } do |form| %>
-  <div><%= form.label :reason, "Motivo" %><%= form.text_field :reason, value: correction_form&.reason, required: true, autofocus: true, class: "block w-full rounded border-slate-300" %></div>
-  <div><%= form.label :description, "Descrição" %><%= form.text_field :description, value: correction_form&.description || expense.description, required: true, class: "block w-full rounded border-slate-300" %></div>
-  <div><%= form.label :amount_text, "Valor (R$)" %><%= form.text_field :amount_text, value: correction_form&.amount_text || MoneyFormatter.call(cents: expense.amount_cents, currency_code: group.currency_code).delete_prefix("R$ "), required: true, inputmode: "decimal", class: "block rounded border-slate-300" %></div>
-  <div><%= form.label :paid_by_user_id, "Pago por" %><%= form.select :paid_by_user_id, memberships.map { |membership| [ membership.user.email, membership.user_id ] }, { selected: correction_form&.paid_by_user_id || expense.paid_by_user_id }, class: "rounded border-slate-300" %></div>
+<%= form_with url: group_expense_correction_preview_path(group, expense), scope: :correction, class: "expense-entry-form", data: { controller: "split-form", turbo_frame: "correction_preview" } do |form| %>
+  <%= render FieldComponent.new(label: "Motivo", name: "correction[reason]", value: correction_form&.reason, options: { required: true, autofocus: true }) %>
+  <%= render FieldComponent.new(label: "Valor (R$)", name: "correction[amount_text]", value: correction_form&.amount_text || MoneyFormatter.call(cents: expense.amount_cents, currency_code: group.currency_code).delete_prefix("R$ "), options: { required: true, inputmode: "decimal" }) %>
+  <%= render FieldComponent.new(label: "Descrição", name: "correction[description]", value: correction_form&.description || expense.description, options: { required: true }) %>
+  <%= render FieldComponent.new(label: "Pago por", name: "correction[paid_by_user_id]", type: :select, value: correction_form&.paid_by_user_id || expense.paid_by_user_id, choices: memberships.map { |membership| [ membership.user.email, membership.user_id ] }, options: { required: true }) %>
   <fieldset><legend>Como dividir</legend>
-    <label><%= radio_button_tag "correction[split_type]", "equal", correction_form&.split_type != "exact" %> Dividir igualmente</label>
-    <label><%= radio_button_tag "correction[split_type]", "exact", correction_form&.split_type == "exact" %> Informar valores exatos</label>
+    <label><%= radio_button_tag "correction[split_type]", "equal", correction_form&.split_type != "exact", data: { action: "split-form#update" } %> Dividir igualmente</label>
+    <label><%= radio_button_tag "correction[split_type]", "exact", correction_form&.split_type == "exact", data: { action: "split-form#update" } %> Informar valores exatos</label>
   </fieldset>
-  <fieldset><legend>Participantes da divisão igual</legend><% memberships.each do |membership| %><label class="block"><%= check_box_tag "correction[participant_user_ids][]", membership.user_id, equal_participants.include?(membership.user_id) %> <%= membership.user.email %></label><% end %></fieldset>
-  <fieldset><legend>Valores exatos</legend><% memberships.each_with_index do |membership, index| %><label class="block"><%= membership.user.email %><%= hidden_field_tag "correction[shares][#{index}][user_id]", membership.user_id %><%= text_field_tag "correction[shares][#{index}][amount_text]", exact_shares[membership.user_id.to_s]&.fetch(:amount_text, nil), inputmode: "decimal", class: "ml-2 rounded border-slate-300" %></label><% end %></fieldset>
+  <fieldset data-split-form-target="equal"><legend>Participantes da divisão igual</legend><% memberships.each do |membership| %><label class="block"><%= check_box_tag "correction[participant_user_ids][]", membership.user_id, equal_participants.include?(membership.user_id) %> <%= membership.user.email %></label><% end %></fieldset>
+  <fieldset data-split-form-target="exact"><legend>Valores exatos</legend><% memberships.each_with_index do |membership, index| %><%= hidden_field_tag "correction[shares][#{index}][user_id]", membership.user_id %><%= render FieldComponent.new(label: membership.user.email, name: "correction[shares][#{index}][amount_text]", value: exact_shares[membership.user_id.to_s]&.fetch(:amount_text, nil), options: { inputmode: "decimal" }) %><% end %></fieldset>
   <%= form.hidden_field :expected_financial_state_version, value: current_financial_state_version || group.financial_state_version %>
   <%= form.hidden_field :idempotency_key, value: correction_form&.idempotency_key || SecureRandom.uuid %>
   <%= form.submit "Revisar correção", class: "ui-button ui-button--primary" %>

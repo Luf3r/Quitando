@@ -24,6 +24,8 @@ RSpec.describe "Visualização explicativa do grupo", type: :system do
 
     sign_in(fixture.fetch(:member))
     visit group_plan_path(fixture.fetch(:group))
+    expect(page).to have_no_css("details#plan_explanation[open]")
+    open_plan_explanation
 
     expect(page).to have_css("svg[data-visualization-graph]", count: 1)
     expect(page).to have_css("svg circle[data-user-id]", count: 2)
@@ -48,6 +50,7 @@ RSpec.describe "Visualização explicativa do grupo", type: :system do
 
     sign_in(fixture.fetch(:member))
     visit group_plan_path(fixture.fetch(:group))
+    open_plan_explanation
 
     expect(page).to have_css("svg[data-visualization-graph]", count: 1)
     expect(page.evaluate_script(<<~JS)).to eq(amount_cents.to_s)
@@ -72,6 +75,7 @@ RSpec.describe "Visualização explicativa do grupo", type: :system do
 
     sign_in(fixture.fetch(:member))
     visit group_plan_path(fixture.fetch(:group))
+    open_plan_explanation
 
     expect(page).to have_css("svg[data-layer='bilateral']", count: 1)
     expect(page).to have_css("svg path.visualization-edge", count: 1)
@@ -97,6 +101,7 @@ RSpec.describe "Visualização explicativa do grupo", type: :system do
 
     sign_in(fixture.fetch(:member))
     visit group_plan_path(fixture.fetch(:group))
+    open_plan_explanation
 
     expect(page).to have_css("svg[data-layer='historical']", count: 1)
     expect(page).to have_css("svg path.visualization-edge", count: 2)
@@ -108,6 +113,7 @@ RSpec.describe "Visualização explicativa do grupo", type: :system do
 
     sign_in(fixture.fetch(:member))
     visit group_plan_path(fixture.fetch(:group))
+    open_plan_explanation
 
     expect(page).to have_no_css("svg[data-visualization-graph]")
     expect(page).to have_text("Não há relações para desenhar neste estado")
@@ -122,6 +128,7 @@ RSpec.describe "Visualização explicativa do grupo", type: :system do
 
     sign_in(fixture.fetch(:member))
     visit group_plan_path(fixture.fetch(:group))
+    open_plan_explanation
     expect(page).to have_css("svg[data-visualization-graph]")
 
     page.execute_script(<<~JS)
@@ -146,6 +153,7 @@ RSpec.describe "Visualização explicativa do grupo", type: :system do
 
     sign_in(fixture.fetch(:member))
     visit group_plan_path(fixture.fetch(:group))
+    open_plan_explanation
 
     expect(page).to have_css("#group_settlement_visualization[data-visualization-unavailable='true']")
     expect(page).to have_text("O mapa visual está indisponível")
@@ -159,6 +167,7 @@ RSpec.describe "Visualização explicativa do grupo", type: :system do
 
     sign_in(fixture.fetch(:member))
     visit group_plan_path(fixture.fetch(:group))
+    open_plan_explanation
 
     live_region = find("#visualization_layer_announcement", visible: :all)
     expect(live_region.text).to eq("")
@@ -180,6 +189,7 @@ RSpec.describe "Visualização explicativa do grupo", type: :system do
 
     sign_in(fixture.fetch(:member))
     visit group_plan_path(fixture.fetch(:group))
+    open_plan_explanation
     plan_control = find("input[name='visualization_layer'][value='plan']")
     plan_control.send_keys(:arrow_right)
 
@@ -203,6 +213,7 @@ RSpec.describe "Visualização explicativa do grupo", type: :system do
 
     sign_in(fixture.fetch(:member))
     visit group_plan_path(fixture.fetch(:group))
+    open_plan_explanation
 
     colors = page.evaluate_script(<<~JS)
       (() => {
@@ -247,6 +258,7 @@ RSpec.describe "Visualização explicativa do grupo", type: :system do
 
     sign_in(fixture.fetch(:member))
     visit group_plan_path(fixture.fetch(:group))
+    open_plan_explanation
 
     expect(page.evaluate_script(<<~JS)).to be(true)
       document.getElementById("visualization_panel_plan").compareDocumentPosition(
@@ -266,6 +278,7 @@ RSpec.describe "Visualização explicativa do grupo", type: :system do
 
     sign_in(fixture.fetch(:member))
     visit group_plan_path(fixture.fetch(:group))
+    open_plan_explanation
 
     table_rect = page.evaluate_script("document.getElementById('visualization_panel_plan').getBoundingClientRect().toJSON()")
     graph_rect = page.evaluate_script("document.getElementById('visualization_graph_region').getBoundingClientRect().toJSON()")
@@ -279,7 +292,8 @@ RSpec.describe "Visualização explicativa do grupo", type: :system do
 
     sign_in(fixture.fetch(:member))
     visit group_plan_path(fixture.fetch(:group))
-    find_link("Marcar como enviado").click
+    open_plan_explanation
+    find(".plan-list a", text: "Marcar como enviado").click
     expect(page).to have_css("#group_dialog_shell[open]")
     expect(page.evaluate_script("document.activeElement?.id")).to eq("payment_amount_text"),
       page.evaluate_script("document.activeElement?.outerHTML")
@@ -299,15 +313,16 @@ RSpec.describe "Visualização explicativa do grupo", type: :system do
     expect(page.evaluate_script("document.activeElement?.id")).not_to eq("negative_focus_target")
 
     visit group_plan_path(fixture.fetch(:group))
-    find_link("Marcar como enviado").click
+    open_plan_explanation
+    find(".plan-list a", text: "Marcar como enviado").click
     expect(find("#payment_amount_text")).to match_css(":focus")
     click_button "Fechar"
-    expect(find_link("Marcar como enviado")).to match_css(":focus")
+    expect(find(".plan-list a", text: "Marcar como enviado")).to match_css(":focus")
 
-    find_link("Marcar como enviado").click
+    find(".plan-list a", text: "Marcar como enviado").click
     find("#group_dialog_shell").send_keys(:escape)
     expect(page).to have_no_css("#group_dialog_shell[open]")
-    expect(find_link("Marcar como enviado")).to match_css(":focus")
+    expect(find(".plan-list a", text: "Marcar como enviado")).to match_css(":focus")
   end
 
   it "mantém IDs e controles únicos quando um report obsoleto atualiza o diálogo" do
@@ -315,7 +330,8 @@ RSpec.describe "Visualização explicativa do grupo", type: :system do
 
     sign_in(fixture.fetch(:member))
     visit group_plan_path(fixture.fetch(:group))
-    find_link("Marcar como enviado").click
+    open_plan_explanation
+    find(".plan-list a", text: "Marcar como enviado").click
     expect(page).to have_css("#group_dialog_shell[open]")
 
     ExpenseCreator.call(
@@ -340,6 +356,11 @@ RSpec.describe "Visualização explicativa do grupo", type: :system do
   end
 
   private
+
+  def open_plan_explanation
+    find("details#plan_explanation > summary").click
+    expect(page).to have_css("details#plan_explanation[open]")
+  end
 
   def create_fixture!(with_expense: true)
     suffix = SecureRandom.hex(6)

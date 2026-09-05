@@ -798,7 +798,7 @@ Dois navegadores podem observar mudanças em tempo real, mas o sistema continua 
 
 ## 16. Fase 13 — Visualização, explicação e acessibilidade
 
-**Estado da fase:** em andamento. As entregas 13.1 a 13.14 permanecem verificadas da passagem anterior; 13.15 (histórico auditável de convites) e 13.16 (cenário público demo) foram acrescentadas ao gate e ainda exigem evidência própria. A Fase 14 não absorve essas entregas.
+**Estado da fase:** em revisão. As entregas 13.1 a 13.21 têm evidência automatizada fresca; a aceitação humana final da 13.21 ainda é necessária para concluir a reorganização da experiência dos grupos em torno da situação pessoal, próxima ação e mudanças recentes. A Fase 14 não absorve essa entrega.
 
 ### 16.1 Objetivo
 
@@ -868,9 +868,57 @@ O reset descobre as tabelas da base primária, exclui `schema_migrations` e `ar_
 
 As specs e o verificador integrado devem provar instalação inicial e idempotente, snapshot canônico, mutação, reset real, rollback integral, recusa antes de `TRUNCATE` para banco não autorizado, concorrência sem duplicação, cleanup exato e proteção das credenciais demo. Não há fallback que simule instalação, reset ou processamento de imagem.
 
+O cenário canônico v2 usa o marcador `canonical-v2`/2 e fixa 4 usuários, 6 grupos, 37 despesas, 7 pagamentos, 18 convites, 19 memberships e 1 marcador. Ele cobre correção imutável, residual `5000/5000/5000/4999`, saldo oficial e projetado, pagamentos cancelado/reportado/confirmado, duas páginas de histórico e a comparação `8 → 6 → 3` de Contas. Instalação sobre marcador incompatível falha antes de qualquer escrita; somente o reset integral autorizado pode substituir o cenário.
+
 ### 16.6 Gate de saída
 
-Uma pessoa conhece o produto pela landing e executa todas as jornadas do MVP em uma interface coerente, responsiva e acessível, por HTTP sem JavaScript e com melhorias progressivas quando Turbo, Action Cable e o grafo estão disponíveis. Além das verificações já definidas, o gate exige a demonstração autorizada e paginada do histórico de convites e `bin/verify-demo-scenario` em PostgreSQL temporário validado, cobrindo o caminho principal e as falhas explícitas da entrega 13.16. O gate inclui suíte completa, build Tailwind, `bin/ci`, imagem de produção, diff limpo e Lighthouse mobile dentro dos limites documentados no design da fase.
+Uma pessoa conhece o produto pela landing e executa todas as jornadas do MVP em uma interface coerente, responsiva e acessível, por HTTP sem JavaScript e com melhorias progressivas quando Turbo, Action Cable e o grafo estão disponíveis. Além das verificações já definidas e preservadas do histórico de convites e do cenário demo, o gate exige demonstrar que cada área de grupo apresenta situação, próxima ação e mudanças recentes sem alterar o domínio financeiro. O gate inclui suíte completa, build Tailwind, `bin/ci`, imagem de produção, diff limpo e Lighthouse mobile dentro dos limites documentados no design da fase.
+
+### 16.7 Entrega 13.17 — Shell e lista de grupos orientada à ação
+
+- a navegação global móvel usa um menu nativo compacto com os mesmos destinos e fallback HTTP; a navegação interna do grupo passa a uma grade 2x2 abaixo de 480 px;
+- o banner demo é expandido na landing e login, e recolhido dentro do app sem esconder credenciais nem o próximo reset;
+- a criação de grupo fica em `details`, aberto sem grupos e recolhido para recorrentes;
+- cada card mostra nome, estado, participantes em português e uma frase pessoal de situação; não mostra “Pendências 0”;
+- `GroupListQuery::Card` separa reports recebidos, enviados e alheios, define `attention_rank` e ordena por atenção, atualização decrescente e identificador, sem chamar `DebtSimplifier`.
+
+As specs de query, request, componente e sistema cobrem a ordenação e mensagem dos cards, ausência do simplificador, `details` de criação e demo, os destinos do menu nativo e a grade sem estouro em 360 px. Esta entrega preserva ledger, autorização, URLs, Turbo e broadcasts existentes; não cria estado financeiro, migration ou dependência visual.
+
+### 16.8 Entrega 13.18 — Resumo orientado à próxima ação
+
+- `GroupOverviewQuery::Snapshot` inclui os três fatos recentes sob o mesmo lock dos saldos, e `GroupHistoryQuery.recent` reutiliza a hidratação e ordenação auditáveis;
+- presenter puro deriva estado de atenção, ação principal, pendências pessoais/alheias e linhas de participantes, sem persistência ou cálculo financeiro no cliente;
+- o Resumo torna saldo oficial e próxima ação predominantes, mostra projeção apenas quando difere, limita atividade a três fatos e deixa mutações administrativas nas páginas dedicadas;
+- grupo arquivado não recebe ações de escrita; HTML, URLs, morph refresh e broadcasts existentes permanecem a fonte de reconciliação.
+
+### 16.9 Entrega 13.19 — Despesas e pagamentos orientados à ação
+
+- a criação começa por valor, descrição, pagador, data e divisão; o pagador inicial é a pessoa atual, erros preservam valores submetidos e correções preservam o pagador original;
+- os controles usam `FieldComponent` e tokens semânticos; Stimulus apenas alterna a visibilidade da divisão, enquanto o HTML sem JavaScript mantém ambos os fieldsets e o servidor decide o tipo;
+- preview de criação e correção explica total, pagador, participantes, shares e residual determinístico antes da confirmação append-only;
+- report de pagamento apresenta origem, destino, sugestão atual, faixa para parcialidade e que somente a confirmação altera o saldo oficial.
+
+As specs de componente, request e sistema cobrem pagador inicial, preservação, preview, divisão com e sem JavaScript, parcialidade, limites e autorização. Não há migration, pagamento arbitrário, aprovação de despesa, cálculo financeiro no cliente ou alteração de ledger.
+
+### 16.10 Entrega 13.20 — Plano, Histórico e Configurações orientados à ação
+
+- Plano apresenta primeiro pagamentos pendentes e “Ainda falta”; a pessoa que deve enviar pode iniciar o report no próprio item. Saldo projetado, métricas, tabelas, grafo, explicação e trace ficam em “Entenda o cálculo”, inicialmente recolhido, sem retirar as três tabelas do HTML;
+- Histórico preserva paginação e cadeias de correção, com linhas que expõem tipo, descrição, atores, valor, estado e horário;
+- Configurações ordena nome e convites, membros, administração avançada e arquivamento. A interface usa “Responsável pelo grupo”, enquanto `owner` continua sendo o termo do domínio. Ações bloqueadas permanecem visíveis e associam o motivo por `aria-describedby`.
+
+As specs de request verificam a ação do Plano, tabelas equivalentes, linhas do Histórico e a associação acessível de controles bloqueados. Esta entrega não altera ledger, autorização, URLs, Turbo, broadcasts, migrations nem os estados financeiros.
+
+O gate integrado foi demonstrado no Docker com `bin/ci`: a auditoria real do Importmap recuperou duas falhas transitórias de transporte do npm, 623 specs não-system e 26 system specs passaram, assim como lint, build, seeds e o verificador do cenário demo. O retry é limitado e uma sequência sem auditoria concluída permanece falha explícita.
+
+### 16.11 Entrega 13.21 — Gate responsivo, acessibilidade e aceitação final
+
+- a spec de gate confirma que saldo oficial e próxima ação aparecem no primeiro bloco em 360, 768 e 1440 px, nos temas claro e escuro, sem estouro horizontal; em 360 px, a barra de ação cabe no viewport e limita-se a duas ações;
+- as jornadas existentes cobrem navegação nativa, teclado, movimento reduzido, diálogo e foco, formulários com e sem JavaScript, equivalência entre tabela, grafo, stream e reload HTTP;
+- Lighthouse mobile local registrou landing com LCP de 1,85 s, CLS de 0,061 e acessibilidade 1,00, e Resumo autenticado com LCP de 1,89 s, CLS de 0,00047 e acessibilidade 1,00; a imagem de produção e `bin/ci` foram verificados no Docker, com 623 specs não-system e 27 system specs.
+
+O gate não está concluído apenas pela automação: permanece necessária a aceitação manual em cada estado relevante, confirmando que uma pessoa identifica saldo e próxima ação no primeiro bloco e registra uma despesa igual sem tocar na divisão exata. Até esse registro, a fase e a subissue ficam em `Review`, e a Fase 14 não é promovida.
+
+A aceitação humana usa Ana como roteiro: revisar o recebido na Viagem, acompanhar o envio na Configuração, marcar R$ 850 em Contas sem usar o grafo, comparar oficial/projetado e as três camadas, consultar o quitado e o arquivado; Bruno confirma a transferência, a atualização por stream e o reload são comparados, e o reset deve restaurar o snapshot v2.
 
 ---
 

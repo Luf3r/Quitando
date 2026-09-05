@@ -5,6 +5,14 @@
     <section class="expense-preview" aria-labelledby="correction-preview-title">
       <h2 id="correction-preview-title">Revise a correção</h2>
       <p>Valor total: <%= render MoneyComponent.new(cents: @preview.amount_cents, currency_code: @group.currency_code) %>.</p>
+      <% payer = @group.memberships.find { |membership| membership.user_id == @submitted_correction.fetch("paid_by_user_id") } %>
+      <% participant_names = @preview.shares.filter_map { |share| @group.memberships.find { |membership| membership.user_id == share.fetch(:user_id) }&.user&.email } %>
+      <% residual_cents = @preview.split_type == "equal" ? @preview.amount_cents % @preview.shares.length : 0 %>
+      <dl class="expense-preview__facts">
+        <div><dt>Pagador</dt><dd><%= payer&.user&.email || "Participante indisponível" %></dd></div>
+        <div><dt>Participantes</dt><dd><%= participant_names.to_sentence(two_words_connector: " e ", last_word_connector: ", e ") %></dd></div>
+        <div><dt>Residual</dt><dd><%= render MoneyComponent.new(cents: residual_cents, currency_code: @group.currency_code) %> distribuído de forma determinística.</dd></div>
+      </dl>
       <ul><% @preview.shares.each do |share| %><li><%= @group.memberships.find { |membership| membership.user_id == share.fetch(:user_id) }&.user&.email %>: <%= render MoneyComponent.new(cents: share.fetch(:amount_owed_cents), currency_code: @group.currency_code) %></li><% end %></ul>
       <p>Esta é uma revisão derivada. A despesa original ainda não foi anulada.</p>
       <%= form_with url: "/groups/#{@group.id}/expenses/#{@expense.id}/correct", scope: :correction, class: "expense-preview__confirmation", data: { turbo_stream: true } do |form| %>

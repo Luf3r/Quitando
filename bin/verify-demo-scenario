@@ -94,14 +94,32 @@ begin
     abort "installer was not idempotent" unless first.id == second.id
     puts [User.where(demo_account: true).count, Group.count, Expense.count, Payment.count, GroupInvitation.count, Membership.count, DemoScenario.count].join(":")
   RUBY
-  fail!("canonical installation snapshot is malformed") unless snapshot == "4:6:27:4:14:15:1"
+  fail!("canonical installation snapshot is malformed") unless snapshot == "4:6:37:7:18:19:1"
+  financial_snapshot = run!("bin/rails", "runner", <<~RUBY, environment:).strip
+    ana = User.find_by!(email: "ana@demo.quitando.test")
+    bruno = User.find_by!(email: "bruno@demo.quitando.test")
+    carla = User.find_by!(email: "carla@demo.quitando.test")
+    diego = User.find_by!(email: "diego@demo.quitando.test")
+    viagem = Group.find_by!(name: "Viagem para a serra")
+    contas = Group.find_by!(name: "Contas do apartamento")
+    official = GroupBalanceCalculator.call(viagem)
+    projected = ProjectedBalanceCalculator.call(official, viagem.payments.reported)
+    metrics = GroupDashboardQuery.call(group: contas, viewer: ana).visualization.metrics.map(&:count)
+    values = [
+      official.fetch(ana.id), official.fetch(bruno.id), official.fetch(carla.id), official.fetch(diego.id),
+      projected.fetch(ana.id), projected.fetch(bruno.id), projected.fetch(carla.id), projected.fetch(diego.id),
+      *metrics
+    ]
+    puts values.join(":")
+  RUBY
+  fail!("canonical financial scenario is malformed: #{financial_snapshot.inspect}") unless financial_snapshot == "124318:-80205:-97582:53469:26736:-50205:0:23469:8:6:3"
   after_reset = run!("bin/rails", "runner", <<~RUBY, environment:).strip
     ana = User.find_by!(email: "ana@demo.quitando.test")
     GroupCreator.call(owner_user_id: ana.id, name: "verifier mutation")
     DemoScenario::Resetter.call(manual: true)
     puts [User.where(demo_account: true).count, Group.count, Expense.count, Payment.count, GroupInvitation.count, Membership.count, DemoScenario.count, Group.where(name: "verifier mutation").count].join(":")
   RUBY
-  fail!("reset did not restore canonical snapshot: #{after_reset.inspect}") unless after_reset == "4:6:27:4:14:15:1:0"
+  fail!("reset did not restore canonical snapshot: #{after_reset.inspect}") unless after_reset == "4:6:37:7:18:19:1:0"
   run!("bin/rails", "runner", <<~RUBY, environment:)
     preserved = User.create!(email: "rollback-verifier@example.test", password: "password-123")
     begin

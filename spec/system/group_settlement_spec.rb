@@ -15,8 +15,10 @@ RSpec.describe "Jornada de quitação do grupo" do
     group = Group.find_by!(name: "Apartamento")
 
     visit group_path(group)
+    within(".group-navigation") { click_link "Configurações" }
     fill_in "invitation_email", with: bruno.email
     click_button "Enviar convite"
+    within(".group-navigation") { click_link "Configurações" }
     fill_in "invitation_email", with: carla.email
     click_button "Enviar convite"
 
@@ -32,7 +34,7 @@ RSpec.describe "Jornada de quitação do grupo" do
     sign_out
     sign_in(ana)
     visit group_path(group)
-    click_link "Adicionar despesa"
+    within("#group_next_action") { click_link "Adicionar despesa" }
     within(all('form[action="/groups/' + group.id + '/expenses/preview"]').first) do
       fill_in "expense_description", with: "Compra de Ana"
       fill_in "expense_occurred_on", with: "2026-08-14"
@@ -60,8 +62,8 @@ RSpec.describe "Jornada de quitação do grupo" do
     click_button "Confirmar despesa"
 
     expect(page).to have_text("pago por bruno@example.com, registrado por carla@example.com")
-    expect(page).to have_text("Próximas transferências sugeridas")
-    click_link "Marcar como enviado"
+    expect(page).to have_text("Você precisa enviar")
+    within("#group_next_action") { click_link "Marcar como enviado" }
     expect(page).to have_text("Registrar pagamento")
     click_button "Marcar como enviado"
     payment_path = current_path

@@ -24,7 +24,7 @@ class GroupsController < ApplicationController
     @group = policy_scope(Group).find(params[:id])
     authorize @group
     @overview = GroupOverviewQuery.call(group: @group, viewer: current_user)
-    @history_entries = GroupHistoryQuery.call(group: @group)
+    @summary = GroupOverviewPresenter.new(snapshot: @overview, viewer_id: current_user.id, archived: @group.archived_at?)
     @pending_invitations = @group.group_invitations.pending.where(expires_at: Time.current..).includes(:invited_user) if policy(@group).invite?
   end
 

@@ -38,13 +38,23 @@
     </header>
     <main class="page-shell" id="main-content">
       <% if demo_mode? %>
-        <aside class="demo-banner" aria-labelledby="demo-banner-title">
-          <h2 id="demo-banner-title">Ambiente compartilhado de demonstração</h2>
-          <p>Este ambiente é demo-only e descartável. Todo o cenário é reiniciado integralmente a cada seis horas.</p>
-          <p><strong>Contas públicas:</strong> <%= demo_public_emails.join(", ") %></p>
-          <p><strong>Senha:</strong> <%= demo_public_password %></p>
-          <p><strong>Próximo reset:</strong> <time datetime="<%= demo_next_reset_at.iso8601 %>"><%= l(demo_next_reset_at, format: :short) %></time>.</p>
-        </aside>
+        <% if user_signed_in? %>
+          <details class="demo-banner" aria-labelledby="demo-banner-title">
+            <summary id="demo-banner-title">Ambiente compartilhado de demonstração</summary>
+            <p>Este ambiente é demo-only e descartável. Todo o cenário é reiniciado integralmente a cada seis horas.</p>
+            <p><strong>Contas públicas:</strong> <%= demo_public_emails.join(", ") %></p>
+            <p><strong>Senha:</strong> <%= demo_public_password %></p>
+            <p><strong>Próximo reset:</strong> <time datetime="<%= demo_next_reset_at.iso8601 %>"><%= l(demo_next_reset_at, format: :short) %></time>.</p>
+          </details>
+        <% else %>
+          <aside class="demo-banner" aria-labelledby="demo-banner-title">
+            <h2 id="demo-banner-title">Ambiente compartilhado de demonstração</h2>
+            <p>Este ambiente é demo-only e descartável. Todo o cenário é reiniciado integralmente a cada seis horas.</p>
+            <p><strong>Contas públicas:</strong> <%= demo_public_emails.join(", ") %></p>
+            <p><strong>Senha:</strong> <%= demo_public_password %></p>
+            <p><strong>Próximo reset:</strong> <time datetime="<%= demo_next_reset_at.iso8601 %>"><%= l(demo_next_reset_at, format: :short) %></time>.</p>
+          </aside>
+        <% end %>
       <% end %>
       <% if flash[:alert].present? %>
         <%= render AlertComponent.new(message: flash[:alert]) %>

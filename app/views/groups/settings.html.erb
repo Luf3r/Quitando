@@ -1,55 +1,29 @@
 <section class="group-settings-page" aria-labelledby="settings-title">
   <%= render "groups/navigation", group: @group %>
-  <header class="ui-page-header"><div><p class="eyebrow"><%= @group.name %></p><h1 id="settings-title" class="ui-page-header__title">Configurações</h1><p class="ui-page-header__description">Membros, convites, ownership e arquivamento seguem as permissões existentes do grupo.</p></div></header>
-  <section class="settings-section" aria-labelledby="members-title"><h2 id="members-title">Membros</h2><ul class="audit-list"><% @memberships.each do |membership| %><li><strong><%= membership.user.email %></strong> <%= membership.role == "owner" ? "Owner" : "Membro" %>; <%= membership.active? ? "ativo" : "inativo" %>.
-    <% unless @group.archived_at? %><div class="invitation-card__actions">
-      <% if policy(membership).reactivate? && membership.inactive? %><%= button_to "Reativar", "/groups/#{@group.id}/memberships/#{membership.id}/reactivate", class: "ui-button ui-button--secondary" %><% end %>
-      <% if policy(membership).transfer_ownership? && membership.active? && membership.user_id != current_user.id %><%= button_to "Transferir ownership", "/groups/#{@group.id}/memberships/#{membership.id}/transfer_ownership", class: "ui-button ui-button--secondary", data: { turbo_confirm: "Transferir ownership para #{membership.user.email}?" } %><% end %>
-      <% if policy(membership).deactivate? && membership.active? %>
-        <% reason = @membership_deactivation_reasons.fetch(membership.id, nil) %>
-        <% if reason %><%= button_tag(membership.user_id == current_user.id ? "Sair do grupo" : "Inativar membro", type: "button", disabled: true, class: "ui-button ui-button--secondary") %><span class="settings-action-note"><%= reason == "último owner ativo não pode sair" ? "Transfira o ownership antes de sair." : reason %></span><% else %><%= button_to membership.user_id == current_user.id ? "Sair do grupo" : "Inativar membro", "/groups/#{@group.id}/memberships/#{membership.id}/deactivate", class: "ui-button ui-button--secondary", data: { turbo_confirm: membership.user_id == current_user.id ? "Sair deste grupo?" : "Inativar #{membership.user.email}?" } %><% end %>
-      <% end %>
-    </div><% end %>
-  </li><% end %></ul></section>
-  <% if policy(@group).update? && @memberships.active.many? %>
-    <section class="settings-section" aria-labelledby="order-title">
-      <h2 id="order-title">Ordenar membros</h2>
-      <p>Escolha um membro para cada posição e salve a ordem completa.</p>
-      <%= form_with url: group_memberships_order_path(@group), scope: :membership, method: :patch, class: "group-create__form" do |form| %>
-        <% @memberships.select(&:active?).each_with_index do |membership, index| %>
-          <div><%= form.label "ids_#{index}", "Posição #{index + 1}" %><%= select_tag "membership[ids][]", options_for_select(@memberships.select(&:active?).map { |candidate| [ candidate.user.email, candidate.id ] }, membership.id), id: "membership_ids_#{index}", class: "ui-field__control" %></div>
-        <% end %>
-        <%= form.submit "Salvar ordem", class: "ui-button ui-button--secondary" %>
-      <% end %>
-    </section>
+  <header class="ui-page-header"><div><p class="eyebrow"><%= @group.name %></p><h1 id="settings-title" class="ui-page-header__title">Configurações</h1><p class="ui-page-header__description">Nome, convites, membros e arquivamento seguem as permissões existentes do grupo.</p></div></header>
+
+  <% if policy(@group).update? && !@group.archived_at? %>
+    <section class="settings-section" aria-labelledby="group-name-title"><h2 id="group-name-title">Nome do grupo</h2><%= form_with model: @group, class: "group-create__form" do |form| %><%= form.label :name, "Nome", class: "sr-only" %><%= form.text_field :name, required: true, class: "ui-field__control" %><%= form.submit "Salvar nome", class: "ui-button ui-button--primary" %><% end %></section>
   <% end %>
+
   <% if policy(@group).invite? %>
     <section class="settings-section" aria-labelledby="invitations-title">
       <h2 id="invitations-title">Histórico de convites enviados</h2>
-      <% unless @group.archived_at? %>
-        <h3>Convidar pessoa</h3>
-        <%= form_with url: group_invitations_path(@group), scope: :invitation, class: "group-create__form" do |form| %>
-          <%= form.label :email, "E-mail", class: "sr-only" %><%= form.email_field :email, required: true, class: "ui-field__control", placeholder: "pessoa@exemplo.com" %><%= form.submit "Enviar convite", class: "ui-button ui-button--primary" %>
-        <% end %>
-      <% end %>
-
+      <% unless @group.archived_at? %><h3>Convidar pessoa</h3><%= form_with url: group_invitations_path(@group), scope: :invitation, class: "group-create__form" do |form| %><%= form.label :email, "E-mail", class: "sr-only" %><%= form.email_field :email, required: true, class: "ui-field__control", placeholder: "pessoa@exemplo.com" %><%= form.submit "Enviar convite", class: "ui-button ui-button--primary" %><% end %><% end %>
       <h3>Pendentes</h3>
-      <% if @sent_pending_page.entries.any? %>
-        <ul class="audit-list"><% @sent_pending_page.entries.each do |invitation| %><li><strong><%= invitation.group.name %></strong>. <%= invitation.invited_user.email %>. <%= invitation_status_label(invitation.status) %> em <time datetime="<%= invitation.created_at.iso8601 %>"><%= l(invitation.created_at, format: :short) %></time>.<% unless @group.archived_at? %> <%= button_to "Revogar convite", "/groups/#{@group.id}/invitations/#{invitation.id}/revoke", class: "ui-button ui-button--secondary" %><% end %></li><% end %></ul>
-      <% else %>
-        <p>Nenhum convite pendente.</p>
-      <% end %>
+      <% if @sent_pending_page.entries.any? %><ul class="audit-list"><% @sent_pending_page.entries.each do |invitation| %><li><strong><%= invitation.group.name %></strong>. <%= invitation.invited_user.email %>. <%= invitation_status_label(invitation.status) %> em <time datetime="<%= invitation.created_at.iso8601 %>"><%= l(invitation.created_at, format: :short) %></time>.<% unless @group.archived_at? %> <%= button_to "Revogar convite", "/groups/#{@group.id}/invitations/#{invitation.id}/revoke", class: "ui-button ui-button--secondary" %><% end %></li><% end %></ul><% else %><p>Nenhum convite pendente.</p><% end %>
       <% if @sent_pending_page.total_pages > 1 %><nav class="pagination" aria-label="Paginação dos convites enviados pendentes"><% if @sent_pending_page.number > 1 %><%= link_to "Anterior", group_settings_path(@group, page: @sent_pending_page.number - 1) %><% end %><span>Página <%= @sent_pending_page.number %> de <%= @sent_pending_page.total_pages %></span><% if @sent_pending_page.number < @sent_pending_page.total_pages %><%= link_to "Próxima", group_settings_path(@group, page: @sent_pending_page.number + 1) %><% end %></nav><% end %>
-
-      <h3>Encerrados</h3>
-      <% if @sent_terminal_page.entries.any? %>
-        <ul class="audit-list"><% @sent_terminal_page.entries.each do |invitation| %><% terminal_at = invitation_terminal_at(invitation) %><li><strong><%= invitation.group.name %></strong>. <%= invitation.invited_user.email %>. <%= invitation_status_label(invitation.status) %> em <time datetime="<%= terminal_at.iso8601 %>"><%= l(terminal_at, format: :short) %></time>.</li><% end %></ul>
-      <% else %>
-        <p>Nenhum convite encerrado.</p>
-      <% end %>
-      <% if @sent_terminal_page.total_pages > 1 %><nav class="pagination" aria-label="Paginação dos convites enviados encerrados"><% if @sent_terminal_page.number > 1 %><%= link_to "Anterior", group_settings_path(@group, page: @sent_terminal_page.number - 1) %><% end %><span>Página <%= @sent_terminal_page.number %> de <%= @sent_terminal_page.total_pages %></span><% if @sent_terminal_page.number < @sent_terminal_page.total_pages %><%= link_to "Próxima", group_settings_path(@group, page: @sent_terminal_page.number + 1) %><% end %></nav><% end %>
+      <details class="settings-history"><summary>Histórico de convites encerrados</summary><% if @sent_terminal_page.entries.any? %><ul class="audit-list"><% @sent_terminal_page.entries.each do |invitation| %><% terminal_at = invitation_terminal_at(invitation) %><li><strong><%= invitation.group.name %></strong>. <%= invitation.invited_user.email %>. <%= invitation_status_label(invitation.status) %> em <time datetime="<%= terminal_at.iso8601 %>"><%= l(terminal_at, format: :short) %></time>.</li><% end %></ul><% else %><p>Nenhum convite encerrado.</p><% end %><% if @sent_terminal_page.total_pages > 1 %><nav class="pagination" aria-label="Paginação dos convites enviados encerrados"><% if @sent_terminal_page.number > 1 %><%= link_to "Anterior", group_settings_path(@group, page: @sent_terminal_page.number - 1) %><% end %><span>Página <%= @sent_terminal_page.number %> de <%= @sent_terminal_page.total_pages %></span><% if @sent_terminal_page.number < @sent_terminal_page.total_pages %><%= link_to "Próxima", group_settings_path(@group, page: @sent_terminal_page.number + 1) %><% end %></nav><% end %></details>
     </section>
   <% end %>
-  <% if policy(@group).update? && !@group.archived_at? %><section class="settings-section" aria-labelledby="group-name-title"><h2 id="group-name-title">Nome do grupo</h2><%= form_with model: @group, class: "group-create__form" do |form| %><%= form.label :name, "Nome", class: "sr-only" %><%= form.text_field :name, required: true, class: "ui-field__control" %><%= form.submit "Salvar nome", class: "ui-button ui-button--primary" %><% end %></section><% end %>
-  <% if policy(@group).update? %><section class="settings-section" aria-labelledby="archive-title"><h2 id="archive-title">Arquivamento</h2><% if @group.archived_at? %><%= button_to "Restaurar grupo", group_restore_path(@group), method: :post, class: "ui-button ui-button--primary" %><% elsif @archive_reason %><%= button_tag "Arquivar grupo", type: "button", disabled: true, class: "ui-button ui-button--secondary" %><span class="settings-action-note"><%= @archive_reason %></span><% else %><%= button_to "Arquivar grupo", group_archive_path(@group), method: :post, class: "ui-button ui-button--secondary", data: { turbo_confirm: "Arquivar este grupo?" } %><% end %></section><% end %>
+
+  <section class="settings-section" aria-labelledby="members-title"><h2 id="members-title">Membros</h2><ul class="audit-list"><% @memberships.each do |membership| %><li><strong><%= membership.user.email %></strong> <%= membership.role == "owner" ? "Responsável pelo grupo" : "Membro" %>; <%= membership.active? ? "ativo" : "inativo" %>.
+    <% unless @group.archived_at? %><div class="invitation-card__actions">
+      <% if policy(membership).reactivate? && membership.inactive? %><%= button_to "Reativar", "/groups/#{@group.id}/memberships/#{membership.id}/reactivate", class: "ui-button ui-button--secondary" %><% end %>
+      <% if policy(membership).transfer_ownership? && membership.active? && membership.user_id != current_user.id %><%= button_to "Transferir responsabilidade", "/groups/#{@group.id}/memberships/#{membership.id}/transfer_ownership", class: "ui-button ui-button--secondary", data: { turbo_confirm: "Transferir a responsabilidade para #{membership.user.email}?" } %><% end %>
+      <% if policy(membership).deactivate? && membership.active? %><% reason = @membership_deactivation_reasons.fetch(membership.id, nil) %><% if reason %><% reason_id = "membership_#{membership.id}_reason" %><%= button_tag(membership.user_id == current_user.id ? "Sair do grupo" : "Inativar membro", type: "button", disabled: true, aria: { describedby: reason_id }, class: "ui-button ui-button--secondary") %><span id="<%= reason_id %>" class="settings-action-note"><%= reason == "último owner ativo não pode sair" ? "Transfira a responsabilidade antes de sair." : reason %></span><% else %><%= button_to membership.user_id == current_user.id ? "Sair do grupo" : "Inativar membro", "/groups/#{@group.id}/memberships/#{membership.id}/deactivate", class: "ui-button ui-button--secondary", data: { turbo_confirm: membership.user_id == current_user.id ? "Sair deste grupo?" : "Inativar #{membership.user.email}?" } %><% end %><% end %>
+    </div><% end %></li><% end %></ul></section>
+
+  <% if policy(@group).update? && @memberships.active.many? %><details class="settings-section settings-history"><summary>Administração avançada</summary><h2>Ordenar membros</h2><p>Escolha um membro para cada posição e salve a ordem completa.</p><%= form_with url: group_memberships_order_path(@group), scope: :membership, method: :patch, class: "group-create__form" do |form| %><% @memberships.select(&:active?).each_with_index do |membership, index| %><div><%= form.label "ids_#{index}", "Posição #{index + 1}" %><%= select_tag "membership[ids][]", options_for_select(@memberships.select(&:active?).map { |candidate| [candidate.user.email, candidate.id] }, membership.id), id: "membership_ids_#{index}", class: "ui-field__control" %></div><% end %><%= form.submit "Salvar ordem", class: "ui-button ui-button--secondary" %><% end %></details><% end %>
+  <% if policy(@group).update? %><section class="settings-section" aria-labelledby="archive-title"><h2 id="archive-title">Arquivamento</h2><% if @group.archived_at? %><%= button_to "Restaurar grupo", group_restore_path(@group), method: :post, class: "ui-button ui-button--primary" %><% elsif @archive_reason %><%= button_tag "Arquivar grupo", type: "button", disabled: true, aria: { describedby: "archive_reason" }, class: "ui-button ui-button--secondary" %><span id="archive_reason" class="settings-action-note"><%= @archive_reason %></span><% else %><%= button_to "Arquivar grupo", group_archive_path(@group), method: :post, class: "ui-button ui-button--secondary", data: { turbo_confirm: "Arquivar este grupo?" } %><% end %></section><% end %>
 </section>

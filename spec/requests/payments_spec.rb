@@ -80,6 +80,11 @@ RSpec.describe "Payments" do
     expect(form.at_css("input[name='payment[from_user_id]']")["value"]).to eq(debtor.id)
     expect(form.at_css("input[name='payment[to_user_id]']")["value"]).to eq(owner.id)
     expect(form.at_css("input[name='payment[amount_text]']")["value"]).to eq("10,00")
+    expect(response.body).to include("Origem")
+    expect(response.body).to include("Destino")
+    expect(response.body).to include("Valor sugerido")
+    expect(response.body).to include("Pagamento parcial")
+    expect(response.body).to include("somente a confirmação altera o saldo oficial")
   end
 
   it "mantém o deep link de report funcional sem Turbo" do

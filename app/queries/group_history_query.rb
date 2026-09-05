@@ -15,12 +15,22 @@ class GroupHistoryQuery
     entries.sort_by(&:occurred_at).reverse
   end
 
+  def self.recent(group:, limit:)
+    hydrate_rows(group, ordered_rows(group:, limit:, offset: 0))
+  end
+
   def self.page(group:, number:)
     total_facts = fact_count(group)
     total_pages = [ (total_facts + PER_PAGE - 1) / PER_PAGE, 1 ].max
     offset = (number - 1) * PER_PAGE
-    rows = ApplicationRecord.connection.select_all(
-      ApplicationRecord.sanitize_sql_array([ <<~SQL, group.id, group.id, PER_PAGE, offset ])
+    entries = hydrate_rows(group, ordered_rows(group:, limit: PER_PAGE, offset:))
+
+    Page.new(entries:, number:, total_pages:, total_facts:)
+  end
+
+  def self.ordered_rows(group:, limit:, offset:)
+    ApplicationRecord.connection.select_all(
+      ApplicationRecord.sanitize_sql_array([ <<~SQL, group.id, group.id, limit, offset ])
         SELECT fact_type, id, occurred_at
         FROM (
           SELECT 'expense' AS fact_type, id, created_at AS occurred_at FROM expenses WHERE group_id = ?
@@ -31,11 +41,14 @@ class GroupHistoryQuery
         LIMIT ? OFFSET ?
       SQL
     )
+  end
+
+  def self.hydrate_rows(group, rows)
     expense_ids = rows.filter_map { |row| row.fetch("id") if row.fetch("fact_type") == "expense" }
     payment_ids = rows.filter_map { |row| row.fetch("id") if row.fetch("fact_type") == "payment" }
     expenses = group.expenses.includes(:replaces_expense, :replacement_expenses).where(id: expense_ids).index_by(&:id)
     payments = group.payments.includes(:from_user, :to_user, :reported_by_user, :confirmed_by_user, :cancelled_by_user).where(id: payment_ids).index_by(&:id)
-    entries = rows.map do |row|
+    rows.map do |row|
       if row.fetch("fact_type") == "expense"
         expense_entry(expenses.fetch(row.fetch("id")))
       else
@@ -43,8 +56,6 @@ class GroupHistoryQuery
         Entry.new(kind: :payment, record: payment, occurred_at: payment.created_at, cycles: [ payment.status.to_sym ])
       end
     end
-
-    Page.new(entries:, number:, total_pages:, total_facts:)
   end
 
   def self.fact_count(group)
@@ -66,5 +77,5 @@ class GroupHistoryQuery
     cycles << :recorded if cycles.empty?
     Entry.new(kind: :expense, record: expense, occurred_at: expense.created_at, cycles:)
   end
-  private_class_method :fact_count, :expense_entry
+  private_class_method :fact_count, :ordered_rows, :hydrate_rows, :expense_entry
 end

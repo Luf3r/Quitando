@@ -50,19 +50,19 @@ RSpec.describe "Atualizações em tempo real do grupo", type: :system do
     end
 
     in_session(:counterparty) do
-      expect(page).to have_text("0 pagamento(s) reportado(s) envolvendo você.")
+      expect(page).to have_text("Aguardando outra pessoa")
     end
 
     sign_in_in(:bruno, fixture.fetch(:bruno))
     visit_group_in(:bruno, fixture.fetch(:group))
     Capybara.using_session(:bruno) do
-      click_link "Pagamento reported"
+      click_link "Revisar pagamento"
       accept_confirm { click_button "Confirmar pagamento" }
     end
 
     in_session(:ana) do
       expect(page).to have_text("Quitado")
-      expect(page).to have_text("0 pagamento(s) reportado(s)")
+      expect(page).to have_text("O grupo está quitado.")
       expect(page).to have_text("pago por #{fixture.fetch(:bruno).email}, registrado por #{fixture.fetch(:carla).email}")
     end
 

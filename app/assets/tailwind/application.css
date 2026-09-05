@@ -143,6 +143,8 @@ a {
   gap: 0.35rem;
 }
 
+.site-navigation__mobile { display: none; }
+
 .site-navigation__link {
   display: inline-flex;
   min-height: 2.75rem;
@@ -606,7 +608,10 @@ a {
   background: var(--color-surface-secondary);
 }
 
-.demo-banner h2 { margin: 0 0 0.65rem; font-size: 1.1rem; }
+.demo-banner h2,
+.demo-banner summary { margin: 0 0 0.65rem; font-size: 1.1rem; font-weight: 680; }
+.demo-banner summary { cursor: pointer; }
+.demo-banner[open] summary { margin-bottom: 0.65rem; }
 .demo-banner p,
 .demo-account-notice p { margin: 0.4rem 0 0; color: var(--color-text-secondary); line-height: 1.45; }
 .demo-banner strong { color: var(--color-text); }
@@ -614,8 +619,10 @@ a {
 .group-create,
 .group-index-section { margin-bottom: 2.5rem; }
 .group-create { border: 1px solid var(--color-border); border-radius: var(--radius-container); padding: 1.25rem; background: var(--color-surface); }
-.group-create h2,
+.group-create summary,
 .section-heading h2 { margin: 0; font-size: 1.25rem; letter-spacing: -0.02em; }
+.group-create summary { cursor: pointer; font-weight: 680; }
+.group-create[open] summary { margin-bottom: 1rem; }
 .group-create__form { display: flex; max-width: 38rem; gap: 0.75rem; margin-top: 1rem; }
 .section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
 .section-heading a { color: var(--color-text-secondary); font-weight: 620; }
@@ -631,11 +638,9 @@ a {
 .group-card__top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .group-card__top strong { font-size: 1.25rem; }
 .group-card__members { margin: 0.7rem 0; color: var(--color-text-secondary); }
-.group-card__facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; margin: 1rem 0 0; }
-.group-card__facts div { display: grid; gap: 0.2rem; padding: 0.75rem; border-radius: var(--radius-control); background: var(--color-surface-secondary); }
-.group-card__facts dt { color: var(--color-text-secondary); font-size: 0.8rem; }
-.group-card__facts dd { margin: 0; font-weight: 670; }
-.group-card__archive-note { display: block; margin-top: 0.85rem; color: var(--color-text-secondary); font-size: 0.9rem; }
+.group-card__attention { margin: 0; color: var(--color-text); font-weight: 640; line-height: 1.45; }
+.group-summary__balance { font-size: 1.15rem; }
+.group-mobile-actions { display: none; }
 .group-navigation { display: flex; gap: 0.35rem; margin: 0 0 2rem; border-bottom: 1px solid var(--color-border); overflow-x: auto; }
 .group-navigation a, .group-navigation span { display: inline-flex; white-space: nowrap; padding: 0.75rem 0.9rem; color: var(--color-text-secondary); text-decoration: none; }
 .group-navigation .is-current { border-bottom: 2px solid var(--color-accent); color: var(--color-text); font-weight: 680; }
@@ -650,12 +655,23 @@ a {
 .plan-balances div { padding: 0.75rem; border-radius: var(--radius-control); background: var(--color-surface-secondary); }
 .plan-balances dt { color: var(--color-text-secondary); font-size: 0.85rem; }
 .plan-balances dd { margin: 0.25rem 0 0; font-weight: 680; }
+.plan-explanation { margin-top: 1.25rem; }
+.plan-explanation > summary,
+.settings-history > summary { cursor: pointer; color: var(--color-text); font-weight: 680; }
+.plan-explanation[open] > summary,
+.settings-history[open] > summary { margin-bottom: 0.85rem; }
 .audit-list { display: grid; gap: 0.75rem; padding: 0; margin: 0; list-style: none; }
 .audit-list li { display: grid; gap: 0.3rem; border-bottom: 1px solid var(--color-border); padding-bottom: 0.85rem; color: var(--color-text-secondary); }
 .audit-list strong, .audit-list a { color: var(--color-text); }
 .audit-list time { color: var(--color-text-secondary); font-size: 0.85rem; }
+.history-entry dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: 0.55rem 1rem; margin: 0; }
+.history-entry dl div { display: grid; gap: 0.15rem; }
+.history-entry dt { color: var(--color-text-secondary); font-size: 0.8rem; }
+.history-entry dd { margin: 0; color: var(--color-text); }
 .settings-section { margin-top: 1.25rem; border: 1px solid var(--color-border); border-radius: var(--radius-container); padding: 1.25rem; background: var(--color-surface); }
 .settings-section h2 { margin: 0 0 1rem; font-size: 1.2rem; }
+.settings-history { display: block; }
+.settings-action-note { color: var(--color-text-secondary); }
 .pagination { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1rem; }
 .expense-entry-form { display: grid; gap: 1rem; max-width: 44rem; padding: 1.25rem; border: 1px solid var(--color-border); border-radius: var(--radius-container); background: var(--color-surface); }
 .expense-entry-form > div, .expense-entry-form fieldset { display: grid; gap: 0.4rem; }
@@ -663,8 +679,12 @@ a {
 .expense-entry-form legend { padding-inline: 0.25rem; font-weight: 680; }
 .expense-entry-form label { color: var(--color-text-secondary); }
 .expense-preview { display: grid; gap: 0.85rem; margin-top: 1rem; max-width: 44rem; padding: 1.25rem; border: 1px solid color-mix(in srgb, var(--color-accent) 40%, var(--color-border)); border-radius: var(--radius-container); background: var(--color-surface); }
-.expense-preview h2, .expense-preview p, .expense-preview ul { margin: 0; }
+.expense-preview h2, .expense-preview p, .expense-preview ul, .expense-preview__facts { margin: 0; }
 .expense-preview ul { display: grid; gap: 0.35rem; padding-left: 1.25rem; }
+.expense-preview__facts, .payment-report-context { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; margin: 0; }
+.expense-preview__facts div, .payment-report-context div { display: grid; gap: 0.2rem; padding: 0.7rem; border-radius: var(--radius-control); background: var(--color-surface-secondary); }
+.expense-preview__facts dt, .payment-report-context dt { color: var(--color-text-secondary); font-size: 0.85rem; }
+.expense-preview__facts dd, .payment-report-context dd { margin: 0; color: var(--color-text); font-weight: 620; }
 .expense-preview__confirmation { margin-top: 0.25rem; }
 
 @media (max-width: 767px) {
@@ -682,6 +702,45 @@ a {
   .landing-steps li { min-height: auto; }
   .group-create__form,
   .invitation-card { align-items: stretch; flex-direction: column; }
+  .expense-preview__facts,
+  .payment-report-context { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 479px) {
+  .group-navigation {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+    border-bottom: 0;
+    overflow: visible;
+  }
+
+  .group-navigation a,
+  .group-navigation span {
+    justify-content: center;
+    min-width: 0;
+    white-space: normal;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-control);
+  }
+
+  .group-navigation .is-current { border: 2px solid var(--color-accent); }
+
+  .group-mobile-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding: 0.75rem max(0.75rem, env(safe-area-inset-right)) calc(0.75rem + env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-left));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-control);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-surface);
+  }
+
+  .group-mobile-actions .ui-button { flex: 1; }
 }
 
 .turbo-progress-bar {
@@ -789,6 +848,36 @@ a {
   .site-navigation {
     width: 100%;
     flex-wrap: wrap;
+  }
+
+  .site-navigation--desktop { display: none; }
+
+  .site-navigation__mobile {
+    display: block;
+    width: 100%;
+  }
+
+  .site-navigation__mobile summary {
+    min-height: 2.5rem;
+    cursor: pointer;
+    color: var(--color-text);
+    font-weight: 680;
+  }
+
+  .site-navigation__mobile-panel {
+    display: grid;
+    gap: 0.35rem;
+    margin-top: 0.5rem;
+    padding: 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-control);
+    background: var(--color-surface);
+  }
+
+  .site-navigation__mobile-panel .site-navigation__link,
+  .site-navigation__mobile-panel .theme-picker {
+    width: 100%;
+    margin-left: 0;
   }
 
   .site-navigation__links {

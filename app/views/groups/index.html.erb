@@ -1,13 +1,13 @@
 <%= render PageHeaderComponent.new(title: "Seus grupos", description: "Acompanhe o que falta encerrar e registre novas despesas.") %>
 
-<section class="group-create" aria-labelledby="novo-grupo">
-  <h2 id="novo-grupo">Criar grupo</h2>
+<details id="novo-grupo" class="group-create" <%= "open" if @group_cards.empty? %>>
+  <summary>Criar grupo</summary>
   <%= form_with url: groups_path, scope: :group, data: { turbo_stream: true }, class: "group-create__form" do |form| %>
-    <%= form.label :name, "Nome", class: "sr-only" %>
+    <%= form.label :name, "Nome" %>
     <%= form.text_field :name, required: true, class: "ui-field__control", placeholder: "Ex.: Apartamento" %>
     <%= form.submit "Criar grupo", class: "ui-button ui-button--primary" %>
   <% end %>
-</section>
+</details>
 
 <section class="group-index-section" aria-labelledby="convites-pendentes">
   <div class="section-heading"><h2 id="convites-pendentes">Convites recebidos</h2><%= link_to "Ver todos", invitations_path %></div>
@@ -36,12 +36,8 @@
         <li>
           <%= link_to group_path(card.group), class: "group-card" do %>
             <div class="group-card__top"><strong><%= card.group.name %></strong><%= render StatusBadgeComponent.new(status: card.archived ? "archived" : card.status) %></div>
-            <p class="group-card__members"><%= card.memberships.map { |membership| membership.user.email }.to_sentence %></p>
-            <dl class="group-card__facts">
-              <div><dt>Seu saldo oficial</dt><dd><%= MoneyFormatter.call(cents: card.viewer_balance_cents, currency_code: card.group.currency_code) %></dd></div>
-              <div><dt>Pendências</dt><dd><%= card.pending_payment_count %></dd></div>
-            </dl>
-            <% if card.archived %><span class="group-card__archive-note">Grupo arquivado. A leitura permanece disponível.</span><% end %>
+            <p class="group-card__members"><%= participant_summary(card.memberships) %></p>
+            <p class="group-card__attention"><%= group_card_attention_message(card) %></p>
           <% end %>
         </li>
       <% end %>
