@@ -10,6 +10,17 @@ RSpec.describe "Componentes do design system", type: :component do
     expect(page).to have_link("Criar grupo", href: "/groups/new", class: /ui-button--primary/)
   end
 
+  it "torna a ação secundária visualmente reconhecível e compacta" do
+    render_inline(ButtonComponent.new(label: "Histórico completo", href: "/groups/1/history", variant: :secondary))
+
+    expect(page).to have_link(
+      "Histórico completo",
+      href: "/groups/1/history",
+      class: /ui-button--secondary.*ui-button--compact/
+    )
+    expect(page).not_to have_css(".ui-button--primary", text: "Histórico completo")
+  end
+
   it "renderiza campo com label, ajuda e erro associados" do
     render_inline(
       FieldComponent.new(

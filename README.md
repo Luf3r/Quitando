@@ -6,7 +6,7 @@ O Quitando ajuda grupos que já confiam uns nos outros a encerrar despesas compa
 
 ## Status
 
-O projeto está em construção. A #144 está em execução com o cenário demo canônico v2; sua verificação automatizada cobre o roteiro da Ana, snapshot, saldos, histórico e grafo. A Fase 13 ainda aguarda a aceitação humana final do gate, sem antecipar a Fase 14.
+O projeto está em construção. A #144 está em `Review` na rodada de aceitação da Fase 13.21: além da identidade financeira por nome, as telas financeiras usam ações hierarquizadas, chips semânticos, registros compactos e cancelamento progressivo. A verificação automatizada cobre roteiro da Ana, snapshot, saldos, Histórico em duas páginas, formulários sem JavaScript e os três viewports nos dois temas. A Fase 13 ainda aguarda a aceitação humana final do gate, sem antecipar a Fase 14.
 
 A passagem anterior da reabertura entregou landing pública, tema claro/escuro/sistema, conta pessoal, shell móvel nativo, navegação por Resumo/Plano/Histórico/Configurações, lista, Resumo, despesas e pagamentos orientados à ação, além da revisão de despesas e correções no servidor antes da confirmação. Landing e Resumo autenticado foram inspecionados nos breakpoints normativos, e o Lighthouse da imagem de produção ficou dentro dos limites de LCP e CLS, com acessibilidade 1,0. A Fase 14 tratará a medição de INP de campo por RUM ou CrUX após o deploy, com alvo p75 abaixo de 200 ms no fluxo principal móvel.
 
@@ -16,7 +16,7 @@ A base integrada já oferece o bootstrap Rails, RSpec com exemplos reais, `bin/c
 
 O fluxo HTTP continua sendo a fonte principal de reconciliação: páginas e formulários funcionam sem JavaScript, enquanto navegadores conectados recebem refresh/morph após commit. O gate de navegador usa Solid Cable e PostgreSQL reais; se o Cable cair ou for rejeitado, há aviso visível e o reload HTTP converge para o estado persistido.
 
-No dashboard, as tabelas de plano, compensação e histórico são renderizadas no HTML e a ação “Marcar como enviado” independe do grafo. Com JavaScript, controles nativos selecionam a camada equivalente no SVG; erros de desenho permanecem visíveis e deixam as tabelas operacionais.
+No dashboard, nomes são a identidade principal; as tabelas de plano, compensação e histórico são renderizadas no HTML e a ação “Marcar como enviado” independe do grafo. Com JavaScript, controles nativos selecionam a camada equivalente no SVG; erros de desenho permanecem visíveis e deixam as tabelas operacionais.
 
 O trabalho é acompanhado no [GitHub Project — Quitando](https://github.com/users/Luf3r/projects/2). As [Fases 3](https://github.com/Luf3r/Quitando/issues/8), [4](https://github.com/Luf3r/Quitando/issues/9), [5](https://github.com/Luf3r/Quitando/issues/10), [6](https://github.com/Luf3r/Quitando/issues/11), [7](https://github.com/Luf3r/Quitando/issues/12), [8](https://github.com/Luf3r/Quitando/issues/13), [9](https://github.com/Luf3r/Quitando/issues/14), [10](https://github.com/Luf3r/Quitando/issues/15), [11](https://github.com/Luf3r/Quitando/issues/16) e [12](https://github.com/Luf3r/Quitando/issues/17), com suas subissues, estão em `Done`; a [Fase 13](https://github.com/Luf3r/Quitando/issues/18) permanece em `Review` na 13.21 até a aceitação humana final. Status e campos do quadro refletem apenas trabalho realmente demonstrado.
 

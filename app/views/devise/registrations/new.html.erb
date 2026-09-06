@@ -7,8 +7,12 @@
   <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { class: "auth-form" }) do |form| %>
     <%= render FormErrorsComponent.new(messages: resource.errors.full_messages) if resource.errors.any? %>
     <div class="ui-field">
+      <%= form.label :name, "Nome", class: "ui-field__label" %>
+      <%= form.text_field :name, autofocus: true, autocomplete: "name", maxlength: 80, required: true, class: "ui-field__control" %>
+    </div>
+    <div class="ui-field">
       <%= form.label :email, "E-mail", class: "ui-field__label" %>
-      <%= form.email_field :email, autofocus: true, autocomplete: "email", class: "ui-field__control" %>
+      <%= form.email_field :email, autocomplete: "email", class: "ui-field__control" %>
     </div>
     <div class="ui-field">
       <%= form.label :password, "Senha", class: "ui-field__label" %>

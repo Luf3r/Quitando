@@ -121,7 +121,7 @@ begin
   RUBY
   fail!("reset did not restore canonical snapshot: #{after_reset.inspect}") unless after_reset == "4:6:37:7:18:19:1:0"
   run!("bin/rails", "runner", <<~RUBY, environment:)
-    preserved = User.create!(email: "rollback-verifier@example.test", password: "password-123")
+    preserved = User.create!(name: "Rollback verifier", email: "rollback-verifier@example.test", password: "password-123")
     begin
       DemoScenario::Resetter.new(config: DemoScenario::Config.new, installer: -> { raise "intentional reset failure" }).call(manual: true)
     rescue RuntimeError

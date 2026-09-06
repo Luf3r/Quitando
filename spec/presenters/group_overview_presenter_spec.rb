@@ -9,7 +9,7 @@ RSpec.describe GroupOverviewPresenter do
       settlement_plan: plan,
       recent_entries: [],
       memberships: [],
-      participant_emails: official.keys.index_with { |id| "#{id}@example.com" },
+      participant_names: official.keys.index_with { |id| "Pessoa #{id}" },
       status:
     )
   end
@@ -37,6 +37,7 @@ RSpec.describe GroupOverviewPresenter do
     expect(presenter.viewer_official_cents).to eq(-100)
     expect(presenter.viewer_projected_cents).to eq(-50)
     expect(presenter.show_viewer_projection?).to be(true)
+    expect(presenter.participants.first.to_h).to include(name: "Pessoa #{viewer_id}")
     expect(presenter.participants).to include(an_object_having_attributes(user_id: viewer_id, official_cents: -100, projected_cents: -50, show_projection: true))
   end
 

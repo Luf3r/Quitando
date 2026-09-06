@@ -250,9 +250,9 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 
 ## 11. Milestone atual
 
-- **Última entrega demonstrada automaticamente:** Fase 13.21 — gate responsivo, acessibilidade e aceitação final.
+- **Última entrega demonstrada automaticamente:** Fase 13.21 — identidade por nome e refinamento responsivo das superfícies financeiras.
 - **Fase atual:** Fase 13, reaberta para as entregas 13.17 a 13.21 de UX orientada à ação nos grupos.
-- **Status atual:** a #144 está em execução para o cenário demo canônico v2. As verificações automatizadas v2 cobrem snapshot `4:6:37:7:18:19:1`, saldos, residual, histórico, roteiro da Ana e métricas `8→6→3`; a Fase 13 continua pendente da aceitação humana e a Fase 14 permanece posterior.
+- **Status atual:** a #144 está em `Review` para a rodada de aceitação de hierarquia de ações e refinamento financeiro. As verificações automatizadas cobrem nome obrigatório e migration segura, snapshot `4:6:37:7:18:19:1`, saldos, histórico, roteiro da Ana e métricas `8→6→3`; a Fase 13 continua pendente da aceitação humana e a Fase 14 permanece posterior.
 - **Gate pendente da Fase 13:** a pessoa avaliadora deve usar o roteiro Ana — revisar recebido, acompanhar enviado, marcar R$ 850, adicionar despesa, consultar quitado e arquivado — além de comparar stream/reload e reset v2. O cenário demo permanece descartável, com banco/deploy separados, `QUITANDO_DEMO_MODE=true`, reset integral a cada seis horas e `bin/verify-demo-scenario`; dados reais duráveis exigem banco e deploy separados com `QUITANDO_DEMO_MODE=false`.
 - **Gate integrado da Fase 0:** `bin/ci` executa localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação. O hardening adicional da PR #38 também foi aprovado nos checks remotos atuais.
 

@@ -2,6 +2,7 @@ class DemoScenario::Installer
   SCENARIO_KEY = "canonical-v2"
   SCENARIO_VERSION = 2
   PUBLIC_ACCOUNTS = { ana: "ana@demo.quitando.test", bruno: "bruno@demo.quitando.test", carla: "carla@demo.quitando.test", diego: "diego@demo.quitando.test" }.freeze
+  PUBLIC_NAMES = { ana: "Ana", bruno: "Bruno", carla: "Carla", diego: "Diego" }.freeze
   ScenarioConflict = Class.new(StandardError)
 
   # Declarative facts; all persistence below still goes through domain commands.
@@ -51,7 +52,16 @@ class DemoScenario::Installer
   end
 
   def create_public_accounts!
-    PUBLIC_ACCOUNTS.transform_values { |email| User.create!(email:, password: config.public_password, password_confirmation: config.public_password, demo_account: true) }
+    PUBLIC_ACCOUNTS.to_h do |key, email|
+      user = User.create!(
+        name: PUBLIC_NAMES.fetch(key),
+        email:,
+        password: config.public_password,
+        password_confirmation: config.public_password,
+        demo_account: true
+      )
+      [ key, user ]
+    end
   end
 
   def install_serra!(accounts, installed_at:)

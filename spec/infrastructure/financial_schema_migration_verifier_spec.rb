@@ -217,6 +217,15 @@ RSpec.describe "Financial schema migration verifier safety" do
     end
   end
 
+  it "runs the user name canonical backfill, residual refusal and round-trip assertions" do
+    with_fake_migration_dependencies do |_stdout, _stderr, status, _statements, orchestration|
+      expect(status).to be_success
+      expect(orchestration).to include(a_string_including("user name migration did not backfill canonical accounts"))
+      expect(orchestration).to include(a_string_including("user name migration unexpectedly accepted residual user without a name"))
+      expect(orchestration).to include(a_string_including("lock_timeout was not restored after user name migration"))
+    end
+  end
+
   it "marks child migration commands so their temporary trigger cannot be dumped into the shared schema" do
     with_fake_migration_dependencies do |_stdout, _stderr, status, _statements, orchestration|
       expect(status).to be_success

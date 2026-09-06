@@ -18,6 +18,11 @@ RSpec.describe "Group invitations" do
       expect(response.body).to include("Recusado")
       expect(response.body).not_to include("/invitations/#{terminal.id}/accept")
       expect(response.body).not_to include("/invitations/#{terminal.id}/decline")
+      document = response.parsed_body
+      expect(document.at_css("[data-status='pending'][data-tone='attention']")).to be_present
+      expect(document.at_css("[data-status='declined'][data-tone='negative']")).to be_present
+      expect(document.at_css("form[action$='/accept'] .ui-button--primary")).to be_present
+      expect(document.at_css("form[action$='/decline'] .ui-button--danger")).to be_present
     end
 
     it "mostra somente os convites do usuário autenticado" do

@@ -3,6 +3,10 @@ class User < ApplicationRecord
 
   attr_readonly :demo_account
 
+  before_validation :normalize_name
+
+  validates :name, presence: true, length: { maximum: 80 }
+
   has_many :memberships, dependent: :restrict_with_exception
   has_many :group_invitations_received, class_name: "GroupInvitation", foreign_key: :invited_user_id, dependent: :restrict_with_exception
   has_many :group_invitations_sent, class_name: "GroupInvitation", foreign_key: :invited_by_user_id, dependent: :restrict_with_exception
@@ -15,4 +19,10 @@ class User < ApplicationRecord
   has_many :payments_reported, class_name: "Payment", foreign_key: :reported_by_user_id, dependent: :restrict_with_exception
   has_many :payments_confirmed, class_name: "Payment", foreign_key: :confirmed_by_user_id, dependent: :restrict_with_exception
   has_many :payments_cancelled, class_name: "Payment", foreign_key: :cancelled_by_user_id, dependent: :restrict_with_exception
+
+  private
+
+  def normalize_name
+    self.name = name.squish if name
+  end
 end

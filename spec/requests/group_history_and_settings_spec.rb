@@ -35,6 +35,17 @@ RSpec.describe "Histórico e configurações do grupo" do
     expect(response.body).to include("carla@example.com")
     expect(response.body).to include("Ordenar membros")
     expect(response.body).to include(group_memberships_order_path(group))
+
+    document = response.parsed_body
+    owner_row = document.css(".settings-member").find { |row| row.text.include?(owner.email) }
+    invitation_row = document.css(".settings-invitation").find { |row| row.text.include?(invited_user.email) }
+
+    expect(owner_row.css("dt").map(&:text)).to include("Nome", "E-mail", "Papel", "Estado")
+    expect(owner_row.at_css("[data-status='owner'][data-tone='neutral']").text).to include("Responsável pelo grupo")
+    expect(owner_row.at_css("[data-status='active'][data-tone='positive']").text).to include("Ativo")
+    expect(invitation_row.css("dt").map(&:text)).to include("E-mail", "Estado", "Enviado em")
+    expect(invitation_row.at_css("[data-status='pending'][data-tone='attention']").text).to include("Pendente")
+    expect(document.xpath("//text()[normalize-space(.)='.' or normalize-space(.)=';']")).to be_empty
   end
 
   it "mantém Configurações de grupo arquivado somente para leitura e restauração" do
@@ -65,9 +76,11 @@ RSpec.describe "Histórico e configurações do grupo" do
     get group_settings_path(group)
 
     document = response.parsed_body
-    member_row = document.css(".audit-list li").find { |row| row.text.include?(member.email) }
+    member_row = document.css(".settings-member").find { |row| row.text.include?(member.email) }
     expect(member_row.text).to include("saldo oficial diferente de zero")
-    expect(member_row.at_css("button[disabled]")&.text).to include("Inativar membro")
+    blocked_action = member_row.at_css("button[disabled][aria-describedby]")
+    expect(blocked_action&.text).to include("Inativar membro")
+    expect(member_row.at_css("##{blocked_action['aria-describedby']}").text).to include("saldo oficial diferente de zero")
   end
 
   it "explica por que um grupo aberto não pode ser arquivado" do

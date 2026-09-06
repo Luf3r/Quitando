@@ -1,27 +1,8 @@
-<section class="group-history-page" aria-labelledby="history-title">
+<section class="group-history-page group-reading-column" aria-labelledby="history-title">
   <%= render "groups/navigation", group: @group %>
   <header class="ui-page-header"><div><p class="eyebrow"><%= @group.name %></p><h1 id="history-title" class="ui-page-header__title">Histórico</h1><p class="ui-page-header__description"><%= @history_page.total_facts %> fatos registrados no grupo.</p></div></header>
   <% if @history_page.entries.any? %>
-    <ol class="audit-list"><% @history_page.entries.each do |entry| %><li class="history-entry">
-      <dl>
-        <% if entry.kind == :expense %><% expense = entry.record %>
-          <div><dt>Tipo</dt><dd>Despesa</dd></div>
-          <div><dt>Descrição</dt><dd><%= link_to expense.description, group_expense_path(@group, expense) %></dd></div>
-          <div><dt>Registrado por</dt><dd><%= expense.created_by_user.email %></dd></div>
-          <div><dt>Pago por</dt><dd><%= expense.paid_by_user.email %></dd></div>
-          <div><dt>Valor</dt><dd><%= render MoneyComponent.new(cents: expense.amount_cents, currency_code: @group.currency_code) %></dd></div>
-          <div><dt>Estado</dt><dd><%= expense.voided_at? ? "Anulada" : "Ativa" %></dd></div>
-          <% if expense.voided_at? %><div><dt>Correção</dt><dd>Despesa anulada<%= "; #{expense.void_reason}" if expense.void_reason.present? %>.</dd></div><% end %>
-        <% else %><% payment = entry.record %>
-          <div><dt>Tipo</dt><dd>Pagamento</dd></div>
-          <div><dt>Descrição</dt><dd><%= link_to "Ver detalhes", group_payment_path(@group, payment) %></dd></div>
-          <div><dt>Atores</dt><dd><%= payment.from_user.email %> para <%= payment.to_user.email %></dd></div>
-          <div><dt>Valor</dt><dd><%= render MoneyComponent.new(cents: payment.amount_cents, currency_code: @group.currency_code) %></dd></div>
-          <div><dt>Estado</dt><dd><%= payment_status_label(payment.status) %></dd></div>
-        <% end %>
-        <div><dt>Horário</dt><dd><time datetime="<%= entry.occurred_at.iso8601 %>"><%= l(entry.occurred_at, format: :short) %></time></dd></div>
-      </dl>
-    </li><% end %></ol>
+    <ol class="history-list financial-activity-list"><% @history_page.entries.each do |entry| %><li class="history-entry"><%= render FinancialActivityComponent.new(entry:, group: @group) %></li><% end %></ol>
     <% if @history_page.total_pages > 1 %><nav class="pagination" aria-label="Paginação do histórico"><% if @history_page.number > 1 %><%= link_to "Anterior", group_history_path(@group, page: @history_page.number - 1) %><% end %><span>Página <%= @history_page.number %> de <%= @history_page.total_pages %></span><% if @history_page.number < @history_page.total_pages %><%= link_to "Próxima", group_history_path(@group, page: @history_page.number + 1) %><% end %></nav><% end %>
   <% else %><%= render EmptyStateComponent.new(title: "Nenhum fato financeiro ainda", body: "As despesas e pagamentos confirmados aparecerão aqui.") %><% end %>
 </section>

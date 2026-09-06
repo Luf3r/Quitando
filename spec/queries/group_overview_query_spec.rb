@@ -20,6 +20,7 @@ RSpec.describe GroupOverviewQuery do
       an_object_having_attributes(from_user_id: bruno.id, to_user_id: ana.id, amount_cents: 300)
     )
     expect(snapshot.recent_entries).to contain_exactly(an_object_having_attributes(kind: :expense, record: expense))
+    expect(snapshot.to_h).to include(participant_names: { ana.id => ana.name, bruno.id => bruno.name })
     expect(snapshot).not_to respond_to(:visualization)
     expect(snapshot).not_to respond_to(:settlement_trace)
   end

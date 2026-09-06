@@ -1,6 +1,6 @@
 <% form_values = payment_form.stringify_keys %>
-<% origin = dashboard.participant_emails.fetch(form_values.fetch("from_user_id"), "Participante indisponível") %>
-<% destination = dashboard.participant_emails.fetch(form_values.fetch("to_user_id"), "Participante indisponível") %>
+<% origin = dashboard.participant_names.fetch(form_values.fetch("from_user_id"), "Participante indisponível") %>
+<% destination = dashboard.participant_names.fetch(form_values.fetch("to_user_id"), "Participante indisponível") %>
 
 <%= form_with url: group_payments_path(group), scope: :payment, class: "mt-4 space-y-3", data: { turbo_frame: "group_dialog", turbo_stream: true } do |form| %>
   <%= form.hidden_field :from_user_id, value: form_values.fetch("from_user_id") %>
@@ -14,5 +14,5 @@
   </dl>
   <%= render FieldComponent.new(label: "Valor a informar (R$)", name: "payment[amount_text]", value: form_values.fetch("amount_text"), hint: "Pagamento parcial é permitido: informe entre R$ 0,01 e R$ #{form_values.fetch("amount_text")}.", options: { required: true, autofocus: true, inputmode: "decimal" }) %>
   <p class="ui-field__hint">Marcar como enviado registra uma declaração; somente a confirmação altera o saldo oficial.</p>
-  <%= form.submit "Marcar como enviado", class: "rounded bg-slate-900 px-4 py-2 text-white" %>
+  <%= form.submit "Marcar como enviado", class: "ui-button ui-button--primary" %>
 <% end %>

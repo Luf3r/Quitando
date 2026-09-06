@@ -6,7 +6,7 @@ class GroupOverviewQuery
     :settlement_plan,
     :recent_entries,
     :memberships,
-    :participant_emails,
+    :participant_names,
     :status
   )
 
@@ -33,7 +33,7 @@ class GroupOverviewQuery
         settlement_plan: DebtSimplifier.new(projected_balances).call,
         recent_entries: GroupHistoryQuery.recent(group:, limit: 3),
         memberships: memberships.select(&:active?),
-        participant_emails: memberships.index_by(&:user_id).transform_values { |membership| membership.user.email },
+        participant_names: memberships.index_by(&:user_id).transform_values { |membership| membership.user.name },
         status: GroupFinancialStatusResolver.call(group)
       )
     end

@@ -217,6 +217,10 @@ No MVP:
 ### 6.1 Entidades principais
 
 ```text
+User
+  name # identidade principal, obrigatória, normalizada e limitada a 80 caracteres
+  email # autenticação, conta e convites internos
+
 Group
   has_many :memberships
   has_many :users, through: :memberships
@@ -265,7 +269,9 @@ Payment
   idempotency_key
 ```
 
-No MVP, o plano de quitação **não é persistido**. Ele é calculado sob demanda. Despesas, shares e pagamentos são persistidos; pagamentos `reported` são fatos de workflow, enquanto apenas os `confirmed` entram no saldo oficial. Convites não tornam alguém participante financeiro até serem aceitos.
+No MVP, `User` continua sendo o participante financeiro definido pelo ADR-0012. O nome é sua identidade principal nas superfícies financeiras; e-mail permanece para autenticação, Conta, credenciais demo, convite e informação administrativa ou auditável secundária. O nome aceita acentos, não é único, normaliza espaços externos e sequências internas, tem no máximo 80 caracteres e é obrigatório na aplicação e no banco.
+
+O plano de quitação **não é persistido**. Ele é calculado sob demanda. Despesas, shares e pagamentos são persistidos; pagamentos `reported` são fatos de workflow, enquanto apenas os `confirmed` entram no saldo oficial. Convites não tornam alguém participante financeiro até serem aceitos.
 
 ### 6.2 Estados de pagamento
 
@@ -381,7 +387,7 @@ A combinação Solid Queue + Solid Cable mantém a arquitetura inicial sem Redis
 
 ## 9. MVP
 
-A experiência do MVP inclui landing pública, autenticação em português, conta pessoal sem exclusão, lista de grupos e convites, quatro destinos por grupo (Resumo, Plano, Histórico e Configurações), previews financeiros calculados no servidor e temas claro e escuro. O HTML é o caminho completo; Turbo, Action Cable e grafo são melhorias progressivas.
+A experiência do MVP inclui landing pública, autenticação em português com nome obrigatório no cadastro, conta pessoal sem exclusão com edição de nome, e-mail e senha protegida pela senha atual, lista de grupos e convites, quatro destinos por grupo (Resumo, Plano, Histórico e Configurações), previews financeiros calculados no servidor e temas claro e escuro. O HTML é o caminho completo; Turbo, Action Cable e grafo são melhorias progressivas.
 
 Convites recebidos têm histórico paginado de pendentes e encerrados; o owner ativo consulta, em Configurações, o histórico dos convites que enviou. Esses históricos tornam transições já existentes explicáveis e auditáveis, mas não criam novo estado de convite, participação financeira nem autorização para agir sobre convite terminal.
 

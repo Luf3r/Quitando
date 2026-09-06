@@ -11,7 +11,7 @@ RSpec.describe "Expenses" do
     get "/groups/#{group.id}/expenses/new"
 
     expect(response).to have_http_status(:ok)
-    expect(response.body).to include(%(<option selected="selected" value="#{member.id}">#{member.email}</option>))
+    expect(response.body).to include(%(<option selected="selected" value="#{member.id}">#{member.name}</option>))
   end
 
   it "renderiza a nova despesa dentro do frame de diálogo para membro ativo" do
@@ -306,13 +306,26 @@ RSpec.describe "Expenses" do
     group = GroupCreator.call(owner_user_id: creator.id, name: "Apartamento")
     create(:membership, group:, user: payer, position: 1)
     expense = create(:expense, group:, created_by_user: creator, paid_by_user: payer)
+    create(:expense_share, expense:, user: creator, amount_owed_cents: expense.amount_cents)
 
     post user_session_path, params: { user: { email: creator.email, password: creator.password } }
     get "/groups/#{group.id}/expenses/#{expense.id}"
 
     expect(response).to have_http_status(:ok)
-    expect(response.body).to include("pago por bia@example.com")
-    expect(response.body).to include("registrado por ana@example.com")
+    document = response.parsed_body
+    detail = document.at_css("main .financial-detail-page.expense-detail")
+    labels = detail.css("dl.financial-detail__metadata dt").map(&:text)
+
+    expect(detail.at_css("[data-status='active'][data-tone='positive']").text).to include("Ativa")
+    expect(detail.at_css(".financial-detail__amount").text).to include("R$")
+    expect(labels).to include("Data", "Pago por", "Registrado por")
+    expect(detail.at_css("[data-expense-field='paid-by'] dd").text).to eq(payer.name)
+    expect(detail.at_css("[data-expense-field='created-by'] dd").text).to eq(creator.name)
+    expect(detail.at_css(".expense-share-list").text).to include(creator.name, "R$")
+    expect(detail.at_css("form[action$='/description'] input.ui-button--primary")['value']).to eq("Salvar descrição")
+    expect(detail.at_css("a[href$='/correction'].ui-button--secondary.ui-button--compact").text).to include("Corrigir despesa")
+    expect(detail.css(".bg-slate-900")).to be_empty
+    expect(document.xpath("//text()[normalize-space(.)='.' or normalize-space(.)=';']")).to be_empty
   end
 
   it "assina o stream autorizado e preserva o shell de diálogo no detalhe" do
@@ -344,14 +357,16 @@ RSpec.describe "Expenses" do
     expect(response.body).to include("href=\"/groups/#{group.id}/expenses/#{replacement.id}\"")
     expect(response.body).to include("href=\"/groups/#{group.id}/expenses/#{original.id}\"")
     expect(response.body).to include("href=\"/groups/#{group.id}/expenses/#{latest_replacement.id}\"")
-    expect(response.body).to include("Despesa anulada.")
-    expect(response.body).to include("Substitui uma despesa anterior.")
+    document = response.parsed_body
+    expect(document.css("[data-entry-kind='expense'] [data-status='voided']").length).to eq(2)
+    expect(document.css("[data-activity-field='correction']").map(&:text)).to include(a_string_including("Valor corrigido"), a_string_including("Valor final corrigido"))
 
     get group_expense_path(group, replacement)
 
     expect(response).to have_http_status(:ok)
-    expect(response.body).to include("Esta despesa substitui <a class=\"underline\" href=\"/groups/#{group.id}/expenses/#{original.id}\">Mercado original</a>.")
-    expect(response.body).to include("Esta despesa foi anulada e substituída por <a class=\"underline\" href=\"/groups/#{group.id}/expenses/#{latest_replacement.id}\">Mercado final</a>.")
+    document = response.parsed_body
+    expect(document.at_css("[data-expense-relation='replaces'] a[href='/groups/#{group.id}/expenses/#{original.id}']").text).to eq("Mercado original")
+    expect(document.at_css("[data-expense-relation='replaced-by'] a[href='/groups/#{group.id}/expenses/#{latest_replacement.id}']").text).to eq("Mercado final")
   end
 
   it "oferece correção igual com participantes e uma correção de divisão exata" do

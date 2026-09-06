@@ -1,6 +1,24 @@
 require "rails_helper"
 
 RSpec.describe GroupDashboardQuery do
+  it "entrega nomes completos e rótulos curtos por grafema sem expor e-mails", :aggregate_failures do
+    group = create(:group)
+    names = [ "Ágata Évora Silva", "João", "A\u0301" * 20 + " Oliveira" ]
+    users = names.each_with_index.map do |name, position|
+      create(:user, name:).tap { |user| create(:membership, group:, user:, position:) }
+    end
+
+    snapshot = described_class.call(group:, viewer: users.first)
+
+    expect(snapshot.to_h).to include(participant_names: users.index_by(&:id).transform_values(&:name))
+    expect(snapshot.visualization.as_json.fetch(:nodes)).to eq([
+      { user_id: users[0].id, short_label: "Ágata É.", full_name: names[0], position: 0 },
+      { user_id: users[1].id, short_label: "João", full_name: names[1], position: 1 },
+      { user_id: users[2].id, short_label: "A\u0301" * 15 + " O.", full_name: names[2], position: 2 }
+    ])
+    expect(snapshot.visualization.to_json).not_to include(*users.map(&:email))
+  end
+
   it "compõe saldos e plano sem persistir estado" do
     group = create(:group, financial_state_version: 4)
     owner = create(:user)
@@ -20,8 +38,8 @@ RSpec.describe GroupDashboardQuery do
 
   it "compõe trace e payload tipado das três camadas a partir do mesmo snapshot" do
     group = create(:group)
-    owner = create(:user, email: "ana@example.com")
-    member = create(:user, email: "bruno@example.com")
+    owner = create(:user, name: "Ana", email: "ana@example.com")
+    member = create(:user, name: "Bruno", email: "bruno@example.com")
     create(:membership, group:, user: owner, role: :owner, position: 0)
     create(:membership, group:, user: member, position: 1)
     expense = create(
@@ -47,8 +65,8 @@ RSpec.describe GroupDashboardQuery do
     expect(snapshot.visualization).to eq(
       described_class::VisualizationPayload.new(
         nodes: [
-          described_class::VisualizationNode.new(user_id: owner.id, label: owner.email, position: 0),
-          described_class::VisualizationNode.new(user_id: member.id, label: member.email, position: 1)
+          described_class::VisualizationNode.new(user_id: owner.id, short_label: "Ana", full_name: "Ana", position: 0),
+          described_class::VisualizationNode.new(user_id: member.id, short_label: "Bruno", full_name: "Bruno", position: 1)
         ],
         historical: [ edge ],
         bilateral: [ edge ],

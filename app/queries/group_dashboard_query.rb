@@ -1,5 +1,5 @@
 class GroupDashboardQuery
-  VisualizationNode = Data.define(:user_id, :label, :position)
+  VisualizationNode = Data.define(:user_id, :short_label, :full_name, :position)
   VisualizationEdge = Data.define(:from_user_id, :to_user_id, :amount_cents, :formatted_amount)
   VisualizationMetric = Data.define(:layer, :count, :period, :denominator)
   VisualizationPayload = Data.define(:nodes, :historical, :bilateral, :plan, :metrics, :mode, :initial_layer) do
@@ -31,7 +31,7 @@ class GroupDashboardQuery
     :settlement_trace,
     :visualization,
     :memberships,
-    :participant_emails,
+    :participant_names,
     :status
   )
 
@@ -68,7 +68,7 @@ class GroupDashboardQuery
       settlement_trace: settlement_result.trace,
       visualization: visualization_payload(all_memberships, obligations, settlement_result.transfers),
       memberships: all_memberships.select(&:active?),
-      participant_emails: all_memberships.index_by(&:user_id).transform_values { |membership| membership.user.email },
+      participant_names: all_memberships.index_by(&:user_id).transform_values { |membership| membership.user.name },
       status: GroupFinancialStatusResolver.call(group)
     )
   end
@@ -84,7 +84,8 @@ class GroupDashboardQuery
       nodes: memberships.map do |membership|
         VisualizationNode.new(
           user_id: membership.user_id,
-          label: membership.user.email,
+          short_label: short_label(membership.user.name),
+          full_name: membership.user.name,
           position: membership.position
         )
       end,
@@ -95,6 +96,13 @@ class GroupDashboardQuery
       mode: group.payments.exists? ? :historical_only : :initial_comparison,
       initial_layer: %i[plan bilateral historical].find { |layer| layers.fetch(layer).any? }
     )
+  end
+
+  def short_label(name)
+    first_name, second_name = name.split
+    return first_name.grapheme_clusters.first(18).join unless second_name
+
+    "#{first_name.grapheme_clusters.first(15).join} #{second_name.grapheme_clusters.first}."
   end
 
   def visualization_edges(edges)

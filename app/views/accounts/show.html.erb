@@ -5,19 +5,29 @@
     <div>
       <p class="eyebrow">Conta pessoal</p>
       <h1 id="account-title" class="ui-page-header__title">Seus dados de acesso</h1>
-      <p class="ui-page-header__description">Atualize e-mail ou senha. Para proteger sua conta, confirme sua senha atual.</p>
+      <p class="ui-page-header__description">Atualize nome, e-mail ou senha. Para proteger sua conta, confirme sua senha atual.</p>
     </div>
   </header>
 
   <% if @user.demo_account? %>
     <div class="demo-account-notice" role="status">
       <p>As credenciais desta conta demo são públicas e não podem ser alteradas.</p>
+      <dl>
+        <dt>Nome</dt>
+        <dd><%= @user.name %></dd>
+        <dt>E-mail</dt>
+        <dd><%= @user.email %></dd>
+      </dl>
       <p>Use outra conta para dados pessoais duráveis.</p>
     </div>
   <% else %>
     <%= render FormErrorsComponent.new(messages: @user.errors.full_messages) if @user.errors.any? %>
 
     <%= form_with model: @user, url: account_path, method: :patch, class: "account-form" do |form| %>
+    <div class="ui-field">
+      <%= form.label :name, "Nome", class: "ui-field__label" %>
+      <%= form.text_field :name, autocomplete: "name", maxlength: 80, required: true, class: "ui-field__control" %>
+    </div>
     <div class="ui-field">
       <%= form.label :email, "E-mail", class: "ui-field__label" %>
       <%= form.email_field :email, autocomplete: "email", class: "ui-field__control" %>

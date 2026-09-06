@@ -40,6 +40,8 @@ Consulte também o [índice da documentação](./00-index.md).
 - **Encerramento acima do simples registro.** A UX conduz o grupo até saldo oficial zero e nenhuma pendência.
 - **Lista antes do grafo.** A lista textual executa a tarefa; o grafo ajuda a entender e demonstrar.
 - **Mobile-first e acessível.** Registro e quitação funcionam com poucos toques, conexão instável e sem depender de cor ou animação.
+- **Hierarquia previsível de ações.** Coral primário fica reservado ao próximo passo dominante e a submits; links secundários compactos cobrem consulta, revisão e adição, enquanto perigo aparece somente em confirmações terminais.
+- **Estado textual e semântico.** Chips sempre combinam rótulo, contraste, borda e marcador visual; a cor complementa, mas não substitui o estado legível.
 
 ---
 
@@ -80,9 +82,15 @@ Links públicos, participantes sem conta, disputas e pagamentos integrados ficam
 
 A raiz pública apresenta a landing. Depois da autenticação, a navegação principal oferece Grupos, Convites, Conta, Tema e Sair. Em telas menores que 768 px, esses mesmos destinos ficam em um `details` nativo compacto, portanto continuam disponíveis sem JavaScript. Dentro de cada grupo, os quatro destinos são Resumo, Plano, Histórico e Configurações; abaixo de 480 px, eles formam uma grade de duas colunas para nenhum rótulo ficar truncado.
 
-O Resumo prioriza a posição e as ações da pessoa. O Plano começa por pendências e pelo que ainda falta; métricas, tabelas, grafo, explicação e trace ficam em “Entenda o cálculo”, inicialmente recolhido. Histórico e Configurações deixam de competir por espaço no dashboard.
+Cadastro apresenta Nome antes de E-mail e exige ambos. Conta apresenta e permite editar nome, e-mail e senha mediante confirmação da senha atual. O nome aceita acentos, normaliza espaços externos e sequências internas e possui no máximo 80 caracteres. Contas demo exibem nome, e-mail e a política de credenciais públicas, mas não oferecem formulário editável nem permitem alteração no backend.
+
+O Resumo prioriza a posição e as ações da pessoa: estado, saldo oficial e projeção ocupam métricas alinhadas; pendências e participantes usam linhas compactas. O Plano começa por Pendências e Ainda falta em duas regiões no desktop e uma pilha no mobile, com origem, valor, destino e ação separados. Métricas `8 → 6 → 3`, seletor segmentado, grafo integral, legenda e tabelas equivalentes ficam em “Entenda o cálculo”, inicialmente recolhido. Histórico e Configurações deixam de competir por espaço no dashboard.
 
 Quando `QUITANDO_DEMO_MODE=true`, a landing/login apresenta de forma expandida os quatro e-mails públicos, a senha configurada e o próximo reset. Dentro do app, o mesmo conteúdo fica em um `details` acessível para reduzir a competição com a tarefa atual, sem ocultar senha ou reset. O banner declara que o ambiente é demo-only, descartável e reiniciado integralmente a cada seis horas. A UI não apresenta a conta demo como ambiente pessoal durável nem oculta uma falha de instalação ou reset; as credenciais demo não oferecem fluxo para alterar e-mail, senha ou recuperação.
+
+Nome é a identidade principal em contextos financeiros. E-mail aparece somente em autenticação, Conta, credenciais demo, convite e como informação secundária na administração ou auditoria de membros.
+
+Em conteúdo extenso, nomes, descrições, e-mails e URLs quebram com segurança; valores e ações permanecem sem quebra. Registros operacionais se empilham no mobile. Tabelas comparativas possuem largura mínima, região rolável com foco por teclado e indicação textual de rolagem; a tabela permanece a equivalência operacional do grafo inclusive sem JavaScript.
 
 ---
 
@@ -333,11 +341,13 @@ Antes da confirmação, a tela reforça que o pagamento se tornará um fato term
 
 Enquanto pendente, pode “Cancelar declaração” caso tenha informado valor ou destinatário incorreto.
 
-### Regras visuais
+### Detalhe e regras visuais
 
-- `reported`: badge amarelo “aguardando confirmação”;
-- `confirmed`: badge verde acompanhado de “recebimento confirmado”;
-- `cancelled`: badge neutro acompanhado do ator e motivo resumido.
+O detalhe de pagamento mantém grupo, estado, valor e direção no primeiro bloco; ator e horário ficam em metadados rotulados. `reported` oferece confirmação à pessoa destinatária como ação primária. Cancelar fica em um `details` fechado por padrão: só depois de abrir “Cancelar pagamento” aparecem explicação, motivo obrigatório e a confirmação de perigo. O formulário continua convencional sem JavaScript.
+
+- `reported`: chip de atenção “Declarado”;
+- `confirmed`: chip positivo “Confirmado”;
+- `cancelled`: chip negativo “Cancelado”, acompanhado do ator e motivo resumido.
 
 Owner não confirma em nome de outro participante no MVP.
 
@@ -357,7 +367,7 @@ Reúne despesas e pagamentos em ordem cronológica.
 
 O histórico possui rota própria, pagina 25 fatos e usa ordem total por timestamp e identificador. Página malformada retorna `422` em vez de ser coagida silenciosamente.
 
-Cada linha escaneável mostra:
+Cada registro usa cabeçalho compacto com tipo, descrição e valor tabular; a segunda linha estrutura atores, chip de estado, horário e ação. Em mobile, os mesmos campos ficam empilhados e rotulados. Cada linha mostra:
 
 - tipo;
 - descrição e atores;
@@ -382,7 +392,7 @@ Convites usam histórico próprio, sem se misturar a fatos financeiros: `/invita
 
 ## 13. Configurações, convites e memberships
 
-A página de Configurações segue a ordem nome e convite, membros, administração avançada e arquivamento. Convites encerrados e ordenação ficam inicialmente em `details`. Todos os membros ativos podem acessá-la, mas cada ação continua submetida à policy correspondente. Ação indisponível permanece visível e desabilitada, com `aria-describedby` apontando ao motivo derivado das regras existentes.
+A página de Configurações segue a ordem nome e convite, membros, administração avançada e arquivamento. Nome, e-mail, papel e estado de cada pessoa são campos próprios; papel, estado e convite usam chips semânticos. Convites encerrados e ordenação ficam inicialmente em `details`. Todos os membros ativos podem acessá-la, mas cada ação continua submetida à policy correspondente. Ação indisponível permanece visível e desabilitada, com `aria-describedby` apontando ao motivo derivado das regras existentes.
 
 Arquivar, sair e transferir responsabilidade exigem confirmação acessível. A interface chama o papel de `owner` de “Responsável pelo grupo”; o nome do domínio permanece inalterado.
 

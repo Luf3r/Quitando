@@ -141,6 +141,32 @@ RSpec.describe "Payments" do
     expect(response.body).to include('id="group_dialog" data-turbo-permanent')
   end
 
+  it "estrutura o detalhe declarado e mantém o cancelamento recolhido até uma ação deliberada" do
+    owner = create(:user, email: "ana@example.com")
+    debtor = create(:user, email: "bia@example.com")
+    group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento compartilhado")
+    create(:membership, group:, user: debtor, position: 1)
+    payment = create(:payment, group:, from_user: debtor, to_user: owner, reported_by_user: debtor, status: :reported)
+
+    post user_session_path, params: { user: { email: owner.email, password: owner.password } }
+    get "/groups/#{group.id}/payments/#{payment.id}"
+
+    document = response.parsed_body
+    detail = document.at_css("main .financial-detail-page.payment-detail")
+    cancellation = detail.at_css("details.payment-cancellation")
+
+    expect(detail.at_css("[data-status='reported'][data-tone='attention']").text).to include("Declarado")
+    expect(detail.at_css(".financial-detail__amount").text).to include("R$")
+    expect(detail.at_css(".financial-detail__direction").text).to include(debtor.name, owner.name)
+    expect(detail.css("dl.financial-detail__metadata dt").map(&:text)).to include("Declarado por", "Declarado em")
+    expect(detail.at_css("form[action$='/confirm'] .ui-button--primary").text).to include("Confirmar pagamento")
+    expect(cancellation).not_to have_attribute("open")
+    expect(cancellation.at_css("summary").text).to include("Cancelar pagamento")
+    expect(cancellation.at_css("input[name='payment[reason]'][required]")).to be_present
+    expect(cancellation.at_css("form[action$='/cancel'] .ui-button--danger")).to be_present
+    expect(document.xpath("//text()[normalize-space(.)='.' or normalize-space(.)=';']")).to be_empty
+  end
+
   it "permite à origem reportar valor parcial da sugestão atual por POST" do
     owner = create(:user, email: "ana@example.com")
     debtor = create(:user, email: "bia@example.com")
@@ -201,8 +227,8 @@ RSpec.describe "Payments" do
     expect(response).to have_http_status(:conflict)
     conflict = Nokogiri::HTML(response.body).at_css("#conflito-pagamento")
     expect(conflict.text).to include("Pagamento não registrado")
-    expect(conflict.text).to include(debtor.email)
-    expect(conflict.text).to include(owner.email)
+    expect(conflict.text).to include(debtor.name)
+    expect(conflict.text).to include(owner.name)
     expect(conflict.text).to include("5,00")
     expect(conflict.text).not_to include(idempotency_key)
     expect(conflict.text).not_to include(debtor.id)

@@ -16,6 +16,6 @@ class ButtonComponent < ApplicationComponent
   attr_reader :label, :href, :variant, :type, :disabled, :data, :method
 
   def classes
-    "ui-button ui-button--#{variant}"
+    class_names("ui-button", "ui-button--#{variant}", "ui-button--compact": variant == :secondary)
   end
 end

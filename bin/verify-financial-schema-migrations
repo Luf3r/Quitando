@@ -19,11 +19,11 @@ MEMBERSHIP_BACKFILL_FIXTURE = <<~'RUBY'.freeze
   connection = ApplicationRecord.connection
   timestamp = "2026-07-27 12:00:00"
   connection.execute(<<~SQL)
-    INSERT INTO users (id, email, encrypted_password, created_at, updated_at) VALUES
-      ('00000000-0000-4000-8000-000000000001', 'migration-1@example.test', 'x', '#{timestamp}', '#{timestamp}'),
-      ('00000000-0000-4000-8000-000000000002', 'migration-2@example.test', 'x', '#{timestamp}', '#{timestamp}'),
-      ('00000000-0000-4000-8000-000000000003', 'migration-3@example.test', 'x', '#{timestamp}', '#{timestamp}'),
-      ('00000000-0000-4000-8000-000000000004', 'migration-4@example.test', 'x', '#{timestamp}', '#{timestamp}');
+    INSERT INTO users (id, name, email, encrypted_password, created_at, updated_at) VALUES
+      ('00000000-0000-4000-8000-000000000001', 'Migration 1', 'migration-1@example.test', 'x', '#{timestamp}', '#{timestamp}'),
+      ('00000000-0000-4000-8000-000000000002', 'Migration 2', 'migration-2@example.test', 'x', '#{timestamp}', '#{timestamp}'),
+      ('00000000-0000-4000-8000-000000000003', 'Migration 3', 'migration-3@example.test', 'x', '#{timestamp}', '#{timestamp}'),
+      ('00000000-0000-4000-8000-000000000004', 'Migration 4', 'migration-4@example.test', 'x', '#{timestamp}', '#{timestamp}');
     INSERT INTO groups (id, name, currency_code, created_at, updated_at) VALUES
       ('10000000-0000-4000-8000-000000000001', 'Backfill A', 'BRL', '#{timestamp}', '#{timestamp}'),
       ('10000000-0000-4000-8000-000000000002', 'Backfill B', 'BRL', '#{timestamp}', '#{timestamp}');
@@ -69,13 +69,13 @@ PAYMENT_COMMAND_RECEIPT_MIGRATION_ASSERTION = <<~'RUBY'.freeze
   timestamp = connection.quote(Time.current)
   token = SecureRandom.hex(12)
   from_user_id = connection.select_value(<<~SQL)
-    INSERT INTO users (id, email, encrypted_password, created_at, updated_at)
-    VALUES (uuidv7(), #{connection.quote("migration-from-#{token}@example.test")}, 'x', #{timestamp}, #{timestamp})
+    INSERT INTO users (id, name, email, encrypted_password, created_at, updated_at)
+    VALUES (uuidv7(), 'Migration from', #{connection.quote("migration-from-#{token}@example.test")}, 'x', #{timestamp}, #{timestamp})
     RETURNING id
   SQL
   to_user_id = connection.select_value(<<~SQL)
-    INSERT INTO users (id, email, encrypted_password, created_at, updated_at)
-    VALUES (uuidv7(), #{connection.quote("migration-to-#{token}@example.test")}, 'x', #{timestamp}, #{timestamp})
+    INSERT INTO users (id, name, email, encrypted_password, created_at, updated_at)
+    VALUES (uuidv7(), 'Migration to', #{connection.quote("migration-to-#{token}@example.test")}, 'x', #{timestamp}, #{timestamp})
     RETURNING id
   SQL
   group_id = connection.select_value(<<~SQL)
@@ -118,13 +118,13 @@ PAYMENT_COMMAND_RECEIPT_APPEND_ONLY_ASSERTION = <<~'RUBY'.freeze
   timestamp = connection.quote(Time.current)
   token = SecureRandom.hex(12)
   from_user_id = connection.select_value(<<~SQL)
-    INSERT INTO users (id, email, encrypted_password, created_at, updated_at)
-    VALUES (uuidv7(), #{connection.quote("receipt-from-#{token}@example.test")}, 'x', #{timestamp}, #{timestamp})
+    INSERT INTO users (id, name, email, encrypted_password, created_at, updated_at)
+    VALUES (uuidv7(), 'Receipt from', #{connection.quote("receipt-from-#{token}@example.test")}, 'x', #{timestamp}, #{timestamp})
     RETURNING id
   SQL
   to_user_id = connection.select_value(<<~SQL)
-    INSERT INTO users (id, email, encrypted_password, created_at, updated_at)
-    VALUES (uuidv7(), #{connection.quote("receipt-to-#{token}@example.test")}, 'x', #{timestamp}, #{timestamp})
+    INSERT INTO users (id, name, email, encrypted_password, created_at, updated_at)
+    VALUES (uuidv7(), 'Receipt to', #{connection.quote("receipt-to-#{token}@example.test")}, 'x', #{timestamp}, #{timestamp})
     RETURNING id
   SQL
   group_id = connection.select_value(<<~SQL)
@@ -178,7 +178,7 @@ PHASE_NINE_RECEIPT_ASSERTION = <<~'RUBY'.freeze
 RUBY
 PHASE_NINE_DESCRIPTION_REVISION_FIXTURE = <<~'RUBY'.freeze
   token = SecureRandom.hex(12)
-  user = User.create!(email: "phase-nine-revision-#{token}@example.test", password: "password-#{token}")
+  user = User.create!(name: "Phase nine", email: "phase-nine-revision-#{token}@example.test", password: "password-#{token}")
   group = Group.create!(name: "Phase nine revision #{token}", currency_code: "BRL")
   expense = Expense.create!(group:, created_by_user: user, paid_by_user: user, amount_cents: 100, description: "Antes", occurred_on: Date.current)
   ExpenseDescriptionRevision.create!(expense:, actor_user: user, previous_description: "Antes", new_description: "Depois")
@@ -233,8 +233,8 @@ DEMO_SCENARIO_MIGRATION_FIXTURE = <<~'RUBY'.freeze
     WHERE oid = 'users'::regclass;
   SQL
   connection.execute(<<~SQL)
-    INSERT INTO users (id, email, encrypted_password, created_at, updated_at)
-    VALUES (uuidv7(), #{connection.quote(email)}, 'x', #{timestamp}, #{timestamp})
+    INSERT INTO users (id, name, email, encrypted_password, created_at, updated_at)
+    VALUES (uuidv7(), 'Demo scenario preexisting', #{connection.quote(email)}, 'x', #{timestamp}, #{timestamp})
   SQL
   connection.execute(<<~SQL)
     DROP TRIGGER IF EXISTS users_demo_scenario_metadata_only ON users;
@@ -273,8 +273,8 @@ DEMO_SCENARIO_MIGRATION_ASSERTION = <<~'RUBY'.freeze
   abort "demo scenario migration default is not false: #{column.default.inspect}" unless [ false, "false" ].include?(column.default)
 
   inserted_demo_account = connection.select_value(<<~SQL)
-    INSERT INTO users (id, email, encrypted_password, created_at, updated_at)
-    VALUES (uuidv7(), #{connection.quote("demo-scenario-default-#{SecureRandom.hex(12)}@example.test")}, 'x', #{connection.quote(Time.current)}, #{connection.quote(Time.current)})
+    INSERT INTO users (id, name, email, encrypted_password, created_at, updated_at)
+    VALUES (uuidv7(), 'Demo scenario default', #{connection.quote("demo-scenario-default-#{SecureRandom.hex(12)}@example.test")}, 'x', #{connection.quote(Time.current)}, #{connection.quote(Time.current)})
     RETURNING demo_account::text
   SQL
   abort "demo scenario migration did not apply false to a newly inserted user: #{inserted_demo_account.inspect}" unless inserted_demo_account == "false"
@@ -282,6 +282,55 @@ DEMO_SCENARIO_MIGRATION_ASSERTION = <<~'RUBY'.freeze
   connection.execute("DROP TRIGGER users_demo_scenario_metadata_only ON users")
   connection.execute("DROP FUNCTION reject_demo_scenario_user_rewrite()")
   connection.execute("DROP TABLE demo_scenario_migration_verification")
+RUBY
+USER_NAME_MIGRATION_ASSERTION = <<~'RUBY'.freeze
+  require Rails.root.join("db/migrate/20260905190000_add_name_to_users")
+
+  connection = ApplicationRecord.connection
+  expected_lock_timeout = "7s"
+  connection.execute("SET lock_timeout = '#{expected_lock_timeout}'")
+  assert_lock_timeout = lambda do |operation|
+    actual = connection.select_value("SHOW lock_timeout")
+    next if actual == expected_lock_timeout
+
+    abort "lock_timeout was not restored after user name migration #{operation}: #{actual.inspect}"
+  end
+  migration = AddNameToUsers.new
+  timestamp = connection.quote(Time.current)
+
+  migration.migrate(:down)
+  assert_lock_timeout.call("down")
+  connection.execute(<<~SQL)
+    INSERT INTO users (id, email, encrypted_password, created_at, updated_at) VALUES
+      (uuidv7(), 'ana@demo.quitando.test', 'x', #{timestamp}, #{timestamp}),
+      (uuidv7(), 'bruno@demo.quitando.test', 'x', #{timestamp}, #{timestamp}),
+      (uuidv7(), 'carla@demo.quitando.test', 'x', #{timestamp}, #{timestamp}),
+      (uuidv7(), 'diego@demo.quitando.test', 'x', #{timestamp}, #{timestamp})
+  SQL
+  migration.migrate(:up)
+  assert_lock_timeout.call("canonical up")
+  expected = [ [ "Ana", "ana@demo.quitando.test" ], [ "Bruno", "bruno@demo.quitando.test" ], [ "Carla", "carla@demo.quitando.test" ], [ "Diego", "diego@demo.quitando.test" ] ]
+  actual = connection.select_rows("SELECT name, email FROM users ORDER BY email")
+  abort "user name migration did not backfill canonical accounts: #{actual.inspect}" unless actual == expected
+
+  migration.migrate(:down)
+  assert_lock_timeout.call("residual down")
+  connection.execute("DELETE FROM users")
+  connection.execute(<<~SQL)
+    INSERT INTO users (id, email, encrypted_password, created_at, updated_at)
+    VALUES (uuidv7(), 'residual@example.test', 'x', #{timestamp}, #{timestamp})
+  SQL
+  begin
+    connection.transaction(requires_new: true) { migration.migrate(:up) }
+    abort "user name migration unexpectedly accepted residual user without a name"
+  rescue ActiveRecord::MigrationError => error
+    abort "user name migration raised the wrong residual error: #{error.message}" unless error.message.include?("non-canonical user(s) remain without a name")
+  end
+  abort "user name migration residual failure was not atomic" if connection.column_exists?(:users, :name)
+
+  connection.execute("DELETE FROM users")
+  migration.migrate(:up)
+  assert_lock_timeout.call("final up")
 RUBY
 
 class CommandFailure < StandardError
@@ -390,6 +439,7 @@ begin
   database_created = true
 
   run!("bin/rails", "db:prepare", environment: child_environment)
+  run!("bin/rails", "runner", USER_NAME_MIGRATION_ASSERTION, environment: child_environment)
   run!(
     "bin/rails", "db:migrate:down",
     environment: child_environment.merge("VERSION" => PHASE_TEN_MIGRATION_VERSION)

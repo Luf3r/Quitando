@@ -21,6 +21,7 @@ RSpec.describe "user factory" do
     user = create(:user)
 
     expect(user).to be_persisted
+    expect(user.name).to match(/\APessoa \d+\z/)
     expect(user.email).to match(/\Auser\d+@example\.com\z/)
   end
 

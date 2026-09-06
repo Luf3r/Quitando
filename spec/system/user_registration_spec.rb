@@ -6,12 +6,14 @@ RSpec.describe "User registration" do
   it "permite criar uma conta e iniciar uma sessão" do
     visit new_user_registration_path
 
+    fill_in "user_name", with: "Ana Vitória"
     fill_in "user_email", with: "ana@example.com"
     fill_in "user_password", with: "senha-segura"
     fill_in "user_password_confirmation", with: "senha-segura"
     find('input[type="submit"]').click
 
     expect(page).to have_link("Abrir app", href: "/groups")
+    expect(User.find_by!(email: "ana@example.com").name).to eq("Ana Vitória")
   end
 
   it "permite que uma pessoa existente inicie uma sessão" do

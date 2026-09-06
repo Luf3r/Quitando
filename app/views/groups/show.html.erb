@@ -17,13 +17,9 @@
   <% end %>
 
   <section id="group_recent_activity" class="plan-section" aria-labelledby="recent-activity-title">
-    <div class="section-heading"><h2 id="recent-activity-title">Mudanças recentes</h2><%= link_to "Histórico completo", group_history_path(@group) %></div>
+    <div class="section-heading"><h2 id="recent-activity-title">Mudanças recentes</h2><%= link_to "Histórico completo", group_history_path(@group), class: "ui-button ui-button--secondary ui-button--compact" %></div>
     <% if @overview.recent_entries.any? %>
-      <ol class="audit-list"><% @overview.recent_entries.each do |entry| %><li>
-        <% if entry.kind == :expense %><% expense = entry.record %><%= link_to expense.description, group_expense_path(@group, expense) %>. <%= render MoneyComponent.new(cents: expense.amount_cents, currency_code: @group.currency_code) %>; pago por <%= expense.paid_by_user.email %>, registrado por <%= expense.created_by_user.email %>.<% if entry.cycles.include?(:voided) %> Despesa anulada.<% end %><% if entry.cycles.include?(:replacement) %> Substitui uma despesa anterior.<% end %>
-        <% else %><% payment = entry.record %><%= link_to "Pagamento #{payment_status_label(payment.status)}", group_payment_path(@group, payment) %>. <%= payment.from_user.email %> para <%= payment.to_user.email %>, <%= render MoneyComponent.new(cents: payment.amount_cents, currency_code: @group.currency_code) %>.<% end %>
-        <time datetime="<%= entry.occurred_at.iso8601 %>"><%= l(entry.occurred_at, format: :short) %></time>
-      </li><% end %></ol>
+      <ol class="financial-activity-list"><% @overview.recent_entries.each do |entry| %><li><%= render FinancialActivityComponent.new(entry:, group: @group, compact: true) %></li><% end %></ol>
     <% else %><p>Não há fatos financeiros registrados.</p><% end %>
   </section>
 

@@ -91,7 +91,10 @@ export default class extends Controller {
 
     const nodeIds = new Set()
     payload.nodes.forEach((node) => {
-      if (typeof node.user_id !== "string" || typeof node.label !== "string" || !Number.isInteger(node.position)) {
+      if (typeof node.user_id !== "string" ||
+          typeof node.short_label !== "string" || node.short_label.trim().length === 0 ||
+          typeof node.full_name !== "string" || node.full_name.trim().length === 0 ||
+          !Number.isInteger(node.position)) {
         throw new TypeError("Visualization node is malformed")
       }
       nodeIds.add(node.user_id)
@@ -183,6 +186,8 @@ export default class extends Controller {
       .join("g")
       .attr("transform", (node) => `translate(${node.x},${node.y})`)
 
+    renderedNodes.append("title").text((node) => node.full_name)
+
     renderedNodes.append("circle")
       .attr("data-user-id", (node) => node.user_id)
       .attr("r", 30)
@@ -192,7 +197,7 @@ export default class extends Controller {
       .attr("class", "visualization-node-label")
       .attr("text-anchor", "middle")
       .attr("dy", 48)
-      .text((node) => node.label)
+      .text((node) => node.short_label)
   }
 
   availableLayer(payload) {

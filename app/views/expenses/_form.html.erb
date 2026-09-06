@@ -5,14 +5,14 @@
 <%= form_with url: group_expenses_preview_path(group), scope: :expense, class: "expense-entry-form", data: { controller: "split-form", turbo_frame: "expense_preview" } do |form| %>
   <%= render FieldComponent.new(label: "Valor (R$)", name: "expense[amount_text]", value: expense_form&.amount_text, hint: "Use vírgula para os centavos.", options: { required: true, inputmode: "decimal" }) %>
   <%= render FieldComponent.new(label: "Descrição", name: "expense[description]", value: expense_form&.description, options: { required: true }) %>
-  <%= render FieldComponent.new(label: "Pago por", name: "expense[paid_by_user_id]", type: :select, value: expense_form&.paid_by_user_id, choices: memberships.map { |membership| [ membership.user.email, membership.user_id ] }, hint: "Quem fez o pagamento, que pode ser diferente de quem registra.", options: { required: true }) %>
+  <%= render FieldComponent.new(label: "Pago por", name: "expense[paid_by_user_id]", type: :select, value: expense_form&.paid_by_user_id, choices: memberships.map { |membership| [ membership.user.name, membership.user_id ] }, hint: "Quem fez o pagamento, que pode ser diferente de quem registra.", options: { required: true }) %>
   <%= render FieldComponent.new(label: "Data", name: "expense[occurred_on]", type: :date, value: expense_form&.occurred_on.presence || Date.current.iso8601, options: { required: true }) %>
   <fieldset><legend>Como dividir</legend>
     <label><%= radio_button_tag "expense[split_type]", "equal", expense_form&.split_type != "exact", data: { action: "split-form#update" } %> Dividir igualmente</label>
     <label><%= radio_button_tag "expense[split_type]", "exact", expense_form&.split_type == "exact", data: { action: "split-form#update" } %> Informar valores exatos</label>
   </fieldset>
-  <fieldset data-split-form-target="equal"><legend>Participantes da divisão igual</legend><% memberships.each do |membership| %><label class="block"><%= check_box_tag "expense[participant_user_ids][]", membership.user_id, equal_participants.include?(membership.user_id) %> <%= membership.user.email %></label><% end %></fieldset>
-  <fieldset data-split-form-target="exact"><legend>Valores exatos</legend><% memberships.each_with_index do |membership, index| %><%= hidden_field_tag "expense[shares][#{index}][user_id]", membership.user_id %><%= render FieldComponent.new(label: membership.user.email, name: "expense[shares][#{index}][amount_text]", value: exact_shares[membership.user_id.to_s]&.fetch(:amount_text, nil), options: { inputmode: "decimal" }) %><% end %></fieldset>
+  <fieldset data-split-form-target="equal"><legend>Participantes da divisão igual</legend><% memberships.each do |membership| %><label class="block"><%= check_box_tag "expense[participant_user_ids][]", membership.user_id, equal_participants.include?(membership.user_id) %> <%= membership.user.name %></label><% end %></fieldset>
+  <fieldset data-split-form-target="exact"><legend>Valores exatos</legend><% memberships.each_with_index do |membership, index| %><%= hidden_field_tag "expense[shares][#{index}][user_id]", membership.user_id %><%= render FieldComponent.new(label: membership.user.name, name: "expense[shares][#{index}][amount_text]", value: exact_shares[membership.user_id.to_s]&.fetch(:amount_text, nil), options: { inputmode: "decimal" }) %><% end %></fieldset>
   <%= form.submit "Revisar divisão", class: "ui-button ui-button--primary" %>
 <% end %>
 

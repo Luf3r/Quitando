@@ -18,8 +18,13 @@ RSpec.describe "DemoScenario::Installer" do
 
     travel_to(installed_at) { DemoScenario::Installer.call(config:) }
 
-    expect(User.where(demo_account: true).order(:email).pluck(:email)).to eq(
-      %w[ana@demo.quitando.test bruno@demo.quitando.test carla@demo.quitando.test diego@demo.quitando.test]
+    expect(User.where(demo_account: true).order(:email).pluck(:name, :email)).to eq(
+      [
+        [ "Ana", "ana@demo.quitando.test" ],
+        [ "Bruno", "bruno@demo.quitando.test" ],
+        [ "Carla", "carla@demo.quitando.test" ],
+        [ "Diego", "diego@demo.quitando.test" ]
+      ]
     )
     expect(User.where(demo_account: true).all? { |user| user.valid_password?("senha-publica") }).to be(true)
     expect(Group.order(:name).pluck(:name)).to eq(

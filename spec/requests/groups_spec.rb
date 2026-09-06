@@ -10,12 +10,16 @@ RSpec.describe "Groups" do
     get group_history_path(group)
 
     document = response.parsed_body
-    row = document.at_css(".history-entry")
+    row = document.at_css(".history-entry article.financial-activity")
+    expect(document.at_css(".group-history-page")[:class]).to include("group-reading-column")
+    expect(row.at_css(".financial-activity__header")).to be_present
+    expect(row.at_css(".financial-activity__meta")).to be_present
     expect(row.text).to include("Despesa")
     expect(row.text).to include("Mercado")
     expect(row.text).to include("Registrado por")
     expect(row.text).to include("Valor")
     expect(row.text).to include("Horário")
+    expect(document.xpath("//main//text()[normalize-space(.) = '.' or normalize-space(.) = ';']")).to be_empty
   end
 
   it "usa responsável pelo grupo e associa uma ação bloqueada ao motivo" do
@@ -118,8 +122,9 @@ RSpec.describe "Groups" do
       get "/groups"
 
       headings = Nokogiri::HTML(response.body).css("section h2").map(&:text)
+      all_invitations_link = response.parsed_body.at_css("#convites-pendentes + a[href='/invitations']")
       expect(headings.index("Convites recebidos")).to be < headings.index("Seus grupos")
-      expect(response.body).to include('href="/invitations"')
+      expect(all_invitations_link['class'].split).to include("ui-button--secondary", "ui-button--compact")
     end
 
     it "não mostra convite terminal no resumo nem expõe suas ações" do
@@ -213,7 +218,7 @@ RSpec.describe "Groups" do
       get group_path(group)
 
       document = response.parsed_body
-      expect(document.at_css("#group_dashboard_financial_summary").text.squish).to include("Você precisa enviar R$ 3,00 para ana@example.com")
+      expect(document.at_css("#group_dashboard_financial_summary").text.squish).to include("Você precisa enviar R$ 3,00 para #{ana.name}")
       expect(document.at_css("a[href='#{new_group_payment_path(group, to_user_id: ana.id)}']").text).to include("Marcar como enviado")
       expect(document.css("#group_mobile_actions a").length).to eq(1)
     end
@@ -232,8 +237,12 @@ RSpec.describe "Groups" do
       document = response.parsed_body
       action = document.at_css("#group_next_action")
       expect(action.text).to include("Revise o pagamento recebido")
-      expect(action.at_css("a[href='#{group_payment_path(group, payment)}']").text).to include("Revisar pagamento")
-      expect(document.css("#group_recent_activity li").length).to eq(3)
+      review_link = action.at_css("a[href='#{group_payment_path(group, payment)}']")
+      expect(review_link.text).to include("Revisar pagamento")
+      expect(review_link[:class]).to include("ui-button--secondary", "ui-button--compact")
+      expect(document.css("#group_recent_activity article.financial-activity--compact").length).to eq(3)
+      expect(document.at_css("#group_recent_activity .section-heading a")[:class]).to include("ui-button--secondary", "ui-button--compact")
+      expect(document.xpath("//section[@id='group_recent_activity']//text()[normalize-space(.) = '.' or normalize-space(.) = ';']")).to be_empty
       expect(document.at_css("#group_dashboard_memberships")).to be_nil
       expect(document.at_css("#configuracoes-grupo")).to be_nil
     end
@@ -329,9 +338,9 @@ RSpec.describe "Groups" do
 
       document = response.parsed_body
       explanation = document.at_css("[data-counterintuitive-explanation]").text.squish
-      expect(explanation).to include("carla@example.com deve ao grupo. Pagar ana@example.com")
-      expect(document.at_css("#visualization_table_historical").text.squish).to include("carla@example.com diego@example.com")
-      expect(document.at_css("#visualization_table_plan").text.squish).to include("carla@example.com ana@example.com")
+      expect(explanation).to include("#{carla.name} deve ao grupo. Pagar #{ana.name}")
+      expect(document.at_css("#visualization_table_historical").text.squish).to include("#{carla.name} #{diego.name}")
+      expect(document.at_css("#visualization_table_plan").text.squish).to include("#{carla.name} #{ana.name}")
     end
 
     it "deixa a ordenação de memberships na página de Configurações" do

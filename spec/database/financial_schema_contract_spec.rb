@@ -6,6 +6,7 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
   TABLE_COLUMNS = {
     "users" => {
       "id" => [ "uuid", false ],
+      "name" => [ "character varying(80)", false ],
       "email" => [ "character varying", false ],
       "encrypted_password" => [ "character varying", false ],
       "reset_password_token" => [ "character varying", true ],
@@ -210,6 +211,16 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
   it "persiste a fronteira demo com flag segura e cenário unicamente identificado" do
     expect(column_default("users", "demo_account")).to eq("false")
     expect(unique_index_columns("demo_scenarios")).to contain_exactly(%w[key])
+  end
+
+  it "protege o nome do usuário contra vazio mesmo sem validação Active Record" do
+    expect(connection.check_constraints(:users).map(&:name)).to include("users_name_nonblank")
+
+    [ "", "   " ].each do |name|
+      expect_postgres_error(PG::CheckViolation) do
+        insert_direct(User, name:, email: "direto-#{database_uuid}@example.com", encrypted_password: "senha")
+      end
+    end
   end
 
   it "prova cada FK com coluna de origem e destino exatas", :aggregate_failures do
@@ -818,8 +829,9 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
     payment = payment_attributes(group:, from_user: user, to_user: other_user)
 
     [
-      [ User, :email, { email: "direto-#{database_uuid}@example.com", encrypted_password: "senha" } ],
-      [ User, :encrypted_password, { email: "direto-#{database_uuid}@example.com", encrypted_password: "senha" } ],
+      [ User, :name, { name: "Pessoa direta", email: "direto-#{database_uuid}@example.com", encrypted_password: "senha" } ],
+      [ User, :email, { name: "Pessoa direta", email: "direto-#{database_uuid}@example.com", encrypted_password: "senha" } ],
+      [ User, :encrypted_password, { name: "Pessoa direta", email: "direto-#{database_uuid}@example.com", encrypted_password: "senha" } ],
       *%i[name currency_code financial_state_version].map do |column_name|
         [ Group, column_name, { name: "Casa", currency_code: "BRL", financial_state_version: 0 } ]
       end,

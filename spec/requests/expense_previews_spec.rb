@@ -14,6 +14,8 @@ RSpec.describe "Preview de despesa" do
     }.not_to change(Expense, :count)
     expect(response).to have_http_status(:ok)
     expect(response.body).to include("Revise a divisão")
+    expect(response.body).to include(ana.name, bia.name)
+    expect(response.body).not_to include(ana.email, bia.email)
     expect(response.body).to include("Confirmar despesa")
     expect(response.body).to include('name="expense[description]"')
 
@@ -55,6 +57,8 @@ RSpec.describe "Preview de despesa" do
 
     expect(response).to have_http_status(:ok)
     expect(response.body).to include("Revise a correção")
+    expect(response.body).to include(ana.name, bia.name)
+    expect(response.body).not_to include(ana.email, bia.email)
     expect(response.body).to include("Confirmar correção")
     expect(expense.reload.voided_at).to be_nil
   end

@@ -53,7 +53,7 @@ RSpec.describe "Jornada de quitação do grupo" do
       fill_in "expense_description", with: "Compra registrada por Carla"
       fill_in "expense_occurred_on", with: "2026-08-14"
       fill_in "expense_amount_text", with: "100,00"
-      select bruno.email, from: "expense_paid_by_user_id"
+      select bruno.name, from: "expense_paid_by_user_id"
       choose "expense_split_type_exact"
       find('input[name="expense[shares][0][amount_text]"]').set("100,00")
       click_button "Revisar divisão"
@@ -61,7 +61,9 @@ RSpec.describe "Jornada de quitação do grupo" do
     expect(page).to have_text("Revise a divisão")
     click_button "Confirmar despesa"
 
-    expect(page).to have_text("pago por bruno@example.com, registrado por carla@example.com")
+    recent_activity = page.find("#group_recent_activity")
+    expect(recent_activity).to have_css("[data-activity-field='paid-by'] dd", text: bruno.name)
+    expect(recent_activity).to have_css("[data-activity-field='created-by'] dd", text: carla.name)
     expect(page).to have_text("Você precisa enviar")
     within("#group_next_action") { click_link "Marcar como enviado" }
     expect(page).to have_text("Registrar pagamento")

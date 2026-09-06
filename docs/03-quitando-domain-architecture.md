@@ -282,6 +282,19 @@ No MVP:
 
 Todas as chaves primárias das entidades usam o tipo PostgreSQL `uuid` com default explícito `uuidv7()`. Todas as foreign keys usam `uuid`. Ruby representa esses identificadores como strings canônicas minúsculas. A configuração global dos generators Rails usa `primary_key_type: :uuid`, mas cada migration continua responsável por declarar `default: -> { "uuidv7()" }`; o default UUID v4 implícito não satisfaz o contrato.
 
+### 6.0 `users`
+
+```text
+id
+name          # varchar(80), identidade principal
+email         # autenticação, conta e convites internos
+demo_account
+created_at
+updated_at
+```
+
+`name` aceita acentos, não é único, normaliza espaços externos e sequências internas e possui no máximo 80 caracteres. A aplicação rejeita ausência, vazio após normalização e excesso de comprimento. O banco exige `NOT NULL` e uma constraint nomeada que rejeita vazio após `btrim`, inclusive quando validações Active Record são contornadas. Essa identidade não cria uma entidade `Participant`: memberships, shares e pagamentos continuam referenciando `User`, conforme o ADR-0012.
+
 ### 6.1 `groups`
 
 ```text
@@ -577,7 +590,7 @@ Responsabilidades:
 
 As contribuições por share, as relações agregadas e a compensação bilateral são dados derivados e não são persistidos. Seus valores permanecem inteiros em centavos, inclusive quando a soma derivada excede o limite de uma coluna `bigint`; o builder não escreve em despesas, shares, memberships nem em `financial_state_version`.
 
-No payload JSON destinado ao navegador, `amount_cents` é serializado como string decimal positiva. A representação tipada no servidor permanece `Integer`; o cliente valida a forma textual e nunca converte, arredonda ou calcula dinheiro com `Number`.
+No payload JSON destinado ao navegador, `amount_cents` é serializado como string decimal positiva. A representação tipada no servidor permanece `Integer`; o cliente valida a forma textual e nunca converte, arredonda ou calcula dinheiro com `Number`. Cada nó também fornece `short_label` e `full_name`: o primeiro é o primeiro nome e inicial determinísticos, limitado a 18 grafemas para o nó; o segundo preserva a identidade completa em `<title>`, legenda e tabela equivalente.
 
 ### 8.5 `GroupFinancialStatusResolver`
 
@@ -869,7 +882,7 @@ Para pagamentos reportados aleatórios válidos:
 
 ## 16. Cenário público de demonstração
 
-O cenário demo é uma camada operacional, não uma alteração do domínio financeiro. Ele instala de modo idempotente quatro contas públicas — Ana, Bruno, Carla e Diego — e um conjunto canônico que exercita os fatos e estados já definidos. `users.demo_account` identifica essas contas e `demo_scenarios` registra a instalação e o último reset; nenhum desses registros entra no ledger, altera `financial_state_version` ou muda as regras de autorização financeira.
+O cenário demo é uma camada operacional, não uma alteração do domínio financeiro. Ele instala de modo idempotente quatro contas públicas com os nomes persistidos Ana, Bruno, Carla e Diego e preserva seus e-mails canônicos e a senha pública configurada. `users.demo_account` identifica essas contas e `demo_scenarios` registra a instalação e o último reset; nenhum desses registros entra no ledger, altera `financial_state_version` ou muda as regras de autorização financeira.
 
 O marcador vigente é `canonical-v2`, versão 2. O snapshot estrutural é de 4 usuários, 6 grupos, 37 despesas, 7 pagamentos, 18 convites, 19 memberships e 1 marcador. O instalador recusa qualquer marcador incompatível antes de escrever; a transição entre cenários só ocorre pelo reset integral autorizado. Ana percorre a demo por Viagem para a serra (revisar recebido), Configuração da república (acompanhar envio), Contas do apartamento (marcar transferência), Próxima viagem (adicionar despesa), Casa de praia quitada (quitado) e Churrasco arquivado (somente leitura). Viagem fixa oficial `+124.318/-80.205/-97.582/+53.469` e projeção `+26.736/-50.205/0/+23.469`; Contas demonstra 8 relações históricas, 6 compensadas e 3 transferências.
 

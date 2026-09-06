@@ -37,7 +37,7 @@ module ApplicationHelper
   end
 
   def participant_summary(memberships)
-    participants = memberships.map { |membership| membership.user.email }
+    participants = memberships.map { |membership| membership.user.name }
     return participants.to_sentence(two_words_connector: " e ", last_word_connector: ", e ") if participants.length <= 3
 
     "#{participants.first(2).to_sentence(two_words_connector: " e ")} e mais #{participants.length - 2}"

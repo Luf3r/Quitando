@@ -10,15 +10,15 @@
 </details>
 
 <section class="group-index-section" aria-labelledby="convites-pendentes">
-  <div class="section-heading"><h2 id="convites-pendentes">Convites recebidos</h2><%= link_to "Ver todos", invitations_path %></div>
+  <div class="section-heading"><h2 id="convites-pendentes">Convites recebidos</h2><%= link_to "Ver todos", invitations_path, class: "ui-button ui-button--secondary ui-button--compact" %></div>
   <% if @invitations.any? %>
     <ul class="invitation-list">
       <% @invitations.each do |invitation| %>
         <li class="invitation-card">
-          <div><strong><%= invitation.group.name %></strong><span>Convidado por <%= invitation.invited_by_user.email %></span></div>
+          <div><strong><%= invitation.group.name %></strong><span>Convidado por <%= invitation.invited_by_user.name %></span></div>
           <div class="invitation-card__actions">
             <%= button_to "Aceitar", "/invitations/#{invitation.id}/accept", method: :post, form: { data: { turbo_stream: true } }, class: "ui-button ui-button--primary" %>
-            <%= button_to "Recusar", "/invitations/#{invitation.id}/decline", method: :post, form: { data: { turbo_stream: true } }, class: "ui-button ui-button--secondary" %>
+            <%= button_to "Recusar", "/invitations/#{invitation.id}/decline", method: :post, form: { data: { turbo_stream: true } }, class: "ui-button ui-button--danger ui-button--compact" %>
           </div>
         </li>
       <% end %>

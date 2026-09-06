@@ -1,6 +1,6 @@
 class GroupOverviewPresenter
   PendingPayment = Data.define(:payment, :direction)
-  Participant = Data.define(:user_id, :email, :official_cents, :projected_cents, :show_projection)
+  Participant = Data.define(:user_id, :name, :official_cents, :projected_cents, :show_projection)
 
   def initialize(snapshot:, viewer_id:, archived:)
     @snapshot = snapshot
@@ -43,12 +43,12 @@ class GroupOverviewPresenter
   end
 
   def participants
-    snapshot.participant_emails.map do |user_id, email|
+    snapshot.participant_names.map do |user_id, name|
       official_cents = snapshot.official_balances.fetch(user_id, 0)
       projected_cents = snapshot.projected_balances.fetch(user_id, 0)
       Participant.new(
         user_id:,
-        email:,
+        name:,
         official_cents:,
         projected_cents:,
         show_projection: official_cents != projected_cents

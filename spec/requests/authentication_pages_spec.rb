@@ -15,7 +15,28 @@ RSpec.describe "Páginas de autenticação" do
 
     expect(response.body).to include("Criar sua conta")
     expect(response.body).to include("Confirme a senha")
+    document = Nokogiri::HTML(response.body)
+    name_input = document.at_css("#user_name")
+    email_input = document.at_css("#user_email")
+    expect(name_input).to be_present
+    expect(name_input["required"]).to eq("required")
+    expect(name_input["maxlength"]).to eq("80")
+    expect(name_input.path).to be < email_input.path
     expect(response.body).not_to match(/cancel my account|excluir conta/i)
+  end
+
+  it "cadastra nome normalizado pelo parâmetro permitido do Devise" do
+    post user_registration_path, params: {
+      user: {
+        name: "  Ana   Vitória  ",
+        email: "ana.vitoria@example.com",
+        password: "senha-segura",
+        password_confirmation: "senha-segura"
+      }
+    }
+
+    expect(response).to redirect_to(root_path)
+    expect(User.find_by!(email: "ana.vitoria@example.com").name).to eq("Ana Vitória")
   end
 
   it "apresenta recuperação de senha localizada" do

@@ -34,7 +34,11 @@ Este arquivo resume decisões que precisam permanecer consistentes entre produto
 - Cada grupo possui Resumo, Plano, Histórico e Configurações. A separação altera composição e navegação, não regras financeiras.
 - Previews de divisão são derivados no servidor, usam centavos inteiros e nunca persistem fatos antes da confirmação final.
 - O tema aceita Sistema, Claro e Escuro e é uma preferência de apresentação local. Ele não altera domínio ou persistência financeira.
-- A conta pessoal permite atualização autenticada de e-mail e senha; exclusão de conta permanece fora do MVP.
+- `User` permanece o participante financeiro do MVP. Nome obrigatório, normalizado e limitado a 80 caracteres é a identidade principal nas superfícies financeiras; e-mail permanece em autenticação, Conta, credenciais demo, convite e informação secundária de administração ou auditoria.
+- Cadastro exige nome antes de e-mail, e a conta pessoal permite atualização autenticada de nome, e-mail e senha mediante senha atual; exclusão de conta permanece fora do MVP.
+- A visualização permanece complementar: o grafo usa rótulo curto e o nome completo fica na legenda, no título e nas três tabelas HTML. Resumo, Plano e Histórico usam registros compactos e responsivos, sem mudar o ledger ou o caminho HTTP.
+- A hierarquia visual reserva a ação primária para submit ou próxima ação dominante; consultas e revisões são secundárias compactas, e a variante de perigo confirma somente transições terminais. Chips expõem estado canônico, rótulo e tom semântico, nunca apenas cor.
+- Pagamento recolhe o cancelamento até decisão deliberada; detalhes financeiros separam fatos em campos rotulados e Configurações apresenta nome, e-mail, papel e estado sem composição por pontuação.
 - O histórico recebido inclui convites pendentes e terminais; o histórico enviado é restrito ao owner ativo. A apresentação paginada torna fatos de convite auditáveis, sem criar transição nova nem permissão para agir sobre estado terminal.
 - A produção pública demo é demo-only e descartável: usa banco e deploy separados, `QUITANDO_DEMO_MODE=true` e reset integral a cada seis horas. Dados reais duráveis exigem banco e deploy distintos com `QUITANDO_DEMO_MODE=false`.
 

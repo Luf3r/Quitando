@@ -816,6 +816,7 @@ Entregar uma experiência pública e autenticada completa, coerente, responsiva 
 - estados vazios, foco, `aria-live` e `prefers-reduced-motion`.
 - fundação visual com tokens semânticos, Outfit self-hosted e temas `system`, `light` e `dark`;
 - landing pública em `/`, autenticação localizada e conta pessoal sem exclusão;
+- nome obrigatório de usuário, normalizado e limitado a 80 caracteres, persistido com `NOT NULL` e constraint contra vazio após trim;
 - shell responsivo e quatro destinos por grupo: Resumo, Plano, Histórico e Configurações;
 - cards de grupos e convites orientados a ação, sem executar o simplificador na listagem;
 - preview financeiro no servidor e revisão obrigatória de despesas e correções;
@@ -845,6 +846,8 @@ Entregar uma experiência pública e autenticada completa, coerente, responsiva 
 - histórico usa ordenação total e retorna `422` para página malformada;
 - todas as jornadas operam sem JavaScript e mantêm equivalência após stream, desconexão ou grafo indisponível;
 - temas claro e escuro funcionam em 360, 768 e 1440 px, por teclado e com movimento reduzido;
+- chips preservam o estado canônico em atributo de dados e combinam texto, contraste, borda e marcador visual;
+- Resumo e Histórico compartilham registros financeiros compactos; detalhes de pagamento e despesa usam metadados rotulados e Configurações não compõe campos por pontuação solta.
 - strings visíveis não contêm em dash ou en dash.
 
 ### 16.4 Entrega 13.15 — Histórico auditável de convites
@@ -908,15 +911,20 @@ As specs de componente, request e sistema cobrem pagador inicial, preservação,
 
 As specs de request verificam a ação do Plano, tabelas equivalentes, linhas do Histórico e a associação acessível de controles bloqueados. Esta entrega não altera ledger, autorização, URLs, Turbo, broadcasts, migrations nem os estados financeiros.
 
-O gate integrado foi demonstrado no Docker com `bin/ci`: a auditoria real do Importmap recuperou duas falhas transitórias de transporte do npm, 623 specs não-system e 26 system specs passaram, assim como lint, build, seeds e o verificador do cenário demo. O retry é limitado e uma sequência sem auditoria concluída permanece falha explícita.
+O gate integrado foi demonstrado no Docker com `bin/ci`: a auditoria real do Importmap recuperou duas falhas transitórias de transporte do npm, 650 specs não-system e 28 system specs passaram, assim como lint, build, seeds e o verificador do cenário demo. O retry é limitado e uma sequência sem auditoria concluída permanece falha explícita.
 
 ### 16.11 Entrega 13.21 — Gate responsivo, acessibilidade e aceitação final
 
-- a spec de gate confirma que saldo oficial e próxima ação aparecem no primeiro bloco em 360, 768 e 1440 px, nos temas claro e escuro, sem estouro horizontal; em 360 px, a barra de ação cabe no viewport e limita-se a duas ações;
+- Cadastro exige nome antes de e-mail; Conta permite editar nome, e-mail e senha mediante senha atual; nome é a identidade principal nas superfícies financeiras, sem substituir `User` como participante do MVP; `participant_names` substitui o contrato interno anterior e o grafo combina rótulo curto com nome completo na legenda, título e tabela;
+- a migration de `users.name` reconcilia somente Ana, Bruno, Carla e Diego pelos e-mails demo canônicos, recusa usuários residuais sem nome e preserva o snapshot estrutural e financeiro do cenário v2;
+- Resumo, Plano, cálculo e Histórico usam métricas, registros e tabelas responsivas: o grafo aparece integralmente antes da tabela equivalente, e tabelas comparativas têm região rolável acessível sem transformar falha do grafo em sucesso;
 - as jornadas existentes cobrem navegação nativa, teclado, movimento reduzido, diálogo e foco, formulários com e sem JavaScript, equivalência entre tabela, grafo, stream e reload HTTP;
-- Lighthouse mobile local registrou landing com LCP de 1,85 s, CLS de 0,061 e acessibilidade 1,00, e Resumo autenticado com LCP de 1,89 s, CLS de 0,00047 e acessibilidade 1,00; a imagem de produção e `bin/ci` foram verificados no Docker, com 623 specs não-system e 27 system specs.
+- a rodada de refinamento mantém coral primário somente para submits e próxima ação dominante; consulta, revisão, acompanhamento e adição usam ações secundárias compactas, e confirmações terminais usam perigo;
+- `StatusBadgeComponent` recebe estado canônico e rótulo contextual opcional, expondo ambos os dados semânticos; atividade, Histórico, Configurações, pagamento e despesa usam chips positivo, atenção, neutro ou negativo sem depender apenas de cor;
+- Pagamento recolhe o cancelamento nativo até ativação deliberada; Despesa separa valor, estado, data, pagador, autoria, edição e correção; as duas telas e o Histórico limitam a coluna de leitura e empilham campos no mobile.
+- Lighthouse mobile local registrou landing com LCP de 1,85 s, CLS de 0,061 e acessibilidade 1,00, e Resumo autenticado com LCP de 1,89 s, CLS de 0,00047 e acessibilidade 1,00; a imagem de produção e `bin/ci` foram verificados no Docker, com 650 specs não-system e 28 system specs.
 
-O gate não está concluído apenas pela automação: permanece necessária a aceitação manual em cada estado relevante, confirmando que uma pessoa identifica saldo e próxima ação no primeiro bloco e registra uma despesa igual sem tocar na divisão exata. Até esse registro, a fase e a subissue ficam em `Review`, e a Fase 14 não é promovida.
+O gate não está concluído apenas pela automação: permanece necessária a aceitação manual em cada estado relevante, confirmando que uma pessoa identifica saldo e próxima ação no primeiro bloco e registra uma despesa igual sem tocar na divisão exata. A rodada também exige inspeção de Resumo, Histórico, Configurações, Pagamento e Despesa em 360, 768 e 1440 px nos dois temas, incluindo cancelamento inicialmente fechado. Até esse registro, a fase e a subissue ficam em `Review`, e a Fase 14 não é promovida.
 
 A aceitação humana usa Ana como roteiro: revisar o recebido na Viagem, acompanhar o envio na Configuração, marcar R$ 850 em Contas sem usar o grafo, comparar oficial/projetado e as três camadas, consultar o quitado e o arquivado; Bruno confirma a transferência, a atualização por stream e o reload são comparados, e o reset deve restaurar o snapshot v2.
 
