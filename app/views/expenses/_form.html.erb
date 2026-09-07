@@ -2,7 +2,10 @@
 <% equal_participants = expense_form&.split_type == "equal" ? expense_form.participant_user_ids : memberships.map(&:user_id) %>
 <% exact_shares = expense_form&.shares&.index_by { |share| share[:user_id].to_s } || {} %>
 
-<%= form_with url: group_expenses_preview_path(group), scope: :expense, class: "expense-entry-form", data: { controller: "split-form", turbo_frame: "expense_preview" } do |form| %>
+<div data-controller="preview-guard">
+<%= form_with url: group_expenses_preview_path(group), scope: :expense, class: "expense-entry-form", data: { controller: "split-form", turbo_frame: "expense_preview", action: "input->preview-guard#invalidate change->preview-guard#invalidate" } do |form| %>
+  <%= form.hidden_field :preview_revision, value: 0, data: { preview_guard_target: "revision" } %>
+  <p class="ui-field__error" data-preview-guard-target="message" hidden aria-live="polite">Os dados mudaram. Revise novamente antes de confirmar.</p>
   <%= render FieldComponent.new(label: "Valor (R$)", name: "expense[amount_text]", value: expense_form&.amount_text, hint: "Use vírgula para os centavos.", options: { required: true, inputmode: "decimal" }) %>
   <%= render FieldComponent.new(label: "Descrição", name: "expense[description]", value: expense_form&.description, options: { required: true }) %>
   <%= render FieldComponent.new(label: "Pago por", name: "expense[paid_by_user_id]", type: :select, value: expense_form&.paid_by_user_id, choices: memberships.map { |membership| [ membership.user.name, membership.user_id ] }, hint: "Quem fez o pagamento, que pode ser diferente de quem registra.", options: { required: true }) %>
@@ -16,4 +19,5 @@
   <%= form.submit "Revisar divisão", class: "ui-button ui-button--primary" %>
 <% end %>
 
-<turbo-frame id="expense_preview"></turbo-frame>
+<div data-preview-guard-target="preview"><turbo-frame id="expense_preview"></turbo-frame></div>
+</div>

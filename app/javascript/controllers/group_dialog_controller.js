@@ -28,6 +28,8 @@ export default class extends Controller {
     if (this.frame?.children.length === 0) return this.close()
 
     this.returnFocus ||= document.activeElement
+    const title = this.frame.querySelector("h1[id]")
+    if (title) this.element.setAttribute("aria-labelledby", title.id)
     if (!this.element.open) this.element.showModal()
     cancelAnimationFrame(this.focusFrame)
     this.focusFrame = requestAnimationFrame(() => {

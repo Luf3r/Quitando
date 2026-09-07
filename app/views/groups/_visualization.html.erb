@@ -78,7 +78,7 @@
       </ul>
     </section>
     <div class="comparison-table-region" role="region" aria-label="Tabelas equivalentes ao grafo" tabindex="0">
-      <p class="comparison-table-region__hint">Deslize horizontalmente para ver todas as colunas.</p>
+      <p class="comparison-table-region__hint">Se houver colunas fora da tela, deslize a tabela.</p>
       <% %i[plan bilateral historical].each do |layer| %>
         <%= render "groups/visualization_table", layer:, edges: visualization.public_send(layer), group:, dashboard: %>
       <% end %>

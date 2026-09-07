@@ -48,13 +48,14 @@ class GroupsController < ApplicationController
   def settings
     @group = policy_scope(Group).find(params[:group_id])
     authorize @group, :show?
-    page = invitation_history_page
-    return unless page
+    pages = invitation_history_pages
+    return unless pages
 
     @memberships = @group.memberships.includes(:user).order(:position, :user_id)
     if policy(@group).invite?
-      @sent_pending_page = GroupInvitationHistoryQuery.pending_page(invitations: @group.group_invitations, number: page)
-      @sent_terminal_page = GroupInvitationHistoryQuery.terminal_page(invitations: @group.group_invitations, number: page)
+      @sent_pending_page = GroupInvitationHistoryQuery.pending_page(invitations: @group.group_invitations, number: pages.fetch(:pending))
+      @sent_terminal_page = GroupInvitationHistoryQuery.terminal_page(invitations: @group.group_invitations, number: pages.fetch(:closed))
+      @closed_invitation_history_open = params.key?(:closed_page)
     end
     @membership_deactivation_reasons = membership_deactivation_reasons
     @archive_reason = archive_reason
@@ -114,11 +115,17 @@ class GroupsController < ApplicationController
     "grupo possui convite pendente" if @group.group_invitations.pending.where(expires_at: Time.current..).exists?
   end
 
-  def invitation_history_page
-    page = params.fetch(:page, "1")
-    return page.to_i if page.is_a?(String) && /\A[1-9]\d*\z/.match?(page)
+  def invitation_history_pages
+    legacy_page = params[:page]
+    pending_page = params.fetch(:pending_page, legacy_page || "1")
+    closed_page = params.fetch(:closed_page, legacy_page || "1")
+    return { pending: pending_page.to_i, closed: closed_page.to_i } if valid_page?(pending_page) && valid_page?(closed_page)
 
     render plain: t("errors.unprocessable_entity"), status: :unprocessable_content
     nil
+  end
+
+  def valid_page?(page)
+    page.is_a?(String) && /\A[1-9]\d*\z/.match?(page)
   end
 end

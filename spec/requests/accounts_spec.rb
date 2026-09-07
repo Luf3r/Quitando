@@ -96,7 +96,7 @@ RSpec.describe "Conta pessoal" do
     }
 
     expect(response).to have_http_status(:unprocessable_content)
-    expect(response.body).to include("As credenciais desta conta demo são públicas e não podem ser alteradas.")
+    expect(response.body).to include("Esta é uma conta de demonstração. As credenciais abaixo são públicas e só podem ser consultadas.")
     expect(user.reload.name).to eq("Ana")
     expect(user.email).to include("ana-demo-")
     expect(user.valid_password?("senha-publica")).to be(true)
@@ -147,7 +147,7 @@ RSpec.describe "Conta pessoal" do
     get account_path
 
     expect(response).to have_http_status(:ok)
-    expect(response.body).to include("As credenciais desta conta demo são públicas e não podem ser alteradas.")
+    expect(response.body).to include("Esta é uma conta de demonstração. As credenciais abaixo são públicas e só podem ser consultadas.")
     expect(response.body).to include("Ana", user.email)
     expect(Nokogiri::HTML(response.body).at_css("form.account-form")).to be_nil
   end

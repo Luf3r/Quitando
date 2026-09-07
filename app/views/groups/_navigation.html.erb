@@ -1,6 +1,6 @@
 <nav class="group-navigation" aria-label="Navegação do grupo">
-  <%= link_to "Resumo", group_path(group), class: current_page?(group_path(group)) ? "is-current" : nil %>
-  <%= link_to "Plano", group_plan_path(group), class: current_page?(group_plan_path(group)) ? "is-current" : nil %>
-  <%= link_to "Histórico", group_history_path(group), class: current_page?(group_history_path(group)) ? "is-current" : nil %>
-  <%= link_to "Configurações", group_settings_path(group), class: current_page?(group_settings_path(group)) ? "is-current" : nil %>
+  <%= link_to "Resumo", group_path(group), class: current_page?(group_path(group)) ? "is-current" : nil, aria: (current_page?(group_path(group)) ? { current: "page" } : {}) %>
+  <%= link_to "Plano", group_plan_path(group), class: current_page?(group_plan_path(group)) ? "is-current" : nil, aria: (current_page?(group_plan_path(group)) ? { current: "page" } : {}) %>
+  <%= link_to "Histórico", group_history_path(group), class: current_page?(group_history_path(group)) ? "is-current" : nil, aria: (current_page?(group_history_path(group)) ? { current: "page" } : {}) %>
+  <%= link_to "Configurações", group_settings_path(group), class: current_page?(group_settings_path(group)) ? "is-current" : nil, aria: (current_page?(group_settings_path(group)) ? { current: "page" } : {}) %>
 </nav>

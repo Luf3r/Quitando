@@ -196,6 +196,7 @@ Porcentagem e partes ficam para depois.
 - sem JavaScript, os dois fieldsets de divisão permanecem disponíveis e o servidor considera somente o tipo selecionado;
 - servidor valida memberships, valores e soma das shares;
 - preview mostra arredondamento antes da confirmação;
+- qualquer mudança posterior nos campos invalida imediatamente a confirmação, informa “Os dados mudaram. Revise novamente antes de confirmar” e só reabilita após um novo preview calculado pelo servidor; resposta de preview antiga não é válida;
 - erros aparecem no mesmo frame sem apagar dados;
 - nova despesa é append-only e não é rejeitada apenas porque outra despesa foi criada em paralelo; o servidor serializa e revalida memberships e shares;
 - correção financeira envia `expected_financial_state_version`;
@@ -481,6 +482,7 @@ Não existe ação unilateral que remova o usuário de uma share. Divergência e
 
 - cor sempre acompanhada de texto e ícone;
 - foco gerenciado ao abrir e fechar modal;
+- há link para pular direto ao conteúdo e a navegação global e a do grupo identificam a página atual;
 - títulos e descrições associados;
 - grafo com tabela equivalente;
 - animações respeitam `prefers-reduced-motion`;

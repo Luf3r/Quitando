@@ -30,6 +30,7 @@
   </head>
 
   <body>
+    <a class="skip-link" href="#main-content">Pular para o conteúdo</a>
     <header class="site-header">
       <div class="site-header__inner">
         <%= link_to t("app.name"), root_path, class: "wordmark" %>
@@ -57,10 +58,10 @@
         <% end %>
       <% end %>
       <% if flash[:alert].present? %>
-        <%= render AlertComponent.new(message: flash[:alert]) %>
+        <%= render AlertComponent.new(message: flash[:alert], variant: :error) %>
       <% end %>
       <% if flash[:notice].present? %>
-        <%= render AlertComponent.new(message: flash[:notice]) %>
+        <%= render AlertComponent.new(message: flash[:notice], variant: :success) %>
       <% end %>
       <%= yield %>
     </main>

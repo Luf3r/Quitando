@@ -33,6 +33,7 @@ Este arquivo resume decisões que precisam permanecer consistentes entre produto
 - A raiz é uma landing pública real; usuários autenticados seguem dela para o app, sem criar uma segunda fonte de produto ou alegações fictícias.
 - Cada grupo possui Resumo, Plano, Histórico e Configurações. A separação altera composição e navegação, não regras financeiras.
 - Previews de divisão são derivados no servidor, usam centavos inteiros e nunca persistem fatos antes da confirmação final.
+- Uma confirmação de despesa ou correção só vale para a revisão do formulário que a originou. Edição posterior a invalida imediatamente; o navegador não recalcula valores e resposta antiga do servidor não reabilita a ação.
 - O tema aceita Sistema, Claro e Escuro e é uma preferência de apresentação local. Ele não altera domínio ou persistência financeira.
 - `User` permanece o participante financeiro do MVP. Nome obrigatório, normalizado e limitado a 80 caracteres é a identidade principal nas superfícies financeiras; e-mail permanece em autenticação, Conta, credenciais demo, convite e informação secundária de administração ou auditoria.
 - Cadastro exige nome antes de e-mail, e a conta pessoal permite atualização autenticada de nome, e-mail e senha mediante senha atual; exclusão de conta permanece fora do MVP.
@@ -40,6 +41,7 @@ Este arquivo resume decisões que precisam permanecer consistentes entre produto
 - A hierarquia visual reserva a ação primária para submit ou próxima ação dominante; consultas e revisões são secundárias compactas, e a variante de perigo confirma somente transições terminais. Chips expõem estado canônico, rótulo e tom semântico, nunca apenas cor.
 - Pagamento recolhe o cancelamento até decisão deliberada; detalhes financeiros separam fatos em campos rotulados e Configurações apresenta nome, e-mail, papel e estado sem composição por pontuação.
 - O histórico recebido inclui convites pendentes e terminais; o histórico enviado é restrito ao owner ativo. A apresentação paginada torna fatos de convite auditáveis, sem criar transição nova nem permissão para agir sobre estado terminal.
+- As listas de convites pendentes e encerrados possuem paginação independente, preservando a posição da outra lista; o parâmetro histórico `page` continua aceito quando os parâmetros específicos estão ausentes.
 - A produção pública demo é demo-only e descartável: usa banco e deploy separados, `QUITANDO_DEMO_MODE=true` e reset integral a cada seis horas. Dados reais duráveis exigem banco e deploy distintos com `QUITANDO_DEMO_MODE=false`.
 
 ### Domínio

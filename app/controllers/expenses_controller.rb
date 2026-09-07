@@ -17,7 +17,7 @@ class ExpensesController < ApplicationController
   def create
     group = policy_scope(Group).find(params[:group_id])
     authorize group, :create_expense?
-    form = ExpenseForm.new(**expense_params.to_h.symbolize_keys)
+    form = ExpenseForm.new(**expense_params.to_h.except("preview_revision").symbolize_keys)
     raise ExpenseCreator::InvalidExpense, "despesa inválida" unless form.valid?
 
     ExpenseCreator.call(**form.command_attributes.merge(group_id: group.id, created_by_user_id: current_user.id))
@@ -31,7 +31,7 @@ class ExpensesController < ApplicationController
     @group = policy_scope(Group).find(params[:group_id])
     authorize @group, :create_expense?
     @submitted_expense = expense_params.to_h
-    @expense_form = ExpenseForm.new(**@submitted_expense.symbolize_keys)
+    @expense_form = ExpenseForm.new(**@submitted_expense.except("preview_revision").symbolize_keys)
     raise ExpenseSplitPreview::InvalidPreview, "revise os campos obrigatórios da despesa" unless @expense_form.valid?
 
     @preview = ExpenseSplitPreview.call(
@@ -72,7 +72,7 @@ class ExpensesController < ApplicationController
     load_expense_detail(@group)
     authorize @expense, :correct?
     @submitted_correction = correction_params.to_h
-    @correction_form = ExpenseCorrectionForm.new(**@submitted_correction.symbolize_keys.merge(occurred_on: @expense.occurred_on))
+    @correction_form = ExpenseCorrectionForm.new(**@submitted_correction.except("preview_revision").symbolize_keys.merge(occurred_on: @expense.occurred_on))
     raise ExpenseSplitPreview::InvalidPreview, "revise os campos obrigatórios da correção" unless @correction_form.valid?
 
     @preview = ExpenseSplitPreview.call(
@@ -104,7 +104,7 @@ class ExpensesController < ApplicationController
     authorize group, :create_expense?
     expense = group.expenses.find(params[:id])
     authorize expense, :correct?
-    @correction_form = ExpenseCorrectionForm.new(**correction_params.to_h.symbolize_keys.merge(occurred_on: expense.occurred_on))
+    @correction_form = ExpenseCorrectionForm.new(**correction_params.to_h.except("preview_revision").symbolize_keys.merge(occurred_on: expense.occurred_on))
     raise ExpenseCorrector::InvalidExpense, "correção inválida" unless @correction_form.valid?
 
     replacement = ExpenseCorrector.call(**@correction_form.command_attributes.merge(group_id: group.id, expense_id: expense.id, actor_user_id: current_user.id))
@@ -117,12 +117,12 @@ class ExpensesController < ApplicationController
   private
 
   def expense_params
-    params.require(:expense).permit(:description, :occurred_on, :amount_text, :paid_by_user_id, :split_type, participant_user_ids: [], shares: [ :user_id, :amount_text ])
+    params.require(:expense).permit(:description, :occurred_on, :amount_text, :paid_by_user_id, :split_type, :preview_revision, participant_user_ids: [], shares: [ :user_id, :amount_text ])
   end
 
   def correction_params
     params.require(:correction).permit(
-      :reason, :description, :amount_text, :paid_by_user_id, :split_type, :expected_financial_state_version, :idempotency_key,
+      :reason, :description, :amount_text, :paid_by_user_id, :split_type, :preview_revision, :expected_financial_state_version, :idempotency_key,
       participant_user_ids: [], shares: [ :user_id, :amount_text ]
     )
   end
@@ -133,7 +133,7 @@ class ExpensesController < ApplicationController
     @dashboard = GroupDashboardQuery.call(group: @group, viewer: current_user)
     @history_entries = GroupHistoryQuery.call(group: @group)
     @pending_invitations = @group.group_invitations.pending.where(expires_at: Time.current..).includes(:invited_user) if policy(@group).invite?
-    @expense_form = ExpenseForm.new(**expense_params.to_h.symbolize_keys)
+    @expense_form = ExpenseForm.new(**expense_params.to_h.except("preview_revision").symbolize_keys)
     flash.now[:alert] = error.message
     if turbo_frame_request? && request.headers["Turbo-Frame"] == "expense_preview"
       @preview_error = error.message

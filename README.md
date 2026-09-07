@@ -6,7 +6,7 @@ O Quitando ajuda grupos que já confiam uns nos outros a encerrar despesas compa
 
 ## Status
 
-O projeto está em construção. A #144 está em `Review` na rodada de aceitação da Fase 13.21: além da identidade financeira por nome, as telas financeiras usam ações hierarquizadas, chips semânticos, registros compactos e cancelamento progressivo. A verificação automatizada cobre roteiro da Ana, snapshot, saldos, Histórico em duas páginas, formulários sem JavaScript e os três viewports nos dois temas. A Fase 13 ainda aguarda a aceitação humana final do gate, sem antecipar a Fase 14.
+O projeto está em construção. A #144 está em `Review` após a revisão de consistência da Fase 13.21: além da identidade financeira por nome, as telas financeiras usam ações hierarquizadas, chips semânticos, registros compactos, cancelamento progressivo, preview que exige nova revisão após qualquer edição e paginação independente de convites. A verificação automatizada cobre roteiro da Ana, snapshot, saldos, Histórico em duas páginas, formulários sem JavaScript e os três viewports nos dois temas. A Fase 13 ainda aguarda a aceitação humana final do gate, sem antecipar a Fase 14.
 
 A passagem anterior da reabertura entregou landing pública, tema claro/escuro/sistema, conta pessoal, shell móvel nativo, navegação por Resumo/Plano/Histórico/Configurações, lista, Resumo, despesas e pagamentos orientados à ação, além da revisão de despesas e correções no servidor antes da confirmação. Landing e Resumo autenticado foram inspecionados nos breakpoints normativos, e o Lighthouse da imagem de produção ficou dentro dos limites de LCP e CLS, com acessibilidade 1,0. A Fase 14 tratará a medição de INP de campo por RUM ou CrUX após o deploy, com alvo p75 abaixo de 200 ms no fluxo principal móvel.
 

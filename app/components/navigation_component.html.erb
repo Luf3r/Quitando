@@ -1,9 +1,9 @@
 <nav aria-label="Navegação principal" class="site-navigation site-navigation--desktop">
   <% if user.present? %>
     <div class="site-navigation__links">
-      <%= link_to "Grupos", helpers.groups_path, class: "site-navigation__link" %>
-      <%= link_to "Convites#{" #{pending_invitation_count}" if pending_invitation_count.positive?}", helpers.invitations_path, class: "site-navigation__link" %>
-      <%= link_to "Conta", "/account", class: "site-navigation__link" %>
+      <%= link_to "Grupos", helpers.groups_path, class: "site-navigation__link", aria: (helpers.current_page?(helpers.groups_path) ? { current: "page" } : {}) %>
+      <%= link_to "Convites#{" #{pending_invitation_count}" if pending_invitation_count.positive?}", helpers.invitations_path, class: "site-navigation__link", aria: (helpers.current_page?(helpers.invitations_path) ? { current: "page" } : {}) %>
+      <%= link_to "Conta", "/account", class: "site-navigation__link", aria: (helpers.current_page?("/account") ? { current: "page" } : {}) %>
     </div>
   <% end %>
   <label class="theme-picker">
@@ -23,9 +23,9 @@
   <summary>Menu</summary>
   <div class="site-navigation__mobile-panel">
     <% if user.present? %>
-      <%= link_to "Grupos", helpers.groups_path, class: "site-navigation__link" %>
-      <%= link_to "Convites#{" #{pending_invitation_count}" if pending_invitation_count.positive?}", helpers.invitations_path, class: "site-navigation__link" %>
-      <%= link_to "Conta", "/account", class: "site-navigation__link" %>
+      <%= link_to "Grupos", helpers.groups_path, class: "site-navigation__link", aria: (helpers.current_page?(helpers.groups_path) ? { current: "page" } : {}) %>
+      <%= link_to "Convites#{" #{pending_invitation_count}" if pending_invitation_count.positive?}", helpers.invitations_path, class: "site-navigation__link", aria: (helpers.current_page?(helpers.invitations_path) ? { current: "page" } : {}) %>
+      <%= link_to "Conta", "/account", class: "site-navigation__link", aria: (helpers.current_page?("/account") ? { current: "page" } : {}) %>
     <% end %>
     <label class="theme-picker">
       <span>Tema</span>

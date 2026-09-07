@@ -141,6 +141,23 @@ RSpec.describe "Payments" do
     expect(response.body).to include('id="group_dialog" data-turbo-permanent')
   end
 
+  it "não renderiza um painel de ações vazio para terceiro em pagamento declarado" do
+    owner = create(:user, email: "ana@example.com")
+    debtor = create(:user, email: "bia@example.com")
+    observer = create(:user, email: "carla@example.com")
+    group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
+    create(:membership, group:, user: debtor, position: 1)
+    create(:membership, group:, user: observer, position: 2)
+    payment = create(:payment, group:, from_user: debtor, to_user: owner, reported_by_user: debtor, status: :reported)
+
+    post user_session_path, params: { user: { email: observer.email, password: observer.password } }
+    get "/groups/#{group.id}/payments/#{payment.id}"
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).not_to include('id="payment-actions-title"')
+    expect(response.body).not_to include("Confirmar pagamento", "Cancelar pagamento")
+  end
+
   it "estrutura o detalhe declarado e mantém o cancelamento recolhido até uma ação deliberada" do
     owner = create(:user, email: "ana@example.com")
     debtor = create(:user, email: "bia@example.com")

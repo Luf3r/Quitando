@@ -10,8 +10,8 @@ RSpec.describe "Componentes do design system", type: :component do
     expect(page).to have_link("Criar grupo", href: "/groups/new", class: /ui-button--primary/)
   end
 
-  it "torna a ação secundária visualmente reconhecível e compacta" do
-    render_inline(ButtonComponent.new(label: "Histórico completo", href: "/groups/1/history", variant: :secondary))
+  it "torna a ação secundária visualmente reconhecível e permite escolher o tamanho" do
+    render_inline(ButtonComponent.new(label: "Histórico completo", href: "/groups/1/history", variant: :secondary, size: :compact))
 
     expect(page).to have_link(
       "Histórico completo",
@@ -19,6 +19,18 @@ RSpec.describe "Componentes do design system", type: :component do
       class: /ui-button--secondary.*ui-button--compact/
     )
     expect(page).not_to have_css(".ui-button--primary", text: "Histórico completo")
+  end
+
+  it "gera um formulário para um destino mutável e torna um link desabilitado inerte" do
+    render_inline(ButtonComponent.new(label: "Arquivar", href: "/groups/1/archive", method: :post))
+
+    expect(page).to have_css("form[action='/groups/1/archive'][method='post'] button", text: "Arquivar")
+
+    render_inline(ButtonComponent.new(label: "Indisponível", href: "/groups/1", disabled: true))
+
+    expect(page).to have_css("span.ui-button[aria-disabled='true']", text: "Indisponível")
+    expect(page).not_to have_link("Indisponível")
+    expect { ButtonComponent.new(label: "Inválido", method: :post) }.to raise_error(ArgumentError, "method requires href")
   end
 
   it "renderiza campo com label, ajuda e erro associados" do

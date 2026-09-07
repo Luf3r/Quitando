@@ -30,6 +30,8 @@
     <% end %>
   </dl>
 
+  <% show_payment_actions = (@payment.reported? && !@payment.group.archived_at? && [ @payment.from_user_id, @payment.to_user_id ].include?(current_user.id)) || @payment.confirmed? || @payment.cancelled? %>
+  <% if show_payment_actions %>
   <section class="financial-detail__actions" aria-labelledby="payment-actions-title">
     <h2 id="payment-actions-title">Ações</h2>
     <% if @payment.reported? && !@payment.group.archived_at? && @payment.to_user_id == current_user.id %>
@@ -51,4 +53,5 @@
       <p class="financial-detail__terminal-note">Este pagamento é terminal e não pode ser alterado no MVP.</p>
     <% end %>
   </section>
+  <% end %>
 </section>

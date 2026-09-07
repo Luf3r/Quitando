@@ -141,6 +141,22 @@ RSpec.describe "Histórico e configurações do grupo" do
     expect(queries).to be_empty
   end
 
+  it "mantém a paginação de convites enviados independente e abre o histórico ao paginá-lo" do
+    owner = create(:user, email: "ana@example.com")
+    group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
+    26.times { create(:group_invitation, group:, invited_by_user: owner, expires_at: 2.days.from_now) }
+    26.times { create(:group_invitation, :revoked, group:, invited_by_user: owner) }
+
+    post user_session_path, params: { user: { email: owner.email, password: owner.password } }
+    get group_settings_path(group, pending_page: "1", closed_page: "2")
+
+    expect(response).to have_http_status(:ok)
+    document = response.parsed_body
+    expect(document.at_css("details#closed-invitations-history[open]")).to be_present
+    closed_navigation = document.at_css("nav[aria-label='Paginação dos convites enviados encerrados']")
+    expect(closed_navigation.at_css("a", text: "Anterior")["href"]).to include("pending_page=1", "closed_page=1", "#closed-invitations-history")
+  end
+
   private
 
   def sql_queries_for(*tables)

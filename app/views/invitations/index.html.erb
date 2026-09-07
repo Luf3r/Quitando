@@ -18,7 +18,7 @@
     <% else %>
       <p class="mt-3">Você não possui convites pendentes.</p>
     <% end %>
-    <% if @pending_page.total_pages > 1 %><nav class="pagination" aria-label="Paginação dos convites pendentes"><% if @pending_page.number > 1 %><%= link_to "Anterior", invitations_path(page: @pending_page.number - 1) %><% end %><span>Página <%= @pending_page.number %> de <%= @pending_page.total_pages %></span><% if @pending_page.number < @pending_page.total_pages %><%= link_to "Próxima", invitations_path(page: @pending_page.number + 1) %><% end %></nav><% end %>
+    <% if @pending_page.total_pages > 1 %><nav class="pagination" aria-label="Paginação dos convites pendentes"><% if @pending_page.number > 1 %><%= link_to "Anterior", invitations_path(pending_page: @pending_page.number - 1, closed_page: @terminal_page.number) %><% end %><span>Página <%= @pending_page.number %> de <%= @pending_page.total_pages %></span><% if @pending_page.number < @pending_page.total_pages %><%= link_to "Próxima", invitations_path(pending_page: @pending_page.number + 1, closed_page: @terminal_page.number) %><% end %></nav><% end %>
   </section>
 
   <section aria-labelledby="terminal-invitations-title">
@@ -35,6 +35,6 @@
     <% else %>
       <p class="mt-3">Você não possui convites encerrados.</p>
     <% end %>
-    <% if @terminal_page.total_pages > 1 %><nav class="pagination" aria-label="Paginação dos convites encerrados"><% if @terminal_page.number > 1 %><%= link_to "Anterior", invitations_path(page: @terminal_page.number - 1) %><% end %><span>Página <%= @terminal_page.number %> de <%= @terminal_page.total_pages %></span><% if @terminal_page.number < @terminal_page.total_pages %><%= link_to "Próxima", invitations_path(page: @terminal_page.number + 1) %><% end %></nav><% end %>
+    <% if @terminal_page.total_pages > 1 %><nav class="pagination" aria-label="Paginação dos convites encerrados"><% if @terminal_page.number > 1 %><%= link_to "Anterior", invitations_path(pending_page: @pending_page.number, closed_page: @terminal_page.number - 1) %><% end %><span>Página <%= @terminal_page.number %> de <%= @terminal_page.total_pages %></span><% if @terminal_page.number < @terminal_page.total_pages %><%= link_to "Próxima", invitations_path(pending_page: @pending_page.number, closed_page: @terminal_page.number + 1) %><% end %></nav><% end %>
   </section>
 </section>

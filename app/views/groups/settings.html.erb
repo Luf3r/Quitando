@@ -53,14 +53,14 @@
         <% end %>
         <% if @sent_pending_page.total_pages > 1 %>
           <nav class="pagination" aria-label="Paginação dos convites enviados pendentes">
-            <% if @sent_pending_page.number > 1 %><%= link_to "Anterior", group_settings_path(@group, page: @sent_pending_page.number - 1) %><% end %>
+            <% if @sent_pending_page.number > 1 %><%= link_to "Anterior", group_settings_path(@group, pending_page: @sent_pending_page.number - 1, closed_page: @sent_terminal_page.number) %><% end %>
             <span>Página <%= @sent_pending_page.number %> de <%= @sent_pending_page.total_pages %></span>
-            <% if @sent_pending_page.number < @sent_pending_page.total_pages %><%= link_to "Próxima", group_settings_path(@group, page: @sent_pending_page.number + 1) %><% end %>
+            <% if @sent_pending_page.number < @sent_pending_page.total_pages %><%= link_to "Próxima", group_settings_path(@group, pending_page: @sent_pending_page.number + 1, closed_page: @sent_terminal_page.number) %><% end %>
           </nav>
         <% end %>
       </section>
 
-      <details class="settings-history">
+      <details id="closed-invitations-history" class="settings-history" <%= "open" if @closed_invitation_history_open %>>
         <summary>Histórico de convites encerrados</summary>
         <% if @sent_terminal_page.entries.any? %>
           <ul class="settings-record-list">
@@ -80,9 +80,9 @@
         <% end %>
         <% if @sent_terminal_page.total_pages > 1 %>
           <nav class="pagination" aria-label="Paginação dos convites enviados encerrados">
-            <% if @sent_terminal_page.number > 1 %><%= link_to "Anterior", group_settings_path(@group, page: @sent_terminal_page.number - 1) %><% end %>
+            <% if @sent_terminal_page.number > 1 %><%= link_to "Anterior", group_settings_path(@group, pending_page: @sent_pending_page.number, closed_page: @sent_terminal_page.number - 1, anchor: "closed-invitations-history") %><% end %>
             <span>Página <%= @sent_terminal_page.number %> de <%= @sent_terminal_page.total_pages %></span>
-            <% if @sent_terminal_page.number < @sent_terminal_page.total_pages %><%= link_to "Próxima", group_settings_path(@group, page: @sent_terminal_page.number + 1) %><% end %>
+            <% if @sent_terminal_page.number < @sent_terminal_page.total_pages %><%= link_to "Próxima", group_settings_path(@group, pending_page: @sent_pending_page.number, closed_page: @sent_terminal_page.number + 1, anchor: "closed-invitations-history") %><% end %>
           </nav>
         <% end %>
       </details>

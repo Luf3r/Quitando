@@ -19,6 +19,10 @@ RSpec.describe "Preview de despesa" do
     expect(response.body).to include("Confirmar despesa")
     expect(response.body).to include('name="expense[description]"')
 
+    post group_expenses_preview_path(group), params: { expense: { description: "Mercado", occurred_on: Date.current.iso8601, amount_text: "10,00", split_type: "equal", paid_by_user_id: ana.id, participant_user_ids: [ ana.id, bia.id ], preview_revision: "4" } }
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include('data-preview-guard-revision-value="4"')
+
     post group_expenses_preview_path(group), params: { expense: { description: "Mercado", occurred_on: Date.current.iso8601, amount_text: "10,00", split_type: "equal", paid_by_user_id: outsider.id, participant_user_ids: [ ana.id, bia.id ] } }
     expect(response).to have_http_status(:unprocessable_content)
     expect(response.body).to include("membership ativa obrigatória")

@@ -1,6 +1,6 @@
 <%= turbo_frame_tag "group_dialog" do %>
   <section aria-labelledby="corrigir-despesa-dialogo" class="p-5">
-    <div class="flex items-center justify-between gap-4"><h1 id="corrigir-despesa-dialogo" class="text-xl font-semibold">Corrigir despesa</h1><button type="button" data-action="group-dialog#close" class="text-sm underline">Fechar</button></div>
+    <div class="dialog-header"><h1 id="corrigir-despesa-dialogo">Corrigir despesa</h1><button type="button" data-action="group-dialog#close" class="ui-button ui-button--quiet ui-button--compact">Fechar</button></div>
     <p class="mt-2">Uma correção anula esta despesa e registra uma substituta.</p>
     <%= render "expenses/correction_form", group: @group, expense: @expense, correction_form: @correction_form, current_financial_state_version: @current_financial_state_version %>
   </section>

@@ -2,7 +2,7 @@
   <% if @preview_error.present? %>
     <div class="ui-alert ui-alert--error" role="alert" tabindex="-1"><%= @preview_error %></div>
   <% else %>
-    <section class="expense-preview" aria-labelledby="expense-preview-title">
+    <section class="expense-preview" aria-labelledby="expense-preview-title" data-preview-guard-revision-value="<%= @submitted_expense.fetch("preview_revision", "0") %>">
       <h2 id="expense-preview-title">Revise a divisão</h2>
       <p>Valor total: <%= render MoneyComponent.new(cents: @preview.amount_cents, currency_code: @group.currency_code) %>.</p>
       <% payer = @group.memberships.find { |membership| membership.user_id == @submitted_expense.fetch("paid_by_user_id") } %>
@@ -24,7 +24,7 @@
         <% Array(@submitted_expense["participant_user_ids"]).each do |user_id| %><%= hidden_field_tag "expense[participant_user_ids][]", user_id %><% end %>
         <% raw_shares = @submitted_expense["shares"] || {} %>
         <% raw_shares.each do |index, share| %><%= hidden_field_tag "expense[shares][#{index}][user_id]", share["user_id"] %><%= hidden_field_tag "expense[shares][#{index}][amount_text]", share["amount_text"] %><% end %>
-        <%= form.submit "Confirmar despesa", class: "ui-button ui-button--primary" %>
+        <%= form.submit "Confirmar despesa", class: "ui-button ui-button--primary", data: { preview_guard_target: "confirmation" } %>
       <% end %>
     </section>
   <% end %>

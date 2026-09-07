@@ -2,7 +2,10 @@
 <% equal_participants = correction_form&.split_type == "equal" ? correction_form.participant_user_ids : expense.expense_shares.map(&:user_id) %>
 <% exact_shares = (correction_form&.split_type == "exact" ? correction_form.shares : expense.expense_shares.map { |share| { user_id: share.user_id, amount_text: MoneyFormatter.call(cents: share.amount_owed_cents, currency_code: group.currency_code).delete_prefix("R$ ") } }).index_by { |share| share[:user_id].to_s } %>
 
-<%= form_with url: group_expense_correction_preview_path(group, expense), scope: :correction, class: "expense-entry-form", data: { controller: "split-form", turbo_frame: "correction_preview" } do |form| %>
+<div data-controller="preview-guard">
+<%= form_with url: group_expense_correction_preview_path(group, expense), scope: :correction, class: "expense-entry-form", data: { controller: "split-form", turbo_frame: "correction_preview", action: "input->preview-guard#invalidate change->preview-guard#invalidate" } do |form| %>
+  <%= form.hidden_field :preview_revision, value: 0, data: { preview_guard_target: "revision" } %>
+  <p class="ui-field__error" data-preview-guard-target="message" hidden aria-live="polite">Os dados mudaram. Revise novamente antes de confirmar.</p>
   <%= render FieldComponent.new(label: "Motivo", name: "correction[reason]", value: correction_form&.reason, options: { required: true, autofocus: true }) %>
   <%= render FieldComponent.new(label: "Valor (R$)", name: "correction[amount_text]", value: correction_form&.amount_text || MoneyFormatter.call(cents: expense.amount_cents, currency_code: group.currency_code).delete_prefix("R$ "), options: { required: true, inputmode: "decimal" }) %>
   <%= render FieldComponent.new(label: "Descrição", name: "correction[description]", value: correction_form&.description || expense.description, options: { required: true }) %>
@@ -18,4 +21,5 @@
   <%= form.submit "Revisar correção", class: "ui-button ui-button--primary" %>
 <% end %>
 
-<turbo-frame id="correction_preview"></turbo-frame>
+<div data-preview-guard-target="preview"><turbo-frame id="correction_preview"></turbo-frame></div>
+</div>
