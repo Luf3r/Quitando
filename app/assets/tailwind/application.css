@@ -719,6 +719,8 @@ a {
 .operational-list li { display: grid; grid-template-columns: minmax(0, 1fr) max-content max-content; align-items: center; gap: 0.75rem; padding: 0.75rem 0; border-top: 1px solid var(--color-border); min-width: 0; }
 .operational-list .amount, .transfer-list__amount, .history-entry__amount dd { white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 680; }
 .operational-list .action, .transfer-list__action { white-space: nowrap; }
+.operational-list__parties { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem; }
+.operational-list__connector { color: var(--color-text-secondary); }
 .operational-list__status { display: inline-block; margin-left: 0.35rem; color: var(--color-text-secondary); }
 .participant-balances > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.75rem; padding: 0.75rem 0; border-top: 1px solid var(--color-border); }
 .participant-balances dt { overflow-wrap: anywhere; font-weight: 650; }
@@ -832,6 +834,7 @@ a {
 .settings-record__actions { display: flex; min-width: 0; flex-wrap: wrap; align-items: flex-start; gap: 0.65rem; }
 .settings-blocked-action { display: grid; min-width: 0; gap: 0.45rem; justify-items: start; }
 .settings-action-note { max-width: 52ch; color: var(--color-text-secondary); overflow-wrap: anywhere; }
+.settings-record__feedback { max-width: 52ch; margin-top: -0.3rem; color: var(--color-text-secondary); overflow-wrap: anywhere; }
 .settings-order-form { display: grid; max-width: 42rem; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; gap: 1rem; }
 .settings-order-form > div { display: grid; min-width: 0; gap: 0.35rem; }
 .pagination { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1rem; }

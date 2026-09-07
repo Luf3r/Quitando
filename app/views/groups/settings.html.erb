@@ -93,6 +93,7 @@
     <h2 id="members-title">Membros</h2>
     <ul class="settings-record-list">
       <% @memberships.each do |membership| %>
+        <% deactivation_reason = @membership_deactivation_reasons.fetch(membership.id, nil) if policy(membership).deactivate? && membership.active? %>
         <li class="settings-record settings-member">
           <dl class="settings-record__fields">
             <div><dt>Nome</dt><dd><%= membership.user.name %></dd></div>
@@ -109,18 +110,16 @@
                 <%= button_to "Transferir responsabilidade", "/groups/#{@group.id}/memberships/#{membership.id}/transfer_ownership", class: "ui-button ui-button--secondary ui-button--compact", data: { turbo_confirm: "Transferir a responsabilidade para #{membership.user.name}?" } %>
               <% end %>
               <% if policy(membership).deactivate? && membership.active? %>
-                <% reason = @membership_deactivation_reasons.fetch(membership.id, nil) %>
-                <% if reason %>
-                  <% reason_id = "membership_#{membership.id}_reason" %>
-                  <div class="settings-blocked-action">
-                    <%= button_tag(membership.user_id == current_user.id ? "Sair do grupo" : "Inativar membro", type: "button", disabled: true, aria: { describedby: reason_id }, class: "ui-button ui-button--secondary ui-button--compact") %>
-                    <span id="<%= reason_id %>" class="settings-action-note"><%= reason == "último owner ativo não pode sair" ? "Transfira a responsabilidade antes de sair." : reason %></span>
-                  </div>
+                <% if deactivation_reason %>
+                  <%= button_tag(membership.user_id == current_user.id ? "Sair do grupo" : "Inativar membro", type: "button", disabled: true, aria: { describedby: "membership_#{membership.id}_reason" }, class: "ui-button ui-button--secondary ui-button--compact") %>
                 <% else %>
                   <%= button_to membership.user_id == current_user.id ? "Sair do grupo" : "Inativar membro", "/groups/#{@group.id}/memberships/#{membership.id}/deactivate", class: "ui-button ui-button--secondary ui-button--compact", data: { turbo_confirm: membership.user_id == current_user.id ? "Sair deste grupo?" : "Inativar #{membership.user.name}?" } %>
                 <% end %>
               <% end %>
             </div>
+          <% end %>
+          <% if deactivation_reason %>
+            <span id="membership_<%= membership.id %>_reason" class="settings-record__feedback"><%= deactivation_reason == "último owner ativo não pode sair" ? "Transfira a responsabilidade antes de sair." : deactivation_reason %></span>
           <% end %>
         </li>
       <% end %>
