@@ -6,10 +6,14 @@ class InvitationsController < ApplicationController
   def index
     authorize GroupInvitation, :index?
     visible_invitations = policy_scope(GroupInvitation)
-    visible_invitations.where(expires_at: ..Time.current).find_each do |invitation|
+    pages = invitation_history_pages
+    return unless pages
+
+    visible_invitations.pending.where(expires_at: ..Time.current).find_each do |invitation|
       GroupInvitationExpirer.call(invitation_id: invitation.id)
     end
-    @invitations = visible_invitations.includes(:group, :invited_by_user)
+    @pending_page = GroupInvitationHistoryQuery.pending_page(invitations: visible_invitations, number: pages.fetch(:pending))
+    @terminal_page = GroupInvitationHistoryQuery.terminal_page(invitations: visible_invitations, number: pages.fetch(:closed))
   end
 
   def accept
@@ -24,5 +28,21 @@ class InvitationsController < ApplicationController
     authorize invitation, :decline?
     GroupInvitationDecliner.call(invitation_id: invitation.id, actor_user_id: current_user.id)
     respond_with_refresh(location: invitations_path)
+  end
+
+  private
+
+  def invitation_history_pages
+    legacy_page = params[:page]
+    pending_page = params.fetch(:pending_page, legacy_page || "1")
+    closed_page = params.fetch(:closed_page, legacy_page || "1")
+    return { pending: pending_page.to_i, closed: closed_page.to_i } if valid_page?(pending_page) && valid_page?(closed_page)
+
+    render plain: t("errors.unprocessable_entity"), status: :unprocessable_content
+    nil
+  end
+
+  def valid_page?(page)
+    page.is_a?(String) && /\A[1-9]\d*\z/.match?(page)
   end
 end

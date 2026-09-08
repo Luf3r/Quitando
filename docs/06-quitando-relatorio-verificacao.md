@@ -309,6 +309,6 @@ Os maiores riscos restantes não são contradições documentais, mas hipóteses
 - usuários podem rejeitar o plano quando o destinatário difere da dívida percebida;
 - a premissa de grupos de confiança pode ser estreita demais se registros em nome de terceiros gerarem desconforto.
 
-A implementação seguiu essa ordem até a Fase 13: fundação e `DebtSimplifier` antecederam schema e ledger, e o grafo foi adicionado somente depois do ciclo HTTP e do real-time. Os cenários de destinatário contraintuitivo e despesa registrada por terceiro foram demonstrados sem alterar o ledger. A próxima fase operacional é a Fase 14 — hardening, observabilidade e deploy.
+A implementação seguiu essa ordem até a primeira passagem da Fase 13: fundação e `DebtSimplifier` antecederam schema e ledger, e o grafo foi adicionado somente depois do ciclo HTTP e do real-time. Os cenários de destinatário contraintuitivo e despesa registrada por terceiro foram demonstrados sem alterar o ledger. O gate da Fase 13 foi reaberto para concluir toda a experiência visual; a Fase 14 permanece no Backlog até essa nova evidência integral.
 
 A ordem detalhada, os arquivos de spec e os critérios de saída foram consolidados no [Roadmap de Implementação e Estratégia de Specs](./05-quitando-roadmap-implementacao.md).

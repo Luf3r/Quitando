@@ -2,6 +2,8 @@ class ApplicationController < ActionController::Base
   include Pundit::Authorization
   include TurboRefreshResponse
 
+  helper_method :pending_invitation_count
+
   rescue_from Pundit::NotAuthorizedError, with: :render_forbidden
   rescue_from ExpenseDescriptionEditor::Forbidden, ExpenseCorrector::Forbidden, with: :render_forbidden
   rescue_from PaymentCommand::Forbidden, with: :render_forbidden
@@ -33,5 +35,11 @@ class ApplicationController < ActionController::Base
 
   def render_unprocessable_entity
     render plain: t("errors.unprocessable_entity"), status: :unprocessable_entity
+  end
+
+  def pending_invitation_count
+    return 0 unless user_signed_in?
+
+    current_user.group_invitations_received.pending.where(expires_at: Time.current..).count
   end
 end

@@ -40,14 +40,7 @@ RSpec.describe "Atualizações em tempo real do grupo", type: :system do
       fill_equal_expense!(fixture, description: "Mercado registrado por Carla")
     end
 
-    in_session(:ana) do
-      expect(page).to have_text("pago por #{fixture.fetch(:bruno).email}, registrado por #{fixture.fetch(:carla).email}")
-      expect(page).to have_css("#visualization_table_plan", text: fixture.fetch(:ana).email)
-      expect(page).to have_css("svg[data-layer='plan']")
-      expect(page).to have_css(
-        "svg path[data-from-user-id='#{fixture.fetch(:ana).id}'][data-to-user-id='#{fixture.fetch(:bruno).id}']"
-      )
-    end
+    expect_recent_expense_attribution_in(:ana, fixture)
 
     Capybara.using_session(:ana) do
       click_link "Marcar como enviado"
@@ -55,22 +48,21 @@ RSpec.describe "Atualizações em tempo real do grupo", type: :system do
     end
 
     in_session(:counterparty) do
-      expect(page).to have_text("1 pagamento(s) reportado(s)")
-      expect(page).to have_css("svg[data-layer='bilateral']")
+      expect(page).to have_text("Aguardando outra pessoa")
     end
 
     sign_in_in(:bruno, fixture.fetch(:bruno))
     visit_group_in(:bruno, fixture.fetch(:group))
     Capybara.using_session(:bruno) do
-      click_link "Pagamento reported"
-      click_button "Confirmar pagamento"
+      within("#group_next_action") { click_link "Revisar pagamento" }
+      accept_confirm { click_button "Confirmar pagamento" }
     end
 
     in_session(:ana) do
       expect(page).to have_text("Quitado")
-      expect(page).to have_text("0 pagamento(s) reportado(s)")
-      expect(page).to have_text("pago por #{fixture.fetch(:bruno).email}, registrado por #{fixture.fetch(:carla).email}")
+      expect(page).to have_text("O grupo está quitado.")
     end
+    expect_recent_expense_attribution_in(:ana, fixture)
 
     streamed_snapshot = within_in(:ana, "#group_dashboard_financial_summary") { page.text }
     reloaded_snapshot = in_session(:ana) do
@@ -162,10 +154,19 @@ RSpec.describe "Atualizações em tempo real do grupo", type: :system do
       fill_in "Descrição", with: description
       fill_in "Data", with: "2026-08-23"
       fill_in "Valor (R$)", with: "100,00"
-      select fixture.fetch(:bruno).email, from: "Pago por"
-      uncheck fixture.fetch(:bruno).email
-      uncheck fixture.fetch(:carla).email
-      click_button "Registrar despesa"
+      select fixture.fetch(:bruno).name, from: "Pago por"
+      uncheck fixture.fetch(:bruno).name
+      uncheck fixture.fetch(:carla).name
+      click_button "Revisar divisão"
+    end
+    within("#group_dialog") { click_button "Confirmar despesa" }
+  end
+
+  def expect_recent_expense_attribution_in(session_name, fixture)
+    in_session(session_name) do
+      recent_activity = page.find("#group_recent_activity")
+      expect(recent_activity).to have_css("[data-activity-field='paid-by'] dd", text: fixture.fetch(:bruno).name)
+      expect(recent_activity).to have_css("[data-activity-field='created-by'] dd", text: fixture.fetch(:carla).name)
     end
   end
 

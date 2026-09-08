@@ -1,11 +1,11 @@
 <%= turbo_frame_tag "group_dialog" do %>
   <section aria-labelledby="registrar-pagamento-dialogo" class="p-5">
-    <div class="flex items-center justify-between gap-4"><h1 id="registrar-pagamento-dialogo" class="text-xl font-semibold">Registrar pagamento</h1><button type="button" data-action="group-dialog#close" class="text-sm underline">Fechar</button></div>
+    <div class="dialog-header"><h1 id="registrar-pagamento-dialogo">Registrar pagamento</h1><button type="button" data-action="group-dialog#close" class="ui-button ui-button--quiet ui-button--compact">Fechar</button></div>
     <% if @payment_error %><p role="alert" class="mt-3 rounded border border-rose-300 bg-rose-50 p-3 text-rose-900"><%= @payment_error %></p><% end %>
     <%= render "payments/conflict_context", payment_conflict: @payment_conflict, dashboard: @dashboard %>
     <% if @payment_form %>
-      <p class="mt-3"><%= @dashboard.participant_emails.fetch(@payment_form.fetch(:from_user_id), "Participante indisponível") %> para <%= @dashboard.participant_emails.fetch(@payment_form.fetch(:to_user_id), "Participante indisponível") %>.</p>
-      <%= render "payments/report_form", group: @group, payment_form: @payment_form %>
+      <p class="mt-3"><%= @dashboard.participant_names.fetch(@payment_form.fetch(:from_user_id), "Participante indisponível") %> para <%= @dashboard.participant_names.fetch(@payment_form.fetch(:to_user_id), "Participante indisponível") %>.</p>
+      <%= render "payments/report_form", group: @group, payment_form: @payment_form, dashboard: @dashboard %>
     <% end %>
     <% if @dashboard && (@payment_conflict || @payment_error) %>
       <section class="mt-5" aria-labelledby="dialog_current_plan_title">

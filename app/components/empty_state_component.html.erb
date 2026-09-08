@@ -1,0 +1,7 @@
+<section class="ui-empty-state">
+  <h2 class="ui-empty-state__title"><%= @title %></h2>
+  <p class="ui-empty-state__body"><%= @body %></p>
+  <% if @action_label.present? && @action_path.present? %>
+    <%= render ButtonComponent.new(label: @action_label, href: @action_path) %>
+  <% end %>
+</section>

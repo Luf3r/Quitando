@@ -798,11 +798,11 @@ Dois navegadores podem observar mudanças em tempo real, mas o sistema continua 
 
 ## 16. Fase 13 — Visualização, explicação e acessibilidade
 
-**Estado da fase:** em revalidação após correção de concorrência identificada em code review. A composição do dashboard deve manter o lock de grupo durante toda a leitura e as verificações integrais precisam ser demonstradas novamente.
+**Estado da fase:** em revisão. As entregas 13.1 a 13.21 têm evidência automatizada fresca; a aceitação humana final da 13.21 ainda é necessária para concluir a reorganização da experiência dos grupos em torno da situação pessoal, próxima ação e mudanças recentes. A Fase 14 não absorve essa entrega.
 
 ### 16.1 Objetivo
 
-Adicionar o diferencial demonstrativo sem transformar o grafo em requisito operacional.
+Entregar uma experiência pública e autenticada completa, coerente, responsiva e acessível, sem transformar JavaScript, Action Cable ou o grafo em requisitos operacionais.
 
 ### 16.2 Implementar
 
@@ -814,6 +814,16 @@ Adicionar o diferencial demonstrativo sem transformar o grafo em requisito opera
 - SVG/D3;
 - trace opcional do algoritmo;
 - estados vazios, foco, `aria-live` e `prefers-reduced-motion`.
+- fundação visual com tokens semânticos, Outfit self-hosted e temas `system`, `light` e `dark`;
+- landing pública em `/`, autenticação localizada e conta pessoal sem exclusão;
+- nome obrigatório de usuário, normalizado e limitado a 80 caracteres, persistido com `NOT NULL` e constraint contra vazio após trim;
+- shell responsivo e quatro destinos por grupo: Resumo, Plano, Histórico e Configurações;
+- cards de grupos e convites orientados a ação, sem executar o simplificador na listagem;
+- preview financeiro no servidor e revisão obrigatória de despesas e correções;
+- histórico auditável paginado em 25 fatos;
+- histórico auditável de convites recebidos e enviados, sem novas transições ou permissões financeiras;
+- cenário público demo reproduzível, em banco e deploy próprios, descartável e resetado integralmente a cada seis horas;
+- ativos reais, páginas de erro e screenshots nos dois temas.
 
 ### 16.3 Specs
 
@@ -828,10 +838,97 @@ Adicionar o diferencial demonstrativo sem transformar o grafo em requisito opera
 - comparação histórica não é apresentada como trabalho restante após reports;
 - navegação por teclado e foco dos modais funcionam.
 - composição concorrente mantém o lock de grupo, impede commit financeiro intercalado e devolve um snapshot único sem repetição ilimitada.
+- landing distingue visitante e usuário autenticado, mantém a ordem prevista e não inventa pricing, prova social ou métricas;
+- tema respeita preferência do sistema, override persistido e descarte de valor inválido antes da primeira pintura;
+- cards de grupo não chamam `DebtSimplifier`;
+- Resumo usa snapshot leve e Plano preserva o snapshot completo sob lock;
+- previews iguais e exatos usam centavos inteiros, exibem residual, retornam `422` quando inválidos e nunca persistem;
+- histórico usa ordenação total e retorna `422` para página malformada;
+- todas as jornadas operam sem JavaScript e mantêm equivalência após stream, desconexão ou grafo indisponível;
+- temas claro e escuro funcionam em 360, 768 e 1440 px, por teclado e com movimento reduzido;
+- chips preservam o estado canônico em atributo de dados e combinam texto, contraste, borda e marcador visual;
+- Resumo e Histórico compartilham registros financeiros compactos; detalhes de pagamento e despesa usam metadados rotulados e Configurações não compõe campos por pontuação solta.
+- strings visíveis não contêm em dash ou en dash.
 
-### 16.4 Gate de saída
+### 16.4 Entrega 13.15 — Histórico auditável de convites
 
-O produto pode ser demonstrado visualmente sem introduzir nova fonte de verdade ou bloquear acessibilidade.
+- `GroupInvitationPolicy::Scope` inclui todos os convites recebidos; a separação entre pendentes e terminais ocorre explicitamente na consulta e apresentação;
+- `/invitations?page=N` apresenta as seções Pendentes e Encerrados, com 25 itens por página: Pendentes usam `created_at` decrescente e identificador como desempate; Encerrados usam timestamp terminal decrescente e identificador como desempate. Página malformada retorna `422` antes da consulta;
+- somente o owner ativo consulta em Configurações o histórico de convites enviados; apenas convites pendentes exibem ações.
+
+As specs demonstram escopo recebido com convite terminal, paginação e ordenação, `422` antes de consulta sensível e autorização do histórico enviado. Esta entrega não altera estados de convite, participação financeira, ledger ou permissões de comandos financeiros.
+
+### 16.5 Entrega 13.16 — Cenário público demo reproduzível
+
+- com `QUITANDO_DEMO_MODE=true`, o cenário é instalado antes de aceitar tráfego por `db:prepare` e usa exclusivamente comandos reais de domínio;
+- as quatro contas públicas são Ana, Bruno, Carla e Diego; a senha pública vem de `QUITANDO_DEMO_PASSWORD`;
+- `users.demo_account` é imutável pelo fluxo demo e `demo_scenarios` registra `key`, `version`, `installed_at` e `last_reset_at`; conta demo não altera e-mail ou senha nem recebe recuperação que revele sua existência;
+- banco e deploy demo são separados e descartáveis; dados reais duráveis usam outro banco e deploy com `QUITANDO_DEMO_MODE=false`;
+- reset integral transacional ocorre a cada seis horas, sob advisory lock PostgreSQL compartilhado, com `lock_timeout=10s`, `statement_timeout=60s` e no máximo cinco novas tentativas, uma por minuto;
+- reset manual requer `CONFIRM_DEMO_RESET=quitando-demo-only` e coincidência exata entre `QUITANDO_DEMO_DATABASE_NAME` e o banco atual antes de qualquer `TRUNCATE`.
+
+O reset descobre as tabelas da base primária, exclui `schema_migrations` e `ar_internal_metadata` e mantém lock e escritas na mesma transação. Eventos operacionais de início, sucesso e falha não expõem descrições financeiras; `Solid Queue` agenda o reset somente em production demo.
+
+As specs e o verificador integrado devem provar instalação inicial e idempotente, snapshot canônico, mutação, reset real, rollback integral, recusa antes de `TRUNCATE` para banco não autorizado, concorrência sem duplicação, cleanup exato e proteção das credenciais demo. Não há fallback que simule instalação, reset ou processamento de imagem.
+
+O cenário canônico v2 usa o marcador `canonical-v2`/2 e fixa 4 usuários, 6 grupos, 37 despesas, 7 pagamentos, 18 convites, 19 memberships e 1 marcador. Ele cobre correção imutável, residual `5000/5000/5000/4999`, saldo oficial e projetado, pagamentos cancelado/reportado/confirmado, duas páginas de histórico e a comparação `8 → 6 → 3` de Contas. Instalação sobre marcador incompatível falha antes de qualquer escrita; somente o reset integral autorizado pode substituir o cenário.
+
+### 16.6 Gate de saída
+
+Uma pessoa conhece o produto pela landing e executa todas as jornadas do MVP em uma interface coerente, responsiva e acessível, por HTTP sem JavaScript e com melhorias progressivas quando Turbo, Action Cable e o grafo estão disponíveis. Além das verificações já definidas e preservadas do histórico de convites e do cenário demo, o gate exige demonstrar que cada área de grupo apresenta situação, próxima ação e mudanças recentes sem alterar o domínio financeiro. O gate inclui suíte completa, build Tailwind, `bin/ci`, imagem de produção, diff limpo e Lighthouse mobile dentro dos limites documentados no design da fase.
+
+### 16.7 Entrega 13.17 — Shell e lista de grupos orientada à ação
+
+- a navegação global móvel usa um menu nativo compacto com os mesmos destinos e fallback HTTP; a navegação interna do grupo passa a uma grade 2x2 abaixo de 480 px;
+- o banner demo é expandido na landing e login, e recolhido dentro do app sem esconder credenciais nem o próximo reset;
+- a criação de grupo fica em `details`, aberto sem grupos e recolhido para recorrentes;
+- cada card mostra nome, estado, participantes em português e uma frase pessoal de situação; não mostra “Pendências 0”;
+- `GroupListQuery::Card` separa reports recebidos, enviados e alheios, define `attention_rank` e ordena por atenção, atualização decrescente e identificador, sem chamar `DebtSimplifier`.
+
+As specs de query, request, componente e sistema cobrem a ordenação e mensagem dos cards, ausência do simplificador, `details` de criação e demo, os destinos do menu nativo e a grade sem estouro em 360 px. Esta entrega preserva ledger, autorização, URLs, Turbo e broadcasts existentes; não cria estado financeiro, migration ou dependência visual.
+
+### 16.8 Entrega 13.18 — Resumo orientado à próxima ação
+
+- `GroupOverviewQuery::Snapshot` inclui os três fatos recentes sob o mesmo lock dos saldos, e `GroupHistoryQuery.recent` reutiliza a hidratação e ordenação auditáveis;
+- presenter puro deriva estado de atenção, ação principal, pendências pessoais/alheias e linhas de participantes, sem persistência ou cálculo financeiro no cliente;
+- o Resumo torna saldo oficial e próxima ação predominantes, mostra projeção apenas quando difere, limita atividade a três fatos e deixa mutações administrativas nas páginas dedicadas;
+- grupo arquivado não recebe ações de escrita; HTML, URLs, morph refresh e broadcasts existentes permanecem a fonte de reconciliação.
+
+### 16.9 Entrega 13.19 — Despesas e pagamentos orientados à ação
+
+- a criação começa por valor, descrição, pagador, data e divisão; o pagador inicial é a pessoa atual, erros preservam valores submetidos e correções preservam o pagador original;
+- os controles usam `FieldComponent` e tokens semânticos; Stimulus apenas alterna a visibilidade da divisão, enquanto o HTML sem JavaScript mantém ambos os fieldsets e o servidor decide o tipo;
+- preview de criação e correção explica total, pagador, participantes, shares e residual determinístico antes da confirmação append-only;
+- report de pagamento apresenta origem, destino, sugestão atual, faixa para parcialidade e que somente a confirmação altera o saldo oficial.
+
+As specs de componente, request e sistema cobrem pagador inicial, preservação, preview, divisão com e sem JavaScript, parcialidade, limites e autorização. Não há migration, pagamento arbitrário, aprovação de despesa, cálculo financeiro no cliente ou alteração de ledger.
+
+### 16.10 Entrega 13.20 — Plano, Histórico e Configurações orientados à ação
+
+- Plano apresenta primeiro pagamentos pendentes e “Ainda falta”; a pessoa que deve enviar pode iniciar o report no próprio item. Saldo projetado, métricas, tabelas, grafo, explicação e trace ficam em “Entenda o cálculo”, inicialmente recolhido, sem retirar as três tabelas do HTML;
+- Histórico preserva paginação e cadeias de correção, com linhas que expõem tipo, descrição, atores, valor, estado e horário;
+- Configurações ordena nome e convites, membros, administração avançada e arquivamento. A interface usa “Responsável pelo grupo”, enquanto `owner` continua sendo o termo do domínio. Ações bloqueadas permanecem visíveis e associam o motivo por `aria-describedby`.
+
+As specs de request verificam a ação do Plano, tabelas equivalentes, linhas do Histórico e a associação acessível de controles bloqueados. Esta entrega não altera ledger, autorização, URLs, Turbo, broadcasts, migrations nem os estados financeiros.
+
+O gate integrado foi demonstrado no Docker com `bin/ci`: a auditoria real do Importmap recuperou duas falhas transitórias de transporte do npm, 650 specs não-system e 28 system specs passaram, assim como lint, build, seeds e o verificador do cenário demo. O retry é limitado e uma sequência sem auditoria concluída permanece falha explícita.
+
+### 16.11 Entrega 13.21 — Gate responsivo, acessibilidade e aceitação final
+
+- Cadastro exige nome antes de e-mail; Conta permite editar nome, e-mail e senha mediante senha atual; nome é a identidade principal nas superfícies financeiras, sem substituir `User` como participante do MVP; `participant_names` substitui o contrato interno anterior e o grafo combina rótulo curto com nome completo na legenda, título e tabela;
+- a migration de `users.name` reconcilia somente Ana, Bruno, Carla e Diego pelos e-mails demo canônicos, recusa usuários residuais sem nome e preserva o snapshot estrutural e financeiro do cenário v2;
+- Resumo, Plano, cálculo e Histórico usam métricas, registros e tabelas responsivas: o grafo aparece integralmente antes da tabela equivalente, e tabelas comparativas têm região rolável acessível sem transformar falha do grafo em sucesso;
+- as jornadas existentes cobrem navegação nativa, teclado, movimento reduzido, diálogo e foco, formulários com e sem JavaScript, equivalência entre tabela, grafo, stream e reload HTTP;
+- a rodada de refinamento mantém coral primário somente para submits e próxima ação dominante; consulta, revisão, acompanhamento e adição usam ações secundárias compactas, e confirmações terminais usam perigo;
+- `StatusBadgeComponent` recebe estado canônico e rótulo contextual opcional, expondo ambos os dados semânticos; atividade, Histórico, Configurações, pagamento e despesa usam chips positivo, atenção, neutro ou negativo sem depender apenas de cor;
+- Pagamento recolhe o cancelamento nativo até ativação deliberada; Despesa separa valor, estado, data, pagador, autoria, edição e correção; as duas telas e o Histórico limitam a coluna de leitura e empilham campos no mobile.
+- Os controles seguem contratos de componente: mutações por `href` usam formulário, links desabilitados não navegam, tamanhos padrão e compacto são independentes da variante, alertas distinguem sucesso, informação, aviso e erro; os dois históricos de convites paginam com parâmetros independentes e mantêm a outra lista na posição atual.
+- A confirmação de criação ou correção é vinculada à revisão local do formulário: cada edição invalida o preview, respostas antigas ficam visivelmente não confirmáveis e apenas nova resposta do servidor para a versão atual reabilita a ação.
+- Lighthouse mobile local registrou landing com LCP de 1,85 s, CLS de 0,061 e acessibilidade 1,00, e Resumo autenticado com LCP de 1,89 s, CLS de 0,00047 e acessibilidade 1,00; a imagem de produção e `bin/ci` foram verificados no Docker, com 650 specs não-system e 28 system specs.
+
+O gate não está concluído apenas pela automação: permanece necessária a aceitação manual em cada estado relevante, confirmando que uma pessoa identifica saldo e próxima ação no primeiro bloco e registra uma despesa igual sem tocar na divisão exata. A rodada também exige inspeção de Resumo, Histórico, Configurações, Pagamento e Despesa em 360, 768 e 1440 px nos dois temas, incluindo cancelamento inicialmente fechado. Até esse registro, a fase e a subissue ficam em `Review`, e a Fase 14 não é promovida.
+
+A aceitação humana usa Ana como roteiro: revisar o recebido na Viagem, acompanhar o envio na Configuração, marcar R$ 850 em Contas sem usar o grafo, comparar oficial/projetado e as três camadas, consultar o quitado e o arquivado; Bruno confirma a transferência, a atualização por stream e o reload são comparados, e o reset deve restaurar o snapshot v2.
 
 ---
 
@@ -839,19 +936,19 @@ O produto pode ser demonstrado visualmente sem introduzir nova fonte de verdade 
 
 ### 17.1 Objetivo
 
-Preparar o MVP para demonstração pública e piloto real.
+Preparar operacionalmente o MVP para hardening, observabilidade e deploy após a conclusão do gate da Fase 13.
 
 ### 17.2 Implementar
 
 - logs estruturados sem dados financeiros desnecessários;
 - monitoramento de jobs, broadcasts e invariantes;
-- seeds ou cenário de demonstração;
+- RUM ou consulta CrUX para INP de campo, com acompanhamento do p75 por rota e dispositivo;
 - proteção de rate limit onde aplicável;
 - backups e configuração de produção;
 - deploy com Kamal;
 - smoke tests;
 - revisão de índices e queries;
-- documentação do README e GIF/demo;
+- documentação operacional do README;
 - roteiro de teste com usuário para destinatário contraintuitivo e despesa registrada por terceiro.
 
 ### 17.3 Verificações
@@ -860,11 +957,11 @@ Preparar o MVP para demonstração pública e piloto real.
 - erros não vazam descrições sensíveis;
 - jobs e broadcasts falhos não corrompem comandos já confirmados;
 - página inicial e fluxo principal funcionam após deploy limpo;
-- o cenário demo pode ser recriado de forma determinística.
+- o INP de campo do fluxo principal móvel permanece abaixo de 200 ms no p75.
 
 ### 17.4 Gate de saída
 
-Uma pessoa externa consegue usar o fluxo principal em ambiente publicado e compreender saldo, pendência, plano e encerramento.
+O ambiente público possui observabilidade, proteção operacional, backups, configuração reproduzível, smoke tests, rollback demonstrado e INP de campo do fluxo principal móvel abaixo de 200 ms no p75. Nenhuma tela ou fluxo visual conhecido fica postergado para esta fase.
 
 ---
 

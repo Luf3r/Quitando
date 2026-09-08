@@ -1,0 +1,14 @@
+<div class="ui-field">
+  <%= label_tag field_id, label, class: "ui-field__label" %>
+  <% if hint.present? %>
+    <p id="<%= field_id %>_hint" class="ui-field__hint"><%= hint %></p>
+  <% end %>
+  <% if type == :select %>
+    <%= select_tag name, options_for_select(choices, value), id: field_id, class: "ui-field__control", aria: { describedby: described_by, invalid: errors.any? }, **options %>
+  <% else %>
+    <%= tag.input type: type, id: field_id, name: name, value: value, class: "ui-field__control", aria: { describedby: described_by, invalid: errors.any? }, **options %>
+  <% end %>
+  <% if errors.any? %>
+    <p id="<%= field_id %>_error" class="ui-field__error"><%= errors.to_sentence %></p>
+  <% end %>
+</div>

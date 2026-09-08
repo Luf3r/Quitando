@@ -1,0 +1,8 @@
+<section class="group-history-page group-reading-column" aria-labelledby="history-title">
+  <%= render "groups/navigation", group: @group %>
+  <header class="ui-page-header"><div><p class="eyebrow"><%= @group.name %></p><h1 id="history-title" class="ui-page-header__title">Histórico</h1><p class="ui-page-header__description"><%= @history_page.total_facts %> fatos registrados no grupo.</p></div></header>
+  <% if @history_page.entries.any? %>
+    <ol class="history-list financial-activity-list"><% @history_page.entries.each do |entry| %><li class="history-entry"><%= render FinancialActivityComponent.new(entry:, group: @group) %></li><% end %></ol>
+    <% if @history_page.total_pages > 1 %><nav class="pagination" aria-label="Paginação do histórico"><% if @history_page.number > 1 %><%= link_to "Anterior", group_history_path(@group, page: @history_page.number - 1) %><% end %><span>Página <%= @history_page.number %> de <%= @history_page.total_pages %></span><% if @history_page.number < @history_page.total_pages %><%= link_to "Próxima", group_history_path(@group, page: @history_page.number + 1) %><% end %></nav><% end %>
+  <% else %><%= render EmptyStateComponent.new(title: "Nenhum fato financeiro ainda", body: "As despesas e pagamentos confirmados aparecerão aqui.") %><% end %>
+</section>

@@ -250,10 +250,10 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 
 ## 11. Milestone atual
 
-- **Última fase concluída:** Fase 12 — Turbo Frames, Streams e Action Cable.
-- **Fase atual:** Fase 13 — Visualização, explicação e acessibilidade (correção de concorrência).
-- **Status atual:** o gate foi reaberto para eliminar a repetição ilimitada do dashboard e provar que o lock do grupo preserva um único snapshot financeiro.
-- **Trabalho executável atual:** #124 em `In progress`; concluir a prova de contenção PostgreSQL, as verificações do gate e a reconciliação documental.
+- **Última entrega demonstrada automaticamente:** Fase 13.21 — identidade por nome e refinamento responsivo das superfícies financeiras.
+- **Fase atual:** Fase 13, reaberta para as entregas 13.17 a 13.21 de UX orientada à ação nos grupos.
+- **Status atual:** a #144 está em `Review` após a revisão de consistência visual e interação. As verificações automatizadas cobrem nome obrigatório e migration segura, snapshot `4:6:37:7:18:19:1`, saldos, histórico, preview invalidado após edição, paginação independente de convites, roteiro da Ana e métricas `8→6→3`; a Fase 13 continua pendente da aceitação humana e a Fase 14 permanece posterior.
+- **Gate pendente da Fase 13:** a pessoa avaliadora deve usar o roteiro Ana — revisar recebido, acompanhar enviado, marcar R$ 850, adicionar despesa, consultar quitado e arquivado — além de comparar stream/reload e reset v2. O cenário demo permanece descartável, com banco/deploy separados, `QUITANDO_DEMO_MODE=true`, reset integral a cada seis horas e `bin/verify-demo-scenario`; dados reais duráveis exigem banco e deploy separados com `QUITANDO_DEMO_MODE=false`.
 - **Gate integrado da Fase 0:** `bin/ci` executa localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação. O hardening adicional da PR #38 também foi aprovado nos checks remotos atuais.
 
 **Integrado e verificado até agora:**
@@ -347,7 +347,7 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 - a jornada Selenium com navegadores independentes prova despesa de terceiro, report, confirmação, creator/pagador distintos e equivalência entre stream e reload, usando Solid Cable e PostgreSQL reais também no ambiente de teste;
 - desconexão Cable apresenta aviso, não simula atualização e converge por reload HTTP.
 
-**Concluído e verificado na Fase 13:**
+**Concluído e preservado da primeira passagem da Fase 13 (13.1 a 13.6):**
 
 - `ObligationGraphBuilder` deriva relações históricas agregadas e compensação bilateral de despesas ativas, preserva participantes inativos do histórico, ordena arestas e mantém agregados acima de `bigint` como `Integer`, sem escrita financeira;
 - `DebtSimplifier#call_with_trace` produz o plano e passos determinísticos no mesmo ciclo, preservando o contrato de `call`, sinais dos saldos, imutabilidade, propriedades e isolamento de Rails/ActiveRecord;
@@ -356,6 +356,13 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 - specs de navegador cobrem seleção por teclado, `aria-live`, foco inicial e retorno por botão/Escape, contraste WCAG AA, padrões além de cor, movimento reduzido, viewport móvel, estados vazios e redraw por Turbo morph;
 - Tailwind é construído explicitamente no `bin/ci`, e auditoria do importmap cobre o módulo mínimo `d3-selection` fixado localmente e carregado somente quando a visualização conecta.
 - a leitura concorrente do dashboard é delimitada pela `financial_state_version`: uma alteração financeira confirmada entre o plano e as obrigações descarta a composição parcial e retorna uma composição integral da versão nova, demonstrada em PostgreSQL real.
+
+**Verificado e preservado da passagem reaberta da Fase 13 (13.7 a 13.14):**
+
+- landing, autenticação, conta pessoal, shell e quatro destinos por grupo foram redesenhados e cobertos por jornadas HTTP, Turbo e Action Cable;
+- previews e revisões de despesas, histórico auditável, configurações, bloqueios explicáveis, ativos, páginas de erro e temas foram integrados sem alterar os invariantes financeiros;
+- pre-flight visual e de acessibilidade, capturas responsivas, Lighthouse mobile, suíte, Tailwind, `bin/ci`, imagem de produção e integridade do diff foram reconciliados;
+- a medição de INP de campo foi movida para a Fase 14, onde haverá RUM ou CrUX depois do deploy.
 
 Atualize esta seção e o [GitHub Project](https://github.com/users/Luf3r/projects/2) sempre que a tarefa ativa, uma entrega verificável, pendência, fase ou gate mudar. O estado detalhado e os critérios de saída ficam no [roadmap de implementação](./docs/05-quitando-roadmap-implementacao.md).
 

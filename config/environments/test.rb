@@ -32,6 +32,10 @@ Rails.application.configure do
   # Store uploaded files on the local file system in a temporary directory.
   config.active_storage.service = :test
 
+  # Migration verification installs temporary database guards that must never be
+  # serialized into the shared schema artifact.
+  config.active_record.dump_schema_after_migration = false if ENV["FINANCIAL_MIGRATION_VERIFICATION"] == "true"
+
   # Tell Action Mailer not to deliver emails to the real world.
   # The :test delivery method accumulates sent emails in the
   # ActionMailer::Base.deliveries array.

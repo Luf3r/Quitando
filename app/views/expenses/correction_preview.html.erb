@@ -1,0 +1,26 @@
+<turbo-frame id="correction_preview">
+  <% if @preview_error.present? %>
+    <div class="ui-alert ui-alert--error" role="alert" tabindex="-1"><%= @preview_error %></div>
+  <% else %>
+    <section class="expense-preview" aria-labelledby="correction-preview-title" data-preview-guard-revision-value="<%= @submitted_correction.fetch("preview_revision", "0") %>">
+      <h2 id="correction-preview-title">Revise a correção</h2>
+      <p>Valor total: <%= render MoneyComponent.new(cents: @preview.amount_cents, currency_code: @group.currency_code) %>.</p>
+      <% payer = @group.memberships.find { |membership| membership.user_id == @submitted_correction.fetch("paid_by_user_id") } %>
+      <% participant_names = @preview.shares.filter_map { |share| @group.memberships.find { |membership| membership.user_id == share.fetch(:user_id) }&.user&.name } %>
+      <% residual_cents = @preview.split_type == "equal" ? @preview.amount_cents % @preview.shares.length : 0 %>
+      <dl class="expense-preview__facts">
+        <div><dt>Pagador</dt><dd><%= payer&.user&.name || "Participante indisponível" %></dd></div>
+        <div><dt>Participantes</dt><dd><%= participant_names.to_sentence(two_words_connector: " e ", last_word_connector: ", e ") %></dd></div>
+        <div><dt>Residual</dt><dd><%= render MoneyComponent.new(cents: residual_cents, currency_code: @group.currency_code) %> distribuído de forma determinística.</dd></div>
+      </dl>
+      <ul><% @preview.shares.each do |share| %><li><%= @group.memberships.find { |membership| membership.user_id == share.fetch(:user_id) }&.user&.name %>: <%= render MoneyComponent.new(cents: share.fetch(:amount_owed_cents), currency_code: @group.currency_code) %></li><% end %></ul>
+      <p>Esta é uma revisão derivada. A despesa original ainda não foi anulada.</p>
+      <%= form_with url: "/groups/#{@group.id}/expenses/#{@expense.id}/correct", scope: :correction, class: "expense-preview__confirmation", data: { turbo_stream: true } do |form| %>
+        <% %w[reason description amount_text paid_by_user_id split_type expected_financial_state_version idempotency_key].each do |attribute| %><%= form.hidden_field attribute, value: @submitted_correction.fetch(attribute) %><% end %>
+        <% Array(@submitted_correction["participant_user_ids"]).each do |user_id| %><%= hidden_field_tag "correction[participant_user_ids][]", user_id %><% end %>
+        <% (@submitted_correction["shares"] || {}).each do |index, share| %><%= hidden_field_tag "correction[shares][#{index}][user_id]", share["user_id"] %><%= hidden_field_tag "correction[shares][#{index}][amount_text]", share["amount_text"] %><% end %>
+        <%= form.submit "Confirmar correção", class: "ui-button ui-button--primary", data: { preview_guard_target: "confirmation" } %>
+      <% end %>
+    </section>
+  <% end %>
+</turbo-frame>

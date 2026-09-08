@@ -1,0 +1,29 @@
+<section class="auth-page" aria-labelledby="registration-title">
+  <div class="auth-page__intro">
+    <p class="eyebrow">Comece com um grupo</p>
+    <h1 id="registration-title">Criar sua conta</h1>
+    <p>Você poderá criar um grupo ou entrar por convite depois do cadastro.</p>
+  </div>
+  <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { class: "auth-form" }) do |form| %>
+    <%= render FormErrorsComponent.new(messages: resource.errors.full_messages) if resource.errors.any? %>
+    <div class="ui-field">
+      <%= form.label :name, "Nome", class: "ui-field__label" %>
+      <%= form.text_field :name, autofocus: true, autocomplete: "name", maxlength: 80, required: true, class: "ui-field__control" %>
+    </div>
+    <div class="ui-field">
+      <%= form.label :email, "E-mail", class: "ui-field__label" %>
+      <%= form.email_field :email, autocomplete: "email", class: "ui-field__control" %>
+    </div>
+    <div class="ui-field">
+      <%= form.label :password, "Senha", class: "ui-field__label" %>
+      <%= form.password_field :password, autocomplete: "new-password", class: "ui-field__control" %>
+      <% if @minimum_password_length %><p class="ui-field__hint">Use ao menos <%= @minimum_password_length %> caracteres.</p><% end %>
+    </div>
+    <div class="ui-field">
+      <%= form.label :password_confirmation, "Confirme a senha", class: "ui-field__label" %>
+      <%= form.password_field :password_confirmation, autocomplete: "new-password", class: "ui-field__control" %>
+    </div>
+    <%= form.submit "Criar conta", class: "ui-button ui-button--primary" %>
+  <% end %>
+  <p class="auth-page__links"><%= link_to "Já tenho conta", new_session_path(resource_name) %></p>
+</section>

@@ -1,0 +1,38 @@
+<%= render "groups/realtime_shell", group: @group %>
+
+<section class="group-plan-page" aria-labelledby="plan-title">
+  <%= link_to "Voltar aos grupos", groups_path, class: "back-link" %>
+  <%= render "groups/navigation", group: @group %>
+  <header class="ui-page-header">
+    <div>
+      <p class="eyebrow"><%= @group.name %></p>
+      <h1 id="plan-title" class="ui-page-header__title">Plano líquido</h1>
+      <p class="ui-page-header__description">Sugestões derivadas do saldo projetado. Elas não são pagamentos realizados.</p>
+    </div>
+  </header>
+
+  <div class="plan-regions">
+    <section class="plan-section" aria-labelledby="pending-title">
+      <h2 id="pending-title">Pendências</h2>
+      <% if @dashboard.pending_payments.any? %>
+        <ul class="transfer-list plan-list"><% @dashboard.pending_payments.each do |payment| %><li><span class="transfer-list__from"><%= payment.from_user.name %></span><span class="transfer-list__amount"><%= render MoneyComponent.new(cents: payment.amount_cents, currency_code: @group.currency_code) %></span><span class="transfer-list__to"><%= payment.to_user.name %></span><%= link_to "Ver pagamento", group_payment_path(@group, payment), class: "transfer-list__action" %></li><% end %></ul>
+      <% else %><p>Nenhum pagamento aguarda confirmação.</p><% end %>
+    </section>
+
+    <section class="plan-section" aria-labelledby="suggestions-title">
+      <h2 id="suggestions-title">Ainda falta</h2>
+      <% if @dashboard.settlement_plan.any? %>
+        <ol class="transfer-list plan-list"><% @dashboard.settlement_plan.each do |transfer| %><li><span class="transfer-list__from"><%= @dashboard.participant_names.fetch(transfer.from_user_id) %></span><span class="transfer-list__amount"><%= render MoneyComponent.new(cents: transfer.amount_cents, currency_code: @group.currency_code) %></span><span class="transfer-list__to"><%= @dashboard.participant_names.fetch(transfer.to_user_id) %></span><% if transfer.from_user_id == current_user.id && !@group.archived_at? %><span class="transfer-list__action"><%= render ButtonComponent.new(label: "Marcar como enviado", href: new_group_payment_path(@group, to_user_id: transfer.to_user_id), variant: :secondary, size: :compact, data: { turbo_frame: "group_dialog" }) %></span><% end %></li><% end %></ol>
+      <% else %><p>Não há transferências sugeridas neste estado.</p><% end %>
+    </section>
+  </div>
+
+  <details id="plan_explanation" class="plan-explanation">
+    <summary>Entenda o cálculo</summary>
+    <section class="plan-section" aria-labelledby="projected-title">
+      <h2 id="projected-title">Saldo projetado restante</h2>
+      <dl class="plan-balances"><% @dashboard.projected_balances.each do |user_id, cents| %><div><dt><%= @dashboard.participant_names.fetch(user_id) %></dt><dd><%= render MoneyComponent.new(cents:, currency_code: @group.currency_code) %></dd></div><% end %></dl>
+    </section>
+    <%= render "groups/visualization", group: @group, dashboard: @dashboard %>
+  </details>
+</section>

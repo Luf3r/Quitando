@@ -1,6 +1,6 @@
 <% id_prefix = local_assigns.fetch(:id_prefix, "visualization") %>
 <section id="<%= id_prefix %>_panel_<%= layer %>" aria-labelledby="<%= id_prefix %>_caption_<%= layer %>" data-visualization-layer-panel="<%= layer %>">
-  <table id="<%= id_prefix %>_table_<%= layer %>" class="w-full border-collapse text-left">
+  <table id="<%= id_prefix %>_table_<%= layer %>" class="comparison-table">
     <caption id="<%= id_prefix %>_caption_<%= layer %>" class="mb-2 text-left font-medium"><%= t("financial_visualization.layers.#{layer}.title") %></caption>
     <thead>
       <tr class="border-b border-slate-400">
@@ -19,14 +19,14 @@
             data-to-user-id="<%= edge.to_user_id %>"
             data-amount-cents="<%= edge.amount_cents %>"
           >
-            <td class="py-2 pr-3"><%= dashboard.participant_emails.fetch(edge.from_user_id) %></td>
-            <td class="py-2 pr-3"><%= dashboard.participant_emails.fetch(edge.to_user_id) %></td>
-            <td class="py-2 pr-3"><%= render MoneyComponent.new(cents: edge.amount_cents, currency_code: group.currency_code) %></td>
-            <td class="py-2">
+            <td class="comparison-table__identity"><%= dashboard.participant_names.fetch(edge.from_user_id) %></td>
+            <td class="comparison-table__identity"><%= dashboard.participant_names.fetch(edge.to_user_id) %></td>
+            <td class="comparison-table__amount"><%= render MoneyComponent.new(cents: edge.amount_cents, currency_code: group.currency_code) %></td>
+            <td class="comparison-table__action">
               <% if layer == :plan && edge.from_user_id == current_user.id && !group.archived_at? %>
-                <%= link_to t("financial_visualization.table.report"), new_group_payment_path(group, to_user_id: edge.to_user_id), data: { turbo_frame: "group_dialog" }, class: "inline-block rounded bg-slate-900 px-3 py-1 text-white" %>
+                <%= link_to t("financial_visualization.table.report"), new_group_payment_path(group, to_user_id: edge.to_user_id), data: { turbo_frame: "group_dialog" }, class: "ui-button ui-button--secondary ui-button--compact" %>
               <% else %>
-                <span aria-label="<%= t("financial_visualization.table.no_action") %>">—</span>
+                <span aria-label="<%= t("financial_visualization.table.no_action") %>">-</span>
               <% end %>
             </td>
           </tr>

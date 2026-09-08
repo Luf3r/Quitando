@@ -11,7 +11,7 @@ class GroupInvitationPolicy < Struct.new(:user, :invitation)
 
   class Scope < Struct.new(:user, :scope)
     def resolve
-      scope.where(invited_user_id: user.id, status: :pending)
+      scope.where(invited_user_id: user.id)
     end
   end
 end

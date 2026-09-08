@@ -23,6 +23,7 @@ Consulte também o [índice da documentação](./00-index.md) e os [ADRs](./adr/
 - [13. Contratos de teste](#13-contratos-de-teste)
 - [14. Observabilidade mínima](#14-observabilidade-mínima)
 - [15. Decisões explicitamente adiadas](#15-decisões-explicitamente-adiadas)
+- [16. Cenário público de demonstração](#16-cenário-público-de-demonstração)
 
 ---
 
@@ -39,7 +40,7 @@ Relação entre usuário e grupo, com papel e estado. Registros com histórico f
 
 ### 1.3 Convite de grupo
 
-Solicitação para que um usuário já cadastrado entre no grupo. No MVP, o convite é interno ao aplicativo: somente depois de aceito ele cria ou reativa um membership. Convidados sem conta e links públicos continuam fora do escopo.
+Solicitação para que um usuário já cadastrado entre no grupo. No MVP, o convite é interno ao aplicativo: somente depois de aceito ele cria ou reativa um membership. Seus estados terminais permanecem no histórico auditável; isso não cria participação financeira. Convidados sem conta e links públicos continuam fora do escopo.
 
 ### 1.4 Despesa
 
@@ -280,6 +281,19 @@ No MVP:
 ## 6. Entidades e campos sugeridos
 
 Todas as chaves primárias das entidades usam o tipo PostgreSQL `uuid` com default explícito `uuidv7()`. Todas as foreign keys usam `uuid`. Ruby representa esses identificadores como strings canônicas minúsculas. A configuração global dos generators Rails usa `primary_key_type: :uuid`, mas cada migration continua responsável por declarar `default: -> { "uuidv7()" }`; o default UUID v4 implícito não satisfaz o contrato.
+
+### 6.0 `users`
+
+```text
+id
+name          # varchar(80), identidade principal
+email         # autenticação, conta e convites internos
+demo_account
+created_at
+updated_at
+```
+
+`name` aceita acentos, não é único, normaliza espaços externos e sequências internas e possui no máximo 80 caracteres. A aplicação rejeita ausência, vazio após normalização e excesso de comprimento. O banco exige `NOT NULL` e uma constraint nomeada que rejeita vazio após `btrim`, inclusive quando validações Active Record são contornadas. Essa identidade não cria uma entidade `Participant`: memberships, shares e pagamentos continuam referenciando `User`, conforme o ADR-0012.
 
 ### 6.1 `groups`
 
@@ -576,7 +590,7 @@ Responsabilidades:
 
 As contribuições por share, as relações agregadas e a compensação bilateral são dados derivados e não são persistidos. Seus valores permanecem inteiros em centavos, inclusive quando a soma derivada excede o limite de uma coluna `bigint`; o builder não escreve em despesas, shares, memberships nem em `financial_state_version`.
 
-No payload JSON destinado ao navegador, `amount_cents` é serializado como string decimal positiva. A representação tipada no servidor permanece `Integer`; o cliente valida a forma textual e nunca converte, arredonda ou calcula dinheiro com `Number`.
+No payload JSON destinado ao navegador, `amount_cents` é serializado como string decimal positiva. A representação tipada no servidor permanece `Integer`; o cliente valida a forma textual e nunca converte, arredonda ou calcula dinheiro com `Number`. Cada nó também fornece `short_label` e `full_name`: o primeiro é o primeiro nome e inicial determinísticos, limitado a 18 grafemas para o nó; o segundo preserva a identidade completa em `<title>`, legenda e tabela equivalente.
 
 ### 8.5 `GroupFinancialStatusResolver`
 
@@ -706,6 +720,7 @@ O solver exato registra `financial_state_version`. O resultado só é publicado 
 - arquivamento só é permitido quando o grupo está `empty` ou `settled`, sem pendências ou convites abertos;
 - grupo arquivado é somente leitura no MVP;
 - owner pode restaurar um grupo arquivado; restaurar não altera saldos, histórico ou moeda.
+- qualquer usuário consulta seu próprio histórico recebido de convites, inclusive terminais; somente owner ativo consulta o histórico enviado do grupo. Os históricos não autorizam aceitar, recusar ou revogar um convite terminal.
 
 ### 10.2 Despesa
 
@@ -743,6 +758,8 @@ A subscription verifica membership antes de transmitir eventos. Conhecer o ident
 - eventos relevantes registram ator e timestamp;
 - payloads de broadcast contêm apenas o necessário para renderizar componentes autorizados;
 - exportação, links públicos e pagamentos externos permanecem fora do MVP.
+
+O deploy público de demonstração não é um ambiente de dados reais: quando `QUITANDO_DEMO_MODE=true`, ele usa banco e deploy separados, dados descartáveis e reset integral do cenário a cada seis horas. Dados reais duráveis exigem banco e deploy distintos com `QUITANDO_DEMO_MODE=false`. O reset só pode operar no banco demo configurado e não pode ser convertido em sucesso por fallback quando faltar configuração, confirmação ou autorização operacional.
 
 Quando links públicos forem adicionados, exigirão token armazenado como digest, expiração, revogação, escopo mínimo e prevenção de replay.
 
@@ -860,3 +877,13 @@ Para pagamentos reportados aleatórios válidos:
 - API e webhooks externos;
 - modo alternativo de acerto direto que preserve relações históricas em vez de minimizar transferências.
 - suporte a múltiplos idiomas: locale é uma preocupação de apresentação e não modifica fórmulas, sinais, armazenamento monetário ou a moeda do grupo.
+
+---
+
+## 16. Cenário público de demonstração
+
+O cenário demo é uma camada operacional, não uma alteração do domínio financeiro. Ele instala de modo idempotente quatro contas públicas com os nomes persistidos Ana, Bruno, Carla e Diego e preserva seus e-mails canônicos e a senha pública configurada. `users.demo_account` identifica essas contas e `demo_scenarios` registra a instalação e o último reset; nenhum desses registros entra no ledger, altera `financial_state_version` ou muda as regras de autorização financeira.
+
+O marcador vigente é `canonical-v2`, versão 2. O snapshot estrutural é de 4 usuários, 6 grupos, 37 despesas, 7 pagamentos, 18 convites, 19 memberships e 1 marcador. O instalador recusa qualquer marcador incompatível antes de escrever; a transição entre cenários só ocorre pelo reset integral autorizado. Ana percorre a demo por Viagem para a serra (revisar recebido), Configuração da república (acompanhar envio), Contas do apartamento (marcar transferência), Próxima viagem (adicionar despesa), Casa de praia quitada (quitado) e Churrasco arquivado (somente leitura). Viagem fixa oficial `+124.318/-80.205/-97.582/+53.469` e projeção `+26.736/-50.205/0/+23.469`; Contas demonstra 8 relações históricas, 6 compensadas e 3 transferências.
+
+O instalador e o resetter usam os comandos reais de domínio, executam em transação e compartilham advisory lock PostgreSQL. Reset usa `lock_timeout` de 10 segundos, `statement_timeout` de 60 segundos e até cinco novas tentativas, uma por minuto. O reset integral é programado a cada seis horas; falha de instalação, reset, banco incorreto, modo demo desligado ou confirmação manual ausente permanece explícita e observável, sem expor descrições financeiras.

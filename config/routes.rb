@@ -5,8 +5,9 @@ Rails.application.routes.draw do
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
 
-  devise_for :users
+  devise_for :users, controllers: { passwords: "users/passwords", registrations: "users/registrations" }
   root "home#index"
+  resource :account, only: %i[show update]
   uuid_v7 = ->(*parameter_names) { CanonicalUuidV7RouteConstraint.new(*parameter_names) }
 
   resources :invitations, only: :index
@@ -16,6 +17,9 @@ Rails.application.routes.draw do
   resources :groups, only: :update, constraints: uuid_v7.call(:id)
 
   scope "groups/:group_id", as: "group", constraints: { group_id: CanonicalUuidV7RouteConstraint::ROUTE_PATTERN } do
+    get :plan, to: "groups#plan"
+    get :history, to: "groups#history"
+    get :settings, to: "groups#settings"
     post :archive, to: "groups#archive", as: :archive
     post :restore, to: "groups#restore", as: :restore
 
@@ -25,8 +29,10 @@ Rails.application.routes.draw do
     patch "memberships/order", to: "memberships#order", as: :memberships_order
 
     resources :expenses, only: %i[new create]
+    post "expenses/preview", to: "expenses#preview", as: :expenses_preview
     resources :expenses, only: :show, constraints: uuid_v7.call(:id)
     get "expenses/:id/correction", to: "expenses#correction", as: :expense_correction, constraints: uuid_v7.call(:id)
+    post "expenses/:id/correction/preview", to: "expenses#correction_preview", as: :expense_correction_preview, constraints: uuid_v7.call(:id)
     patch "expenses/:id/description", to: "expenses#update_description", constraints: uuid_v7.call(:id)
     post "expenses/:id/correct", to: "expenses#correct", constraints: uuid_v7.call(:id)
 

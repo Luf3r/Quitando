@@ -11,12 +11,13 @@ RSpec.describe GroupInvitationPolicy do
     expect(described_class.new(other_user, invitation)).not_to be_accept
   end
 
-  it "limita o escopo aos convites pendentes do usuário" do
+  it "inclui todos os convites recebidos, inclusive os terminais" do
     user = create(:user)
-    visible = create(:group_invitation, invited_user: user, status: :pending)
+    pending = create(:group_invitation, invited_user: user, status: :pending)
+    terminal = create(:group_invitation, :declined, invited_user: user)
     hidden = create(:group_invitation, status: :pending)
 
-    expect(described_class::Scope.new(user, GroupInvitation).resolve).to contain_exactly(visible)
+    expect(described_class::Scope.new(user, GroupInvitation).resolve).to contain_exactly(pending, terminal)
     expect(described_class::Scope.new(user, GroupInvitation).resolve).not_to include(hidden)
   end
 end

@@ -1,0 +1,30 @@
+<article class="<%= classes %>" data-entry-kind="<%= entry.kind %>">
+  <header class="financial-activity__header">
+    <span class="financial-activity__type"><%= kind_label %></span>
+    <h3 class="financial-activity__description">
+      <% if expense? %>
+        <%= link_to description, detail_path %>
+      <% else %>
+        <%= description %>
+      <% end %>
+    </h3>
+    <span class="financial-activity__amount"><span class="sr-only">Valor</span><%= render MoneyComponent.new(cents: record.amount_cents, currency_code: group.currency_code) %></span>
+  </header>
+
+  <dl class="financial-activity__meta">
+    <% if expense? %>
+      <div data-activity-field="paid-by"><dt>Pago por</dt><dd><%= record.paid_by_user.name %></dd></div>
+      <div data-activity-field="created-by"><dt>Registrado por</dt><dd><%= record.created_by_user.name %></dd></div>
+    <% else %>
+      <div data-activity-field="from"><dt>Origem</dt><dd><%= record.from_user.name %></dd></div>
+      <div data-activity-field="to"><dt>Destino</dt><dd><%= record.to_user.name %></dd></div>
+    <% end %>
+    <div data-activity-field="status"><dt>Estado</dt><dd><%= render StatusBadgeComponent.new(status:, label: status_label) %></dd></div>
+    <div data-activity-field="time"><dt>Horário</dt><dd><time datetime="<%= entry.occurred_at.iso8601 %>"><%= helpers.l(entry.occurred_at, format: :short) %></time></dd></div>
+    <% if expense? && record.void_reason.present? %>
+      <div data-activity-field="correction"><dt>Correção</dt><dd><%= record.void_reason %></dd></div>
+    <% end %>
+  </dl>
+
+  <%= link_to action_label, detail_path, class: "ui-button ui-button--secondary ui-button--compact financial-activity__action" %>
+</article>

@@ -1,0 +1,42 @@
+<nav aria-label="Navegação principal" class="site-navigation site-navigation--desktop">
+  <% if user.present? %>
+    <div class="site-navigation__links">
+      <%= link_to "Grupos", helpers.groups_path, class: "site-navigation__link", aria: (helpers.current_page?(helpers.groups_path) ? { current: "page" } : {}) %>
+      <%= link_to "Convites#{" #{pending_invitation_count}" if pending_invitation_count.positive?}", helpers.invitations_path, class: "site-navigation__link", aria: (helpers.current_page?(helpers.invitations_path) ? { current: "page" } : {}) %>
+      <%= link_to "Conta", "/account", class: "site-navigation__link", aria: (helpers.current_page?("/account") ? { current: "page" } : {}) %>
+    </div>
+  <% end %>
+  <label class="theme-picker">
+    <span>Tema</span>
+    <select data-controller="theme" data-action="change->theme#change" aria-label="Tema">
+      <option value="system">Sistema</option>
+      <option value="light">Claro</option>
+      <option value="dark">Escuro</option>
+    </select>
+  </label>
+  <% if user.present? %>
+    <%= button_to "Sair", helpers.destroy_user_session_path, method: :delete, class: "site-navigation__link site-navigation__sign-out" %>
+  <% end %>
+</nav>
+
+<details class="site-navigation__mobile">
+  <summary>Menu</summary>
+  <div class="site-navigation__mobile-panel">
+    <% if user.present? %>
+      <%= link_to "Grupos", helpers.groups_path, class: "site-navigation__link", aria: (helpers.current_page?(helpers.groups_path) ? { current: "page" } : {}) %>
+      <%= link_to "Convites#{" #{pending_invitation_count}" if pending_invitation_count.positive?}", helpers.invitations_path, class: "site-navigation__link", aria: (helpers.current_page?(helpers.invitations_path) ? { current: "page" } : {}) %>
+      <%= link_to "Conta", "/account", class: "site-navigation__link", aria: (helpers.current_page?("/account") ? { current: "page" } : {}) %>
+    <% end %>
+    <label class="theme-picker">
+      <span>Tema</span>
+      <select data-controller="theme" data-action="change->theme#change" aria-label="Tema">
+        <option value="system">Sistema</option>
+        <option value="light">Claro</option>
+        <option value="dark">Escuro</option>
+      </select>
+    </label>
+    <% if user.present? %>
+      <%= button_to "Sair", helpers.destroy_user_session_path, method: :delete, class: "site-navigation__link site-navigation__sign-out" %>
+    <% end %>
+  </div>
+</details>

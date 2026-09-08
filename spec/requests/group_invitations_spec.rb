@@ -4,7 +4,28 @@ RSpec.describe "Group invitations" do
   include ActiveSupport::Testing::TimeHelpers
 
   describe "GET /invitations" do
-    it "mostra somente convites pending do usuário autenticado" do
+    it "separa os convites pendentes e terminais recebidos, sem ações nos terminais" do
+      invited_user = create(:user, email: "bia@example.com")
+      pending = create(:group_invitation, invited_user:, expires_at: 2.days.from_now)
+      terminal = create(:group_invitation, :declined, invited_user:)
+
+      post user_session_path, params: { user: { email: invited_user.email, password: invited_user.password } }
+      get "/invitations"
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Pendentes", pending.group.name)
+      expect(response.body).to include("Encerrados", terminal.group.name)
+      expect(response.body).to include("Recusado")
+      expect(response.body).not_to include("/invitations/#{terminal.id}/accept")
+      expect(response.body).not_to include("/invitations/#{terminal.id}/decline")
+      document = response.parsed_body
+      expect(document.at_css("[data-status='pending'][data-tone='attention']")).to be_present
+      expect(document.at_css("[data-status='declined'][data-tone='negative']")).to be_present
+      expect(document.at_css("form[action$='/accept'] .ui-button--primary")).to be_present
+      expect(document.at_css("form[action$='/decline'] .ui-button--danger")).to be_present
+    end
+
+    it "mostra somente os convites do usuário autenticado" do
       invited_user = create(:user, email: "bia@example.com")
       visible_group = create(:group, name: "Grupo visível")
       hidden_group = create(:group, name: "Grupo oculto")
@@ -32,10 +53,42 @@ RSpec.describe "Group invitations" do
         get "/invitations"
 
         expect(response).to have_http_status(:ok)
-        expect(response.body).not_to include(own_invitation.group.name)
+        expect(response.body).to include(own_invitation.group.name, "Expirado")
+        expect(response.body).not_to include("/invitations/#{own_invitation.id}/accept")
         expect(own_invitation.reload).to be_expired
         expect(foreign_invitation.reload).to be_pending
       end
+    end
+
+    it "rejeita página malformada antes de consultar convites" do
+      invited_user = create(:user, email: "bia@example.com")
+      create(:group_invitation, invited_user:)
+
+      post user_session_path, params: { user: { email: invited_user.email, password: invited_user.password } }
+      queries = sql_queries_for("group_invitations") { get "/invitations", params: { page: "zero" } }
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(queries).to be_empty
+    end
+
+    it "pagina pendentes e encerrados de forma independente e mantém page como compatibilidade" do
+      invited_user = create(:user, email: "bia@example.com")
+      26.times { create(:group_invitation, invited_user:, expires_at: 2.days.from_now) }
+      26.times { create(:group_invitation, :declined, invited_user:) }
+
+      post user_session_path, params: { user: { email: invited_user.email, password: invited_user.password } }
+      get "/invitations", params: { pending_page: "2", closed_page: "1" }
+
+      expect(response).to have_http_status(:ok)
+      document = response.parsed_body
+      pending_navigation = document.at_css("nav[aria-label='Paginação dos convites pendentes']")
+      closed_navigation = document.at_css("nav[aria-label='Paginação dos convites encerrados']")
+      expect(pending_navigation.at_css("a", text: "Anterior")["href"]).to include("pending_page=1", "closed_page=1")
+      expect(closed_navigation.at_css("a", text: "Próxima")["href"]).to include("pending_page=2", "closed_page=2")
+
+      get "/invitations", params: { page: "2" }
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Página 2 de 2")
     end
   end
 

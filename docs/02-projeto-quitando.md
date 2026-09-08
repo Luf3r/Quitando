@@ -37,9 +37,12 @@ A partir desses registros, o sistema:
 2. mostra pagamentos já declarados e ainda aguardando confirmação;
 3. gera um **plano simplificado de quitação** para o valor ainda não coberto;
 4. permite registrar e confirmar os pagamentos efetivamente realizados;
-5. indica quando as contas podem ser consideradas encerradas.
+5. indica quando as contas podem ser consideradas encerradas;
+6. apresenta publicamente a proposta do produto e oferece todas as jornadas do MVP em uma interface responsiva, acessível e operável sem JavaScript.
 
 A aplicação é inspirada em produtos de divisão de contas, mas o diferencial de portfólio está na profundidade técnica: ledger auditável, projeções explícitas, algoritmo explicável, testes de invariantes, concorrência, idempotência e uma UI reativa construída com Hotwire.
+
+A landing pública equilibra aquisição e portfólio sem alegações inventadas. Ela explica o ciclo do produto, diferencia saldo oficial, pendência e plano, mostra uma captura real do dashboard e declara tanto a engenharia verificável quanto a fronteira de confiança do MVP.
 
 ### 1.1 O problema humano
 
@@ -214,6 +217,10 @@ No MVP:
 ### 6.1 Entidades principais
 
 ```text
+User
+  name # identidade principal, obrigatória, normalizada e limitada a 80 caracteres
+  email # autenticação, conta e convites internos
+
 Group
   has_many :memberships
   has_many :users, through: :memberships
@@ -262,7 +269,9 @@ Payment
   idempotency_key
 ```
 
-No MVP, o plano de quitação **não é persistido**. Ele é calculado sob demanda. Despesas, shares e pagamentos são persistidos; pagamentos `reported` são fatos de workflow, enquanto apenas os `confirmed` entram no saldo oficial. Convites não tornam alguém participante financeiro até serem aceitos.
+No MVP, `User` continua sendo o participante financeiro definido pelo ADR-0012. O nome é sua identidade principal nas superfícies financeiras; e-mail permanece para autenticação, Conta, credenciais demo, convite e informação administrativa ou auditável secundária. O nome aceita acentos, não é único, normaliza espaços externos e sequências internas, tem no máximo 80 caracteres e é obrigatório na aplicação e no banco.
+
+O plano de quitação **não é persistido**. Ele é calculado sob demanda. Despesas, shares e pagamentos são persistidos; pagamentos `reported` são fatos de workflow, enquanto apenas os `confirmed` entram no saldo oficial. Convites não tornam alguém participante financeiro até serem aceitos.
 
 ### 6.2 Estados de pagamento
 
@@ -378,6 +387,12 @@ A combinação Solid Queue + Solid Cable mantém a arquitetura inicial sem Redis
 
 ## 9. MVP
 
+A experiência do MVP inclui landing pública, autenticação em português com nome obrigatório no cadastro, conta pessoal sem exclusão com edição de nome, e-mail e senha protegida pela senha atual, lista de grupos e convites, quatro destinos por grupo (Resumo, Plano, Histórico e Configurações), previews financeiros calculados no servidor e temas claro e escuro. O HTML é o caminho completo; Turbo, Action Cable e grafo são melhorias progressivas.
+
+Convites recebidos têm histórico paginado de pendentes e encerrados; o owner ativo consulta, em Configurações, o histórico dos convites que enviou. Esses históricos tornam transições já existentes explicáveis e auditáveis, mas não criam novo estado de convite, participação financeira nem autorização para agir sobre convite terminal.
+
+A demonstração pública é um perfil operacional separado do piloto real. Com `QUITANDO_DEMO_MODE=true`, ela usa banco e deploy próprios, dados descartáveis e um cenário canônico reproduzível; um reset integral ocorre a cada seis horas. Dados reais duráveis exigem outro banco e deploy com `QUITANDO_DEMO_MODE=false`.
+
 O primeiro release fecha o ciclo completo:
 
 1. cadastro e autenticação;
@@ -390,9 +405,10 @@ O primeiro release fecha o ciclo completo:
 8. confirmação ou cancelamento pelo participante autorizado;
 9. inativação e reativação segura de memberships;
 10. histórico de despesas e pagamentos;
-11. visualização textual obrigatória e grafo complementar;
-12. atualização por Turbo Streams como melhoria progressiva;
-13. testes das regras centrais, concorrência e invariantes.
+11. histórico auditável de convites recebidos e enviados, respeitando as permissões já existentes;
+12. visualização textual obrigatória e grafo complementar;
+13. atualização por Turbo Streams como melhoria progressiva;
+14. testes das regras centrais, concorrência e invariantes.
 
 ### 9.1 Critérios de sucesso
 

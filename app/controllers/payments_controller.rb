@@ -35,7 +35,7 @@ class PaymentsController < ApplicationController
   def show
     group = policy_scope(Group).find(params[:group_id])
     authorize group, :show?
-    @payment = group.payments.includes(:from_user, :to_user, :reported_by_user).find(params[:id])
+    @payment = group.payments.includes(:from_user, :to_user, :reported_by_user, :confirmed_by_user, :cancelled_by_user).find(params[:id])
     authorize @payment, :show?
   end
 

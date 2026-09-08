@@ -60,4 +60,17 @@ RSpec.describe "Structure SQL normalization command" do
       ]
     )
   end
+
+  it "uses the bounded Importmap audit verifier in CI" do
+    steps = []
+    runner = Object.new
+    runner.define_singleton_method(:step) { |name, command| steps << [ name, command ] }
+    recording_ci = Class.new
+    recording_ci.define_singleton_method(:run) { |&block| runner.instance_exec(&block) }
+    stub_const("CI", recording_ci)
+
+    load CI_CONFIG_PATH
+
+    expect(steps).to include([ "Security: Importmap vulnerability audit", "bin/verify-importmap-audit" ])
+  end
 end
