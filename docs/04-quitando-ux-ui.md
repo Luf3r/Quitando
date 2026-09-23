@@ -84,7 +84,7 @@ A raiz pública apresenta a landing. Depois da autenticação, a navegação pri
 
 Cadastro apresenta Nome antes de E-mail e exige ambos. Conta apresenta e permite editar nome, e-mail e senha mediante confirmação da senha atual. O nome aceita acentos, normaliza espaços externos e sequências internas e possui no máximo 80 caracteres. Contas demo exibem nome, e-mail e a política de credenciais públicas, mas não oferecem formulário editável nem permitem alteração no backend.
 
-O Resumo prioriza a posição e as ações da pessoa: estado, saldo oficial e projeção ocupam métricas alinhadas; pendências e participantes usam linhas compactas. O Plano começa por Pendências e Ainda falta em duas regiões no desktop e uma pilha no mobile, com origem, valor, destino e ação separados. Métricas `8 → 6 → 3`, seletor segmentado, grafo integral, legenda e tabelas equivalentes ficam em “Entenda o cálculo”, inicialmente recolhido. Histórico e Configurações deixam de competir por espaço no dashboard.
+O Resumo prioriza a posição e as ações da pessoa: estado, saldo oficial e projeção ocupam métricas alinhadas; pendências e participantes usam linhas compactas. Cada título de seção mantém espaço visível antes da primeira linha, e a ação principal mantém espaço antes do botão. O Plano começa por Pendências e Ainda falta em duas regiões no desktop e uma pilha no mobile, com origem, valor, destino e ação separados. Métricas `8 → 6 → 3`, seletor segmentado, grafo integral, legenda e tabelas equivalentes ficam em “Entenda o cálculo”, inicialmente recolhido. Histórico e Configurações deixam de competir por espaço no dashboard.
 
 Quando `QUITANDO_DEMO_MODE=true`, a landing/login apresenta de forma expandida os quatro e-mails públicos, a senha configurada e o próximo reset. Dentro do app, o mesmo conteúdo fica em um `details` acessível para reduzir a competição com a tarefa atual, sem ocultar senha ou reset. O banner declara que o ambiente é demo-only, descartável e reiniciado integralmente a cada seis horas. A UI não apresenta a conta demo como ambiente pessoal durável nem oculta uma falha de instalação ou reset; as credenciais demo não oferecem fluxo para alterar e-mail, senha ou recuperação.
 
@@ -264,6 +264,8 @@ Depois que a quitação começa, a tela prioriza progresso. Os números das cama
 - SVG/D3 apenas desenha e interage, com o módulo mínimo de seleção carregado quando a visualização conecta;
 - tabela “de → para → valor” contém informação equivalente;
 - o grafo nunca é requisito para realizar pagamento.
+
+Valores exibidos no grafo permanecem ligados visualmente à própria aresta. Quando curvas se aproximam, o rótulo usa fundo do tema e uma posição determinística ao longo ou ao lado da curva; um conector curto indica a aresta quando houver deslocamento. Avisos históricos usam tokens semânticos de aviso, legíveis nos temas claro, escuro e sistema.
 
 As três tabelas são renderizadas no HTML inicial. Com JavaScript, controles nativos selecionam a camada e ocultam apenas as tabelas não selecionadas; sem JavaScript, todas continuam disponíveis. No desktop, a tabela selecionada permanece ao lado do grafo; no móvel, continua antes dele. Um erro estrutural ou de carregamento da dependência de desenho torna o grafo visivelmente indisponível, mantém as tabelas à vista e é registrado para operação; essa recuperação não conta como grafo funcional.
 

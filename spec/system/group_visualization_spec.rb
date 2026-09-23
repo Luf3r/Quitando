@@ -292,6 +292,117 @@ RSpec.describe "Visualização explicativa do grupo", type: :system do
     expect(graph_rect.fetch("width")).to be_within(2).of(page.evaluate_script("document.querySelector('[data-visualization-content]').getBoundingClientRect().width"))
   end
 
+  it "mantém os títulos das tabelas afastados da borda em mobile e desktop" do
+    fixture = create_fixture!
+
+    sign_in(fixture.fetch(:member))
+    visit group_plan_path(fixture.fetch(:group))
+    open_plan_explanation
+
+    [ [ 360, 844 ], [ 1400, 1000 ] ].each do |width, height|
+      page.current_window.resize_to(width, height)
+
+      inset = page.evaluate_script(<<~JS)
+        (() => {
+          const region = document.querySelector(".comparison-table-region")
+          const caption = document.querySelector("#visualization_table_plan caption")
+          const range = document.createRange()
+          range.selectNodeContents(caption)
+          return range.getBoundingClientRect().left - region.getBoundingClientRect().left
+        })()
+      JS
+
+      expect(inset).to be >= 24
+    end
+  end
+
+  it "usa tokens legíveis no aviso histórico no tema escuro" do
+    fixture = create_fixture!
+    create(
+      :payment,
+      :confirmed,
+      group: fixture.fetch(:group),
+      from_user: fixture.fetch(:member),
+      to_user: fixture.fetch(:owner),
+      amount_cents: 100
+    )
+
+    sign_in(fixture.fetch(:member))
+    visit group_plan_path(fixture.fetch(:group))
+    page.execute_script("document.documentElement.dataset.theme = 'dark'")
+    open_plan_explanation
+
+    expect(page).to have_css("[data-visualization-historical-notice]")
+
+    colors = page.evaluate_script(<<~JS)
+      (() => {
+        const notice = document.querySelector("[data-visualization-historical-notice]")
+        const style = getComputedStyle(notice)
+        return { background: style.backgroundColor, color: style.color }
+      })()
+    JS
+
+    expect(colors).to eq({ "background" => "rgb(73, 56, 23)", "color" => "rgb(255, 208, 122)" })
+  end
+
+  it "separa e vincula visualmente os valores de arestas que se cruzam" do
+    fixture = create_fixture!
+
+    sign_in(fixture.fetch(:member))
+    visit group_plan_path(fixture.fetch(:group))
+    open_plan_explanation
+
+    page.execute_script(<<~JS)
+      document.head.insertAdjacentHTML(
+        "beforeend",
+        "<style>.visualization-edge-label { transition: none !important; }</style>"
+      )
+    JS
+
+    page.execute_script(<<~JS)
+      const visualization = document.getElementById("group_settlement_visualization")
+      const controller = window.Stimulus.getControllerForElementAndIdentifier(visualization, "group-visualization")
+      const nodes = [
+        ["a", "Ana", 0], ["b", "Bruno", 1], ["c", "Carla", 2], ["d", "Diego", 3]
+      ].map(([user_id, short_label, position]) => ({ user_id, short_label, full_name: short_label, position }))
+      const edges = [
+        ["a", "c", "R$ 10,00"], ["b", "d", "R$ 20,00"], ["a", "d", "R$ 30,00"],
+        ["b", "c", "R$ 40,00"], ["c", "a", "R$ 50,00"], ["d", "b", "R$ 60,00"]
+      ].map(([from_user_id, to_user_id, formatted_amount], index) => ({
+        from_user_id, to_user_id, formatted_amount, amount_cents: String((index + 1) * 1000)
+      }))
+      visualization.dataset.groupVisualizationPayloadValue = JSON.stringify({
+        nodes, layers: { plan: edges, bilateral: edges, historical: edges }, initial_layer: "bilateral"
+      })
+      controller.draw()
+    JS
+
+    expect(page).to have_css("svg g[data-edge-label]", count: 6)
+    expect(page).to have_css("svg g[data-edge-label] rect", count: 6)
+    expect(page.evaluate_script(<<~JS)).to be(true)
+      (() => {
+        const labels = [...document.querySelectorAll("svg g[data-edge-label]")]
+        return labels.every((label) => {
+          const line = label.querySelector("line[data-edge-label-connector]")
+          return line || label.dataset.edgeLabelAnchored === "true"
+        })
+      })()
+    JS
+    expect(page.evaluate_script(<<~JS)).to be(true)
+      (() => {
+        const bounds = [...document.querySelectorAll("svg g[data-edge-label] rect")]
+          .map((label) => label.getBoundingClientRect())
+
+        return bounds.every((current, index) => bounds.slice(index + 1).every((other) => (
+          current.right + 4 <= other.left ||
+          other.right + 4 <= current.left ||
+          current.bottom + 4 <= other.top ||
+          other.bottom + 4 <= current.top
+        )))
+      })()
+    JS
+  end
+
 
   it "foca o diálogo e devolve foco ao acionador por botão e Escape" do
     fixture = create_fixture!

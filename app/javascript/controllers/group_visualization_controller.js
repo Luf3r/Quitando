@@ -171,14 +171,52 @@ export default class extends Controller {
       .attr("class", "visualization-edge")
       .attr("marker-end", `url(#${markerId})`)
 
-    edgeGroup.selectAll("text")
+    const labelGroups = edgeGroup.selectAll("g[data-edge-label]")
       .data(edgeGeometry)
+      .join("g")
+      .attr("data-edge-label", "")
+      .attr("class", "visualization-edge-label")
+
+    labelGroups.selectAll("text")
+      .data((item) => [ item ])
       .join("text")
       .attr("data-edge-label", "")
-      .attr("x", (item) => item.labelX)
-      .attr("y", (item) => item.labelY)
-      .attr("class", "visualization-edge-label")
+      .attr("class", "visualization-edge-label__text")
+      .attr("text-anchor", "middle")
+      .attr("dominant-baseline", "middle")
       .text((item) => item.edge.formatted_amount)
+
+    const placedLabels = this.placeEdgeLabels(labelGroups.nodes().map((node, index) => {
+      const bounds = node.querySelector("text").getBBox()
+      return { ...edgeGeometry[index], width: bounds.width + 12, height: bounds.height + 8 }
+    }))
+
+    labelGroups.data(placedLabels)
+      .attr("transform", (item) => `translate(${item.labelX},${item.labelY})`)
+      .attr("data-edge-label-anchored", (item) => String(item.offset === 0))
+      .each((item, index, nodes) => {
+        const group = this.select(nodes[index])
+        group.selectAll("line[data-edge-label-connector]")
+          .data(item.offset === 0 ? [] : [ item ])
+          .join("line")
+          .attr("data-edge-label-connector", "")
+          .attr("class", "visualization-edge-label__connector")
+          .attr("x1", (label) => label.anchorX - label.labelX)
+          .attr("y1", (label) => label.anchorY - label.labelY)
+          .attr("x2", 0)
+          .attr("y2", 0)
+
+        group.selectAll("rect")
+          .data([ item ])
+          .join("rect")
+          .attr("class", "visualization-edge-label__background")
+          .attr("x", (label) => -(label.width / 2))
+          .attr("y", (label) => -(label.height / 2))
+          .attr("width", (label) => label.width)
+          .attr("height", (label) => label.height)
+          .attr("rx", 4)
+          .lower()
+      })
 
     const nodeGroup = svg.append("g").attr("class", "visualization-nodes")
     const renderedNodes = nodeGroup.selectAll("g")
@@ -253,9 +291,65 @@ export default class extends Controller {
     return {
       edge,
       path: `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`,
-      labelX: (startX + (2 * controlX) + endX) / 4,
-      labelY: ((startY + (2 * controlY) + endY) / 4) - 8
+      startX,
+      startY,
+      controlX,
+      controlY,
+      endX,
+      endY
     }
+  }
+
+  placeEdgeLabels(edgeGeometry) {
+    const occupied = []
+    const candidates = [
+      [ 0.35, 0 ], [ 0.65, 0 ],
+      ...[ 18, -18, 36, -36, 54, -54, 72, -72, 96, -96 ].flatMap((offset) =>
+        [ 0.2, 0.35, 0.5, 0.65, 0.8 ].map((progress) => [ progress, offset ])
+      )
+    ]
+    const labelsByEdge = new Map()
+
+    edgeGeometry
+      .toSorted((left, right) => left.edge.from_user_id.localeCompare(right.edge.from_user_id) || left.edge.to_user_id.localeCompare(right.edge.to_user_id))
+      .forEach((geometry) => {
+        const positions = candidates.map(([progress, offset]) => ({
+          ...this.labelPosition(geometry, progress, offset),
+          width: geometry.width,
+          height: geometry.height
+        }))
+        const position = positions.find((candidate) => !occupied.some((other) => this.labelsOverlap(candidate, other))) || positions.at(-1)
+        const label = { ...geometry, ...position }
+        occupied.push(label)
+        labelsByEdge.set(`${geometry.edge.from_user_id}:${geometry.edge.to_user_id}`, label)
+      })
+
+    return edgeGeometry.map((geometry) => labelsByEdge.get(`${geometry.edge.from_user_id}:${geometry.edge.to_user_id}`))
+  }
+
+  labelPosition(geometry, progress, offset) {
+    const inverse = 1 - progress
+    const anchorX = (inverse ** 2 * geometry.startX) + (2 * inverse * progress * geometry.controlX) + (progress ** 2 * geometry.endX)
+    const anchorY = (inverse ** 2 * geometry.startY) + (2 * inverse * progress * geometry.controlY) + (progress ** 2 * geometry.endY)
+    const tangentX = (2 * inverse * (geometry.controlX - geometry.startX)) + (2 * progress * (geometry.endX - geometry.controlX))
+    const tangentY = (2 * inverse * (geometry.controlY - geometry.startY)) + (2 * progress * (geometry.endY - geometry.controlY))
+    const length = Math.hypot(tangentX, tangentY) || 1
+    const normalX = -tangentY / length
+    const normalY = tangentX / length
+
+    return {
+      anchorX,
+      anchorY,
+      labelX: anchorX + (normalX * offset),
+      labelY: anchorY + (normalY * offset),
+      offset
+    }
+  }
+
+  labelsOverlap(left, right) {
+    const gap = 8
+    return Math.abs(left.labelX - right.labelX) < ((left.width + right.width) / 2) + gap &&
+      Math.abs(left.labelY - right.labelY) < ((left.height + right.height) / 2) + gap
   }
 
   showEmptyState() {
