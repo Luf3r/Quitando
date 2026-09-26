@@ -37,6 +37,8 @@ RSpec.describe "Structure SQL normalization command" do
         "env RAILS_ENV=test DATABASE_URL=$TEST_DATABASE_URL bin/rails db:prepare && bin/normalize-structure-sql"
       ]
     )
+    expect(steps.index { |name, _command| name == "Setup: Test database" })
+      .to be < steps.index { |name, _command| name == "Database: financial schema migration round-trip" }
   end
 
   it "runs system specs only in their dedicated CI step" do
@@ -52,11 +54,11 @@ RSpec.describe "Structure SQL normalization command" do
     expect(steps).to include(
       [
         "Tests: RSpec",
-        "env CI=true RAILS_ENV=test QUITANDO_DEMO_URL= QUITANDO_MAIN_URL= bundle exec rspec --exclude-pattern 'spec/system/**/*_spec.rb'"
+        "env CI=true RAILS_ENV=test QUITANDO_LOCAL_DUAL_DATABASE=true QUITANDO_DEMO_URL= QUITANDO_MAIN_URL= bundle exec rspec --exclude-pattern 'spec/system/**/*_spec.rb'"
       ],
       [
         "Tests: System",
-        "env CI=true RAILS_ENV=test QUITANDO_DEMO_URL= QUITANDO_MAIN_URL= bundle exec rspec spec/system"
+        "env CI=true RAILS_ENV=test QUITANDO_LOCAL_DUAL_DATABASE=true QUITANDO_DEMO_URL= QUITANDO_MAIN_URL= bundle exec rspec spec/system"
       ]
     )
   end

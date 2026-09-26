@@ -2,7 +2,7 @@
 
 CI.run do
   step "Setup", "bin/setup --skip-server"
-
+  step "Setup: Test database", "env RAILS_ENV=test DATABASE_URL=$TEST_DATABASE_URL bin/rails db:prepare && bin/normalize-structure-sql"
   step "Database: financial schema migration round-trip", "bin/verify-financial-schema-migrations"
 
   step "Style: Ruby", "bin/rubocop"
@@ -10,7 +10,6 @@ CI.run do
   step "Security: Gem audit", "bin/bundler-audit"
   step "Security: Importmap vulnerability audit", "bin/verify-importmap-audit"
   step "Security: Brakeman code analysis", "bin/brakeman --quiet --no-pager --exit-on-warn --exit-on-error"
-  step "Setup: Test database", "env RAILS_ENV=test DATABASE_URL=$TEST_DATABASE_URL bin/rails db:prepare && bin/normalize-structure-sql"
   step "Boot: Zeitwerk eager load", "env RAILS_ENV=test DATABASE_URL=$TEST_DATABASE_URL bin/rails zeitwerk:check"
   step "Assets: Tailwind CSS", "bin/rails tailwindcss:build"
   step "Setup: Clean test database", "env RAILS_ENV=test DATABASE_URL=$TEST_DATABASE_URL bin/rails db:seed:replant"
