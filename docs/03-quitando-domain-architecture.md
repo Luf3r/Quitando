@@ -759,7 +759,7 @@ A subscription verifica membership antes de transmitir eventos. Conhecer o ident
 - payloads de broadcast contêm apenas o necessário para renderizar componentes autorizados;
 - exportação, links públicos e pagamentos externos permanecem fora do MVP.
 
-O deploy público de demonstração não é um ambiente de dados reais: quando `QUITANDO_DEMO_MODE=true`, ele usa banco e deploy separados, dados descartáveis e reset integral do cenário a cada seis horas. Dados reais duráveis exigem banco e deploy distintos com `QUITANDO_DEMO_MODE=false`. O reset só pode operar no banco demo configurado e não pode ser convertido em sucesso por fallback quando faltar configuração, confirmação ou autorização operacional.
+O deploy público de demonstração não é um ambiente de dados reais: quando `QUITANDO_DEMO_MODE=true`, ele usa banco e deploy separados, dados descartáveis e reset integral do cenário a cada seis horas. Dados reais duráveis exigem banco e deploy distintos com `QUITANDO_DEMO_MODE=false`. Em desenvolvimento, um processo Rails atende localhost no shard real e demo.localhost no shard demo; host desconhecido é recusado antes do acesso aos dados. Sessões usam cookies host-only, e Action Cable escolhe o shard no handshake e na assinatura; nomes de stream incluem o shard para que UUIDs iguais não cruzem atualizações. O reset só pode operar no banco demo configurado e não pode ser convertido em sucesso por fallback quando faltar configuração, confirmação ou autorização operacional.
 
 Quando links públicos forem adicionados, exigirão token armazenado como digest, expiração, revogação, escopo mínimo e prevenção de replay.
 

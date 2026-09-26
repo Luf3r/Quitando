@@ -20,7 +20,7 @@ module ApplicationHelper
   end
 
   def demo_mode?
-    ENV["QUITANDO_DEMO_MODE"] == "true"
+    LocalEnvironment.demo?
   end
 
   def demo_access_available?

@@ -15,9 +15,23 @@ RSpec.describe GroupsChannel, type: :channel do
     subscribe signed_stream_name: signed_stream_name(group.id)
 
     expect(subscription).to be_confirmed
-    expect(subscription).to have_stream_from(group.id)
+    expect(subscription).to have_stream_from("default:#{group.id}")
   end
 
+  it "separa o stream demo quando os bancos têm o mesmo identificador de grupo" do
+    demo_user, = ApplicationRecord.connected_to(role: :writing, shard: :demo) do
+      demo_user = create(:user, id: user.id, email: user.email, name: "Pessoa Demo")
+      demo_group = create(:group, id: group.id)
+      create(:membership, group: demo_group, user: demo_user)
+      [ demo_user, demo_group ]
+    end
+    stub_connection(current_user: demo_user, environment_shard: :demo)
+
+    subscribe signed_stream_name: signed_stream_name(group.id)
+
+    expect(subscription).to be_confirmed
+    expect(subscription).to have_stream_from("demo:#{group.id}")
+  end
   it "rejects an unsigned or altered stream before querying groups" do
     stub_connection(current_user: user)
 

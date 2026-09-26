@@ -26,6 +26,13 @@ services:
       BUNDLE_PATH: /usr/local/bundle
       DATABASE_URL: "${DATABASE_URL:-postgres://quitando:quitando@db:5432/quitando_development}"
       TEST_DATABASE_URL: "${TEST_DATABASE_URL:-postgres://quitando:quitando@db:5432/quitando_test}"
+      DEMO_DATABASE_URL: "${DEMO_DATABASE_URL:-postgres://quitando:quitando@db:5432/quitando_demo_development}"
+      DEMO_TEST_DATABASE_URL: "${DEMO_TEST_DATABASE_URL:-postgres://quitando:quitando@db:5432/quitando_demo_test}"
+      QUITANDO_LOCAL_DUAL_DATABASE: "true"
+      QUITANDO_DEMO_DATABASE_NAME: quitando_demo_development
+      QUITANDO_DEMO_PASSWORD: "${QUITANDO_DEMO_PASSWORD:-senha-publica}"
+      QUITANDO_DEMO_URL: "http://demo.localhost:${RAILS_PORT:-3000}"
+      QUITANDO_MAIN_URL: "http://localhost:${RAILS_PORT:-3000}"
       RAILS_ENV: ${RAILS_ENV:-development}
       RAILS_MAX_THREADS: ${RAILS_MAX_THREADS:-5}
     ports:

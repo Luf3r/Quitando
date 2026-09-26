@@ -379,7 +379,7 @@ O ledger oficial é a fonte de verdade para saldos confirmados. Pagamentos pende
 | Autorização | Pundit |
 | UI | ViewComponent + Tailwind CSS |
 | Testes | RSpec + testes de propriedades/invariantes |
-| Deploy | Kamal |
+| Deploy planejado | Fly.io para os apps real e demo, com projetos Neon separados; configuração preparada, publicação pendente |
 
 A combinação Solid Queue + Solid Cable mantém a arquitetura inicial sem Redis. Redis e Sidekiq só entram se houver necessidade observável de escala ou operação.
 
@@ -391,7 +391,7 @@ A experiência do MVP inclui landing pública, autenticação em português com 
 
 Convites recebidos têm histórico paginado de pendentes e encerrados; o owner ativo consulta, em Configurações, o histórico dos convites que enviou. Esses históricos tornam transições já existentes explicáveis e auditáveis, mas não criam novo estado de convite, participação financeira nem autorização para agir sobre convite terminal.
 
-A demonstração pública é um perfil operacional separado do piloto real. Com `QUITANDO_DEMO_MODE=true`, ela usa banco e deploy próprios, dados descartáveis e um cenário canônico reproduzível; um reset integral ocorre a cada seis horas. Dados reais duráveis exigem outro banco e deploy com `QUITANDO_DEMO_MODE=false`.
+A demonstração pública é um perfil operacional separado do piloto real. A landing principal permite entrar e criar uma conta durável e oferece acesso às contas públicas de demonstração. No ambiente demo, o cadastro é bloqueado no servidor e o usuário pode voltar ao cadastro real. Com `QUITANDO_DEMO_MODE=true`, a demo usa banco e deploy próprios, dados descartáveis e um cenário canônico reproduzível; um reset integral ocorre a cada seis horas. Dados reais duráveis exigem outro banco e deploy com `QUITANDO_DEMO_MODE=false`.
 
 O primeiro release fecha o ciclo completo:
 

@@ -19,6 +19,19 @@ RSpec.describe DemoScenario::Config do
       expect(config.public_password).to eq("senha-publica")
     end
 
+    it "aceita a instalação no shard demo local e recusa o shard real" do
+      local_environment = environment.merge(
+        "QUITANDO_DEMO_MODE" => "false",
+        "QUITANDO_LOCAL_DUAL_DATABASE" => "true",
+        "QUITANDO_DEMO_DATABASE_NAME" => "quitando_demo_test"
+      )
+      config = described_class.new(environment: local_environment)
+
+      expect { config.validate_installation! }.to raise_error(DemoScenario::Config::DemoModeDisabled)
+      ApplicationRecord.connected_to(role: :writing, shard: :demo) do
+        expect(config.validate_installation!).to be(config)
+      end
+    end
     it "rejeita modo demo ausente ou diferente do literal true" do
       config = described_class.new(
         environment: environment.merge("QUITANDO_DEMO_MODE" => "1"),
