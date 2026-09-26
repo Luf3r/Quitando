@@ -1,0 +1,25 @@
+<footer class="site-footer <%= "site-footer--compact" unless landing %>">
+  <div class="site-footer__inner">
+    <div class="site-footer__brand">
+      <%= link_to root_path, class: "wordmark", aria: { label: "Quitando, página inicial" } do %>
+        <%= image_tag "/quitando-logo.png", alt: "", width: 40, height: 40, loading: "lazy" %>
+      <% end %>
+      <% if landing %><p>Divida os gastos. Aproveite a companhia.</p><% end %>
+    </div>
+    <nav aria-label="Navegação do rodapé" class="site-footer__links">
+      <% if landing %>
+        <%= link_to "Como funciona", root_path(anchor: "como-funciona") %>
+        <%= link_to "Conheça o app", root_path(anchor: "produto") %>
+        <% if demo_access_available? %><%= link_to "Acessos de teste", root_path(anchor: "acessos-teste") %><% end %>
+      <% end %>
+      <% if user_signed_in? %>
+        <%= link_to "Abrir app", groups_path %>
+        <%= link_to "Conta", account_path %>
+      <% else %>
+        <%= link_to "Entrar", new_user_session_path %>
+        <%= link_to "Criar conta", demo_mode? ? demo_main_registration_url : new_user_registration_path %>
+      <% end %>
+    </nav>
+    <small class="site-footer__copyright">© <%= Date.current.year %> Quitando</small>
+  </div>
+</footer>

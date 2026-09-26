@@ -31,6 +31,8 @@ Este arquivo resume decisões que precisam permanecer consistentes entre produto
 - O roadmap funcional define o que entra no release; a ordem técnica prioriza algoritmo, ledger e comandos financeiros antes de HTTP reativo e visualização.
 - Após o MVP, a interface deve evoluir para suportar múltiplos idiomas; locale altera apresentação e linguagem, não as regras do ledger nem a moeda BRL definida para o grupo no MVP.
 - A raiz é uma landing pública real; usuários autenticados seguem dela para o app, sem criar uma segunda fonte de produto ou alegações fictícias.
+- A landing pode oferecer credenciais públicas que autenticam somente na demonstração compartilhada; cadastro e dados pessoais duráveis permanecem no site principal. O aviso de reset descreve exclusivamente o host demo.
+- A captura do Resumo na landing é real, reproduzível e acompanha a preferência Claro/Escuro/Sistema do navegador; não se reconstrói a interface como imagem artificial.
 - Cada grupo possui Resumo, Plano, Histórico e Configurações. A separação altera composição e navegação, não regras financeiras.
 - Previews de divisão são derivados no servidor, usam centavos inteiros e nunca persistem fatos antes da confirmação final.
 - Uma confirmação de despesa ou correção só vale para a revisão do formulário que a originou. Edição posterior a invalida imediatamente; o navegador não recalcula valores e resposta antiga do servidor não reabilita a ação.

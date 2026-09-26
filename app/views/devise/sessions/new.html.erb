@@ -2,7 +2,7 @@
   <div class="auth-page__intro">
     <p class="eyebrow">Bem-vindo de volta</p>
     <h1 id="session-title">Entrar no Quitando</h1>
-    <p>Retome seu grupo exatamente do ponto em que as contas ficaram.</p>
+    <p>Entre para acompanhar seus grupos e acertar as próximas contas.</p>
   </div>
   <%= form_for(resource, as: resource_name, url: session_path(resource_name), html: { class: "auth-form" }) do |form| %>
     <%= render FormErrorsComponent.new(messages: resource.errors.full_messages) if resource.errors.any? %>
@@ -15,7 +15,7 @@
       <%= form.password_field :password, autocomplete: "current-password", class: "ui-field__control" %>
     </div>
     <% if devise_mapping.rememberable? %>
-      <label class="auth-check"><%= form.check_box :remember_me %> Manter sessão neste dispositivo</label>
+      <label class="auth-check"><%= form.check_box :remember_me %> Continuar conectado neste dispositivo</label>
     <% end %>
     <%= form.submit "Entrar", class: "ui-button ui-button--primary" %>
   <% end %>

@@ -20,7 +20,7 @@
     <div class="section-heading"><h2 id="recent-activity-title">Mudanças recentes</h2><%= link_to "Histórico completo", group_history_path(@group), class: "ui-button ui-button--secondary ui-button--compact" %></div>
     <% if @overview.recent_entries.any? %>
       <ol class="financial-activity-list"><% @overview.recent_entries.each do |entry| %><li><%= render FinancialActivityComponent.new(entry:, group: @group, compact: true) %></li><% end %></ol>
-    <% else %><p>Não há fatos financeiros registrados.</p><% end %>
+    <% else %><p>As primeiras despesas e os próximos acertos aparecerão aqui.</p><% end %>
   </section>
 
   <p class="section-empty">Para membros, convites e administração, acesse <%= link_to "Configurações", group_settings_path(@group) %>.</p>

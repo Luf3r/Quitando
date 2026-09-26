@@ -16,7 +16,7 @@
         <% end %>
       </ul>
     <% else %>
-      <p class="mt-3">Você não possui convites pendentes.</p>
+      <p class="mt-3">Nenhum convite por enquanto. Para entrar em um grupo, peça a quem organiza para convidar seu e-mail cadastrado.</p>
     <% end %>
     <% if @pending_page.total_pages > 1 %><nav class="pagination" aria-label="Paginação dos convites pendentes"><% if @pending_page.number > 1 %><%= link_to "Anterior", invitations_path(pending_page: @pending_page.number - 1, closed_page: @terminal_page.number) %><% end %><span>Página <%= @pending_page.number %> de <%= @pending_page.total_pages %></span><% if @pending_page.number < @pending_page.total_pages %><%= link_to "Próxima", invitations_path(pending_page: @pending_page.number + 1, closed_page: @terminal_page.number) %><% end %></nav><% end %>
   </section>
@@ -33,7 +33,7 @@
         <% end %>
       </ul>
     <% else %>
-      <p class="mt-3">Você não possui convites encerrados.</p>
+      <p class="mt-3">Os convites que você responder aparecerão aqui, junto dos que expirarem ou forem cancelados.</p>
     <% end %>
     <% if @terminal_page.total_pages > 1 %><nav class="pagination" aria-label="Paginação dos convites encerrados"><% if @terminal_page.number > 1 %><%= link_to "Anterior", invitations_path(pending_page: @pending_page.number, closed_page: @terminal_page.number - 1) %><% end %><span>Página <%= @terminal_page.number %> de <%= @terminal_page.total_pages %></span><% if @terminal_page.number < @terminal_page.total_pages %><%= link_to "Próxima", invitations_path(pending_page: @pending_page.number, closed_page: @terminal_page.number + 1) %><% end %></nav><% end %>
   </section>

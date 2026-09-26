@@ -1,6 +1,6 @@
 class FinancialActivityComponent < ApplicationComponent
   PAYMENT_LABELS = {
-    "reported" => "Declarado",
+    "reported" => "Aguardando confirmação",
     "confirmed" => "Confirmado",
     "cancelled" => "Cancelado"
   }.freeze

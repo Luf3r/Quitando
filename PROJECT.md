@@ -250,10 +250,10 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 
 ## 11. Milestone atual
 
-- **Última entrega demonstrada automaticamente:** Fase 13.21 — identidade por nome e refinamento responsivo das superfícies financeiras.
-- **Fase atual:** Fase 13, reaberta para as entregas 13.17 a 13.21 de UX orientada à ação nos grupos.
-- **Status atual:** a #144 está em `Review` após a revisão de consistência visual e interação. As verificações automatizadas cobrem nome obrigatório e migration segura, snapshot `4:6:37:7:18:19:1`, saldos, histórico, preview invalidado após edição, paginação independente de convites, roteiro da Ana e métricas `8→6→3`; a Fase 13 continua pendente da aceitação humana e a Fase 14 permanece posterior.
-- **Gate pendente da Fase 13:** a pessoa avaliadora deve usar o roteiro Ana — revisar recebido, acompanhar enviado, marcar R$ 850, adicionar despesa, consultar quitado e arquivado — além de comparar stream/reload e reset v2. O cenário demo permanece descartável, com banco/deploy separados, `QUITANDO_DEMO_MODE=true`, reset integral a cada seis horas e `bin/verify-demo-scenario`; dados reais duráveis exigem banco e deploy separados com `QUITANDO_DEMO_MODE=false`.
+- **Última entrega demonstrada automaticamente:** Fase 13.22 — marca, captura responsiva do Resumo e acesso à demo a partir do site principal.
+- **Fase atual:** Fase 13, em revisão para as entregas 13.17 a 13.22.
+- **Status atual:** `bin/ci` passou no diff atual, incluindo lint, auditorias, build Tailwind, specs request/system, seeds e verificador demo. A captura real foi gerada e exportada em WebP; a imagem de produção foi construída e passou em `bundle check` e na verificação de ausência das gems de desenvolvimento/teste. O wrapper `bin/verify-production-image` exige o Docker CLI no host e não pode ser executado dentro do container da aplicação. A Fase 13 continua pendente da aceitação humana e da sincronização dos campos do GitHub Project, que não puderam ser consultados neste ambiente; a issue #150 também não pôde receber as evidências finais porque a integração retornou 403 e o token local do `gh` está inválido. A Fase 14 permanece posterior.
+- **Gate pendente da Fase 13:** a pessoa avaliadora deve usar o roteiro Ana — revisar recebido, acompanhar enviado, marcar R$ 850, adicionar despesa, consultar quitado e arquivado — comparar stream/reload e reset v2, e conferir landing/captura/footer nos tamanhos previstos. O cenário demo permanece compartilhado e descartável com reset a cada seis horas. A topologia de deploy real+demo solicitada aguarda a Fase 14 e ADR substituto ao ADR-0016.
 - **Gate integrado da Fase 0:** `bin/ci` executa localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação. O hardening adicional da PR #38 também foi aprovado nos checks remotos atuais.
 
 **Integrado e verificado até agora:**

@@ -17,8 +17,8 @@
   </header>
 
   <dl class="financial-detail__metadata">
-    <div><dt>Declarado por</dt><dd><%= @payment.reported_by_user.name %></dd></div>
-    <div><dt>Declarado em</dt><dd><time datetime="<%= @payment.reported_at.iso8601 %>"><%= l(@payment.reported_at, format: :short) %></time></dd></div>
+    <div><dt>Marcado como enviado por</dt><dd><%= @payment.reported_by_user.name %></dd></div>
+    <div><dt>Marcado como enviado em</dt><dd><time datetime="<%= @payment.reported_at.iso8601 %>"><%= l(@payment.reported_at, format: :short) %></time></dd></div>
     <% if @payment.confirmed? %>
       <div><dt>Confirmado por</dt><dd><%= @payment.confirmed_by_user.name %></dd></div>
       <div><dt>Confirmado em</dt><dd><time datetime="<%= @payment.confirmed_at.iso8601 %>"><%= l(@payment.confirmed_at, format: :short) %></time></dd></div>
@@ -35,22 +35,22 @@
   <section class="financial-detail__actions" aria-labelledby="payment-actions-title">
     <h2 id="payment-actions-title">Ações</h2>
     <% if @payment.reported? && !@payment.group.archived_at? && @payment.to_user_id == current_user.id %>
-      <%= button_to "Confirmar pagamento", "/groups/#{@payment.group_id}/payments/#{@payment.id}/confirm", params: { payment: { idempotency_key: SecureRandom.uuid } }, form: { data: { turbo_stream: true, turbo_confirm: "Confirmar este pagamento? Esta ação é terminal no MVP." } }, class: "ui-button ui-button--primary" %>
+      <%= button_to "Confirmar pagamento", "/groups/#{@payment.group_id}/payments/#{@payment.id}/confirm", params: { payment: { idempotency_key: SecureRandom.uuid } }, form: { data: { turbo_stream: true, turbo_confirm: "Você recebeu este valor? A confirmação não pode ser desfeita." } }, class: "ui-button ui-button--primary" %>
     <% end %>
     <% if @payment.reported? && !@payment.group.archived_at? && [ @payment.from_user_id, @payment.to_user_id ].include?(current_user.id) %>
       <details class="payment-cancellation">
         <summary>Cancelar pagamento</summary>
         <div class="payment-cancellation__panel">
-          <p>Use esta ação se a transferência declarada não aconteceu. O valor voltará ao plano restante.</p>
+          <p>Use esta ação se a transferência não aconteceu. O valor voltará ao plano restante.</p>
           <%= form_with url: "/groups/#{@payment.group_id}/payments/#{@payment.id}/cancel", scope: :payment, data: { turbo_stream: true }, class: "payment-cancellation__form" do |form| %>
-            <%= render FieldComponent.new(label: "Motivo do cancelamento", name: "payment[reason]", hint: "Explique brevemente por que a declaração deve ser removida.", options: { required: true }) %>
+            <%= render FieldComponent.new(label: "Motivo do cancelamento", name: "payment[reason]", hint: "Conte por que o envio está sendo cancelado.", options: { required: true }) %>
             <%= form.hidden_field :idempotency_key, value: SecureRandom.uuid %>
             <%= form.submit "Confirmar cancelamento", class: "ui-button ui-button--danger" %>
           <% end %>
         </div>
       </details>
     <% elsif @payment.confirmed? || @payment.cancelled? %>
-      <p class="financial-detail__terminal-note">Este pagamento é terminal e não pode ser alterado no MVP.</p>
+      <p class="financial-detail__terminal-note">Este pagamento foi encerrado e não pode mais ser alterado.</p>
     <% end %>
   </section>
   <% end %>

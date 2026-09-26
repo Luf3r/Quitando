@@ -5,6 +5,13 @@
       <%= link_to "Convites#{" #{pending_invitation_count}" if pending_invitation_count.positive?}", helpers.invitations_path, class: "site-navigation__link", aria: (helpers.current_page?(helpers.invitations_path) ? { current: "page" } : {}) %>
       <%= link_to "Conta", "/account", class: "site-navigation__link", aria: (helpers.current_page?("/account") ? { current: "page" } : {}) %>
     </div>
+  <% else %>
+    <div class="site-navigation__links">
+      <%= link_to "Como funciona", helpers.root_path(anchor: "como-funciona"), class: "site-navigation__link" %>
+      <%= link_to "Conheça o app", helpers.root_path(anchor: "produto"), class: "site-navigation__link" %>
+      <%= link_to "Entrar", helpers.new_user_session_path, class: "site-navigation__link" %>
+      <%= link_to "Criar conta", helpers.demo_mode? ? helpers.demo_main_registration_url : helpers.new_user_registration_path, class: "ui-button ui-button--primary" %>
+    </div>
   <% end %>
   <label class="theme-picker">
     <span>Tema</span>
@@ -26,6 +33,11 @@
       <%= link_to "Grupos", helpers.groups_path, class: "site-navigation__link", aria: (helpers.current_page?(helpers.groups_path) ? { current: "page" } : {}) %>
       <%= link_to "Convites#{" #{pending_invitation_count}" if pending_invitation_count.positive?}", helpers.invitations_path, class: "site-navigation__link", aria: (helpers.current_page?(helpers.invitations_path) ? { current: "page" } : {}) %>
       <%= link_to "Conta", "/account", class: "site-navigation__link", aria: (helpers.current_page?("/account") ? { current: "page" } : {}) %>
+    <% else %>
+      <%= link_to "Como funciona", helpers.root_path(anchor: "como-funciona"), class: "site-navigation__link" %>
+      <%= link_to "Conheça o app", helpers.root_path(anchor: "produto"), class: "site-navigation__link" %>
+      <%= link_to "Entrar", helpers.new_user_session_path, class: "site-navigation__link" %>
+      <%= link_to "Criar conta", helpers.demo_mode? ? helpers.demo_main_registration_url : helpers.new_user_registration_path, class: "ui-button ui-button--primary" %>
     <% end %>
     <label class="theme-picker">
       <span>Tema</span>

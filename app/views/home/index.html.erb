@@ -1,94 +1,117 @@
-<% content_for :title, "Quitando | Feche as contas do grupo" %>
+<% content_for :title, "Quitando | Divida os gastos. Acerte as contas." %>
 <% content_for :metadata do %>
-  <meta name="description" content="Registre despesas, acompanhe confirmações e veja um plano prático com menos transferências.">
+  <meta name="description" content="Organize as despesas com amigos e veja o que falta para todo mundo ficar em dia.">
   <link rel="canonical" href="<%= root_url %>">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="pt_BR">
-  <meta property="og:title" content="Quitando | Feche as contas do grupo">
-  <meta property="og:description" content="Registre despesas, acompanhe confirmações e veja um plano prático com menos transferências.">
+  <meta property="og:title" content="Quitando | Divida os gastos. Acerte as contas.">
+  <meta property="og:description" content="Organize as despesas com amigos e veja o que falta para todo mundo ficar em dia.">
   <meta property="og:url" content="<%= root_url %>">
   <meta property="og:image" content="<%= image_url("landing/hero-friends-og.webp") %>">
 <% end %>
 
-<section class="landing-hero" aria-labelledby="landing-title">
-  <div class="landing-hero__copy">
-    <p class="eyebrow">Para grupos que já confiam uns nos outros</p>
-    <h1 id="landing-title">Feche as contas do grupo sem refazer cada dívida.</h1>
-    <p class="landing-hero__lede">Registre despesas, acompanhe confirmações e veja um plano prático com menos transferências.</p>
-    <div class="landing-hero__actions">
-      <% if user_signed_in? %>
-        <%= render ButtonComponent.new(label: "Abrir app", href: groups_path) %>
-      <% else %>
-        <%= render ButtonComponent.new(label: "Criar conta", href: new_user_registration_path) %>
-      <% end %>
-      <%= render ButtonComponent.new(label: "Como funciona", href: "#como-funciona", variant: :secondary) %>
+<div class="landing-page" data-controller="reveal">
+  <section class="landing-hero" aria-labelledby="landing-title">
+    <div class="landing-hero__copy">
+      <p class="eyebrow" data-reveal-target="item">Mais momentos juntos. Menos contas na cabeça.</p>
+      <h1 id="landing-title" data-reveal-target="item">Divida os gastos. <span>Acerte as contas.</span></h1>
+      <p class="landing-hero__lede" data-reveal-target="item">Organize as despesas com amigos e veja o que falta para todo mundo ficar em dia.</p>
+      <div class="landing-hero__actions" data-reveal-target="item">
+        <%= render ButtonComponent.new(label: user_signed_in? ? "Abrir app" : "Criar conta", href: user_signed_in? ? groups_path : new_user_registration_path) %>
+        <%= render ButtonComponent.new(label: "Como funciona", href: "#como-funciona", variant: :secondary) %>
+      </div>
     </div>
-    <% unless user_signed_in? %><p class="landing-hero__login">Já tem uma conta? <%= link_to "Entrar", new_user_session_path %></p><% end %>
-  </div>
-  <figure class="landing-hero__photo">
-    <picture>
-      <source media="(max-width: 520px)" srcset="<%= image_path("landing/hero-friends-480.webp") %>">
-      <source media="(max-width: 820px)" srcset="<%= image_path("landing/hero-friends-768.webp") %>">
-      <%= image_tag "landing/hero-friends-1024.webp", alt: "Quatro amigos conversando depois de uma refeição compartilhada.", width: 1024, height: 576, fetchpriority: "high" %>
-    </picture>
-    <figcaption>Um grupo, uma visão clara.</figcaption>
-  </figure>
-</section>
+    <figure class="landing-hero__photo" data-reveal-target="item">
+      <picture>
+        <source media="(max-width: 520px)" srcset="<%= image_path("landing/hero-friends-480.webp") %>">
+        <source media="(max-width: 820px)" srcset="<%= image_path("landing/hero-friends-768.webp") %>">
+        <%= image_tag "landing/hero-friends-1024.webp", alt: "Um grupo de amigos reunidos à mesa enquanto uma pessoa mostra o celular.", width: 1024, height: 576, fetchpriority: "high" %>
+      </picture>
+    </figure>
+  </section>
 
-<section id="como-funciona" class="landing-section landing-flow" aria-labelledby="flow-title">
-  <p class="eyebrow">Um ciclo simples</p>
-  <h2 id="flow-title">Registre, entenda, envie, confirme.</h2>
-  <ol class="landing-steps">
-    <li><strong>Registre</strong><span>Adicione uma despesa e como ela foi dividida.</span></li>
-    <li><strong>Entenda</strong><span>Veja o saldo do grupo sem presumir uma dívida bilateral.</span></li>
-    <li><strong>Envie</strong><span>Siga uma sugestão líquida, quando ela fizer sentido.</span></li>
-    <li><strong>Confirme</strong><span>O destino confirma e o saldo oficial muda.</span></li>
-  </ol>
-</section>
+  <section id="como-funciona" data-reveal-target="item" class="landing-section landing-flow" aria-labelledby="flow-title">
+    <h2 id="flow-title">Da primeira despesa<br>ao último acerto.</h2>
+    <ol class="landing-steps">
+      <li><strong>Registre o gasto</strong><span>Conte quem pagou e como a conta foi dividida.</span></li>
+      <li><strong>Veja o que falta</strong><span>O Quitando sugere quem paga para quem, considerando as contas do grupo inteiro.</span></li>
+      <li><strong>Marque o envio</strong><span>Faça a transferência fora do app. Depois, marque o valor como enviado.</span></li>
+      <li><strong>Fechem a conta</strong><span>Por fim, quem recebeu confirma. Assim, todo mundo acompanha o acerto.</span></li>
+    </ol>
+  </section>
 
-<section id="estados" class="landing-section landing-explainer" aria-labelledby="states-title">
-  <div>
-    <h2 id="states-title">Cada valor responde uma pergunta diferente.</h2>
-  </div>
-  <dl class="landing-definitions">
-    <div><dt>Saldo oficial</dt><dd>O que já foi confirmado no grupo.</dd></div>
-    <div><dt>Pendência</dt><dd>Um envio reportado, ainda aguardando confirmação.</dd></div>
-    <div><dt>Plano líquido</dt><dd>Uma sugestão derivada para reduzir transferências restantes.</dd></div>
-  </dl>
-</section>
+  <section id="estados" data-reveal-target="item" class="landing-section landing-explainer" aria-labelledby="states-title">
+    <div><h2 id="states-title">Cada acerto,<br>bem explicado.</h2><p>Sem adivinhar se alguém já pagou ou se ainda falta confirmar.</p></div>
+    <dl class="landing-definitions">
+      <div><dt>O que falta pagar</dt><dd>Sugestões para acertar as contas do grupo. Você decide quando fazer a transferência.</dd></div>
+      <div><dt>O que aguarda confirmação</dt><dd>Alguém marcou o valor como enviado. Quem recebe ainda precisa confirmar.</dd></div>
+      <div><dt>O que já foi confirmado</dt><dd>O recebimento foi reconhecido e já entrou no saldo oficial, junto com as despesas do grupo.</dd></div>
+    </dl>
+  </section>
 
-<section id="produto" class="landing-section landing-product" aria-labelledby="product-title">
-  <div>
-    <h2 id="product-title">O que aconteceu, o que falta e por quê.</h2>
-    <p>O painel combina saldos, pendências e o plano atual em uma leitura que também funciona sem JavaScript.</p>
-  </div>
-  <figure class="landing-dashboard-screenshot">
-    <%= image_tag "landing/dashboard-summary.webp", alt: "Resumo real de um grupo com saldos, plano líquido e tabela de transferências.", width: 1009, height: 757, loading: "lazy" %>
-    <figcaption>Resumo real do Quitando no cenário visual de Ana, Bruno e Carla.</figcaption>
-  </figure>
-</section>
+  <section id="produto" data-reveal-target="item" class="landing-section landing-product" aria-labelledby="product-title">
+    <div><p class="eyebrow">Tudo no seu lugar</p><h2 id="product-title">Saiba o que fazer agora.</h2><p>Veja sua situação, acompanhe os pagamentos e encontre o próximo passo para deixar as contas em dia.</p></div>
+    <figure class="landing-dashboard-screenshot">
+      <picture class="landing-dashboard-screenshot__theme landing-dashboard-screenshot__theme--light">
+        <source media="(max-width: 520px)" srcset="<%= image_path("landing/dashboard-summary-mobile.webp") %>" width="464" height="1285">
+        <%= image_tag "landing/dashboard-summary.webp", srcset: "#{image_path('landing/dashboard-summary-720.webp')} 720w, #{image_path('landing/dashboard-summary.webp')} 1440w", sizes: "(min-width: 1328px) 1232px, calc(100vw - 5rem)", alt: "Resumo do Quitando no tema claro, com a situação de Ana, pagamentos para revisar e saldos dos participantes.", width: 1440, height: 1080, loading: "lazy" %>
+      </picture>
+      <picture class="landing-dashboard-screenshot__theme landing-dashboard-screenshot__theme--dark">
+        <source media="(max-width: 520px)" srcset="<%= image_path("landing/dashboard-summary-dark-mobile.webp") %>" width="464" height="1285">
+        <%= image_tag "landing/dashboard-summary-dark.webp", srcset: "#{image_path('landing/dashboard-summary-dark-720.webp')} 720w, #{image_path('landing/dashboard-summary-dark.webp')} 1440w", sizes: "(min-width: 1328px) 1232px, calc(100vw - 5rem)", alt: "Resumo do Quitando no tema escuro, com a situação de Ana, pagamentos para revisar e saldos dos participantes.", width: 1440, height: 1080, loading: "lazy" %>
+      </picture>
+      <figcaption>Seu grupo, suas contas e o próximo passo. Exemplo com dados fictícios.</figcaption>
+    </figure>
+  </section>
 
-<section id="engenharia" class="landing-section landing-engineering" aria-labelledby="engineering-title">
-  <h2 id="engineering-title">Cuidado com os fatos, cuidado com a interface.</h2>
-  <ul>
-    <li>Valores em centavos inteiros, sem arredondamento invisível.</li>
-    <li>Plano derivado, sem transformar sugestão em pagamento.</li>
-    <li>HTTP completo antes de cada melhoria progressiva.</li>
-    <li>Texto, foco e tabela equivalentes ao grafo.</li>
-  </ul>
-</section>
+  <section id="engenharia" data-reveal-target="item" class="landing-section landing-engineering" aria-labelledby="engineering-title">
+    <h2 id="engineering-title">Menos contas soltas.<br>Mais clareza para todos.</h2>
+    <ul>
+      <li><strong>Despesas organizadas</strong><span>Quem pagou, quem participou e quanto ficou para cada pessoa.</span></li>
+      <li><strong>Divisão do seu jeito</strong><span>Divida igualmente ou informe o valor de cada participante.</span></li>
+      <li><strong>Histórico à mão</strong><span>Consulte os gastos e acompanhe as correções sem perder o que aconteceu.</span></li>
+      <li><strong>Recebimento confirmado</strong><span>Quem recebe confirma o pagamento. O grupo sabe o que já foi acertado.</span></li>
+    </ul>
+  </section>
 
-<section id="confianca" class="landing-section landing-trust" aria-labelledby="trust-title">
-  <p class="eyebrow">Uma fronteira clara</p>
-  <h2 id="trust-title">Quitando pressupõe confiança prévia entre participantes.</h2>
-  <p>Não há aprovação ou disputa de despesas no MVP. Cada pessoa continua vendo os fatos do grupo, e pagamentos só se tornam oficiais quando o destino confirma.</p>
-</section>
+  <section id="confianca" data-reveal-target="item" class="landing-section landing-trust" aria-labelledby="trust-title">
+    <h2 id="trust-title">Para dividir com quem faz parte da sua vida.</h2>
+    <p>Uma viagem com amigos, as compras da casa ou o almoço em família. Cada pessoa do grupo pode registrar os gastos e indicar quem pagou.</p>
+    <p>As despesas entram sem aprovação prévia. Por isso, use o Quitando com pessoas que você conhece e confia. Quem recebe uma transferência confirma o recebimento.</p>
+  </section>
 
-<section id="comecar" class="landing-section landing-final-cta" aria-labelledby="cta-title">
-  <h2 id="cta-title">Pronto para fechar as contas sem refazer o grupo inteiro?</h2>
-  <% if user_signed_in? %>
-    <%= render ButtonComponent.new(label: "Abrir app", href: groups_path) %>
-  <% else %>
-    <%= render ButtonComponent.new(label: "Criar conta", href: new_user_registration_path) %>
+  <% if demo_access_available? && !user_signed_in? %>
+    <section id="acessos-teste" data-reveal-target="item" class="landing-section landing-demo-access" aria-labelledby="demo-access-title">
+      <div class="landing-demo-access__intro">
+        <p class="eyebrow"><%= demo_mode? ? "Demonstração pública" : "Quer experimentar?" %></p>
+        <h2 id="demo-access-title"><%= demo_mode? ? "Entre com uma conta de teste." : "Conheça o Quitando antes de criar sua conta." %></h2>
+        <% if demo_mode? %>
+          <p>Este ambiente é compartilhado: outras pessoas podem ver as alterações feitas aqui, e os dados são apagados e recriados a cada seis horas. Para guardar suas despesas, crie uma conta no site principal.</p>
+          <%= render ButtonComponent.new(label: "Entrar com conta de teste", href: demo_login_url, variant: :secondary) %>
+        <% else %>
+          <p>A demonstração é compartilhada: o que você fizer por lá fica visível para outras pessoas e é apagado a cada seis horas. Os dados criados no site principal permanecem salvos.</p>
+          <%= render ButtonComponent.new(label: "Entrar na demonstração", href: demo_login_url, variant: :secondary) %>
+        <% end %>
+      </div>
+      <div class="landing-demo-access__credentials">
+        <div>
+          <h3>E-mails de teste</h3>
+          <ul>
+            <% demo_public_emails.each do |email| %>
+              <li><code><%= email %></code></li>
+            <% end %>
+          </ul>
+        </div>
+        <dl>
+          <div><dt>Senha de teste</dt><dd><code><%= demo_public_password %></code></dd></div>
+          <% if demo_mode? %><div><dt>Próxima atualização dos exemplos</dt><dd><time datetime="<%= demo_next_reset_at.iso8601 %>"><%= l(demo_next_reset_at, format: :short) %></time></dd></div><% end %>
+        </dl>
+      </div>
+    </section>
   <% end %>
-</section>
+
+  <section id="comecar" data-reveal-target="item" class="landing-section landing-final-cta" aria-labelledby="cta-title">
+    <h2 id="cta-title">A próxima conta vocês resolvem juntos.</h2>
+    <%= render ButtonComponent.new(label: user_signed_in? ? "Abrir app" : "Criar conta", href: user_signed_in? ? groups_path : new_user_registration_path) %>
+  </section>
+</div>

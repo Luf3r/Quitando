@@ -5,7 +5,7 @@ class StatusBadgeComponent < ApplicationComponent
     "awaiting_confirmation" => "Aguardando confirmação",
     "settled" => "Quitado",
     "archived" => "Arquivado",
-    "reported" => "Declarado",
+    "reported" => "Aguardando confirmação",
     "confirmed" => "Confirmado",
     "cancelled" => "Cancelado",
     "active" => "Ativo",

@@ -80,11 +80,11 @@ RSpec.describe "Payments" do
     expect(form.at_css("input[name='payment[from_user_id]']")["value"]).to eq(debtor.id)
     expect(form.at_css("input[name='payment[to_user_id]']")["value"]).to eq(owner.id)
     expect(form.at_css("input[name='payment[amount_text]']")["value"]).to eq("10,00")
-    expect(response.body).to include("Origem")
-    expect(response.body).to include("Destino")
+    expect(response.body).to include("Quem envia")
+    expect(response.body).to include("Quem recebe")
     expect(response.body).to include("Valor sugerido")
     expect(response.body).to include("Pagamento parcial")
-    expect(response.body).to include("somente a confirmação altera o saldo oficial")
+    expect(response.body).to include("O saldo oficial muda quando quem recebeu confirmar.")
   end
 
   it "mantém o deep link de report funcional sem Turbo" do
@@ -172,10 +172,10 @@ RSpec.describe "Payments" do
     detail = document.at_css("main .financial-detail-page.payment-detail")
     cancellation = detail.at_css("details.payment-cancellation")
 
-    expect(detail.at_css("[data-status='reported'][data-tone='attention']").text).to include("Declarado")
+    expect(detail.at_css("[data-status='reported'][data-tone='attention']").text).to include("Aguardando confirmação")
     expect(detail.at_css(".financial-detail__amount").text).to include("R$")
     expect(detail.at_css(".financial-detail__direction").text).to include(debtor.name, owner.name)
-    expect(detail.css("dl.financial-detail__metadata dt").map(&:text)).to include("Declarado por", "Declarado em")
+    expect(detail.css("dl.financial-detail__metadata dt").map(&:text)).to include("Marcado como enviado por", "Marcado como enviado em")
     expect(detail.at_css("form[action$='/confirm'] .ui-button--primary").text).to include("Confirmar pagamento")
     expect(cancellation).not_to have_attribute("open")
     expect(cancellation.at_css("summary").text).to include("Cancelar pagamento")
