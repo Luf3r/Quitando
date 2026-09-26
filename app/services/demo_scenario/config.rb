@@ -30,6 +30,7 @@ class DemoScenario::Config
 
   def validate_demo_mode!
     return if @environment["QUITANDO_DEMO_MODE"] == "true"
+    return if @environment["QUITANDO_LOCAL_DUAL_DATABASE"] == "true" && (Rails.env.development? || Rails.env.test?) && ApplicationRecord.current_shard == :demo
 
     raise DemoModeDisabled, "QUITANDO_DEMO_MODE must be exactly true"
   end
@@ -57,6 +58,6 @@ class DemoScenario::Config
   end
 
   def current_database_name
-    ActiveRecord::Base.connection_db_config.database
+    ApplicationRecord.connection_db_config.database
   end
 end

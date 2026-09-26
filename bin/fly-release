@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+required_urls=(
+  QUITANDO_DIRECT_DATABASE_URL
+  QUITANDO_DIRECT_CACHE_DATABASE_URL
+  QUITANDO_DIRECT_QUEUE_DATABASE_URL
+  QUITANDO_DIRECT_CABLE_DATABASE_URL
+)
+
+for variable in "${required_urls[@]}"; do
+  if [[ -z "${!variable:-}" ]]; then
+    printf '%s is required for Fly release migrations\n' "$variable" >&2
+    exit 1
+  fi
+done
+
+export DATABASE_URL="$QUITANDO_DIRECT_DATABASE_URL"
+export CACHE_DATABASE_URL="$QUITANDO_DIRECT_CACHE_DATABASE_URL"
+export QUEUE_DATABASE_URL="$QUITANDO_DIRECT_QUEUE_DATABASE_URL"
+export CABLE_DATABASE_URL="$QUITANDO_DIRECT_CABLE_DATABASE_URL"
+
+bin/rails db:prepare
+
+if [[ "${QUITANDO_DEMO_MODE:-false}" == "true" ]]; then
+  bin/rails db:seed
+fi

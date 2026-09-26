@@ -28,7 +28,7 @@ class Users::RegistrationsController < Devise::RegistrationsController
   private
 
   def demo_mode?
-    ENV["QUITANDO_DEMO_MODE"] == "true"
+    LocalEnvironment.demo?
   end
 
   def demo_main_registration_url

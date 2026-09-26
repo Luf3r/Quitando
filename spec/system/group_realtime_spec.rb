@@ -23,7 +23,7 @@ RSpec.describe "Atualizações em tempo real do grupo", type: :system do
     visit_group_in(:counterparty, fixture.fetch(:group))
     in_session(:counterparty) { expect(page).to have_connected_group_stream }
 
-    cable_channel = fixture.fetch(:group).id
+    cable_channel = "default:#{fixture.fetch(:group).id}"
     messages = SolidCable::Message.where(channel: cable_channel)
     messages_before_broadcast = messages.count
     transport_token = SecureRandom.hex(12)
@@ -80,7 +80,7 @@ RSpec.describe "Atualizações em tempo real do grupo", type: :system do
     visit_group_in(:ana, fixture.fetch(:group))
     in_session(:ana) { expect(page).to have_connected_group_stream }
 
-    ActionCable.server.remote_connections.where(current_user: fixture.fetch(:ana)).disconnect(reconnect: false)
+    ActionCable.server.remote_connections.where(current_user: fixture.fetch(:ana), environment_shard: :default).disconnect(reconnect: false)
     in_session(:ana) { expect(page).to have_text("Atualizações em tempo real indisponíveis.") }
 
     sign_in_in(:counterparty, fixture.fetch(:carla))

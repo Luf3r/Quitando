@@ -1,0 +1,19 @@
+
+[build]
+  dockerfile = "Dockerfile"
+
+[deploy]
+  release_command = "bash bin/fly-release"
+
+[env]
+  RAILS_ENV = "production"
+  SOLID_QUEUE_IN_PUMA = "true"
+  QUITANDO_DEMO_MODE = "false"
+  QUITANDO_PREPARE_ON_BOOT = "false"
+
+[http_service]
+  internal_port = 80
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
