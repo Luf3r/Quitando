@@ -44,7 +44,7 @@ Este arquivo resume decisões que precisam permanecer consistentes entre produto
 - Pagamento recolhe o cancelamento até decisão deliberada; detalhes financeiros separam fatos em campos rotulados e Configurações apresenta nome, e-mail, papel e estado sem composição por pontuação.
 - O histórico recebido inclui convites pendentes e terminais; o histórico enviado é restrito ao owner ativo. A apresentação paginada torna fatos de convite auditáveis, sem criar transição nova nem permissão para agir sobre estado terminal.
 - As listas de convites pendentes e encerrados possuem paginação independente, preservando a posição da outra lista; o parâmetro histórico `page` continua aceito quando os parâmetros específicos estão ausentes.
-- A produção pública demo é demo-only e descartável: usa banco e deploy separados, `QUITANDO_DEMO_MODE=true` e reset integral a cada seis horas. Dados reais duráveis exigem banco e deploy distintos com `QUITANDO_DEMO_MODE=false`.
+- A produção pública demo é demo-only e descartável: usa banco e deploy separados, `QUITANDO_DEMO_MODE=true` e reset integral a cada seis horas. Dados reais duráveis exigem banco e deploy distintos com `QUITANDO_DEMO_MODE=false`. Em desenvolvimento, um processo atende hosts reais e demo em shards PostgreSQL separados; produção mantém dois apps Fly com projetos Neon separados. A landing oferece entrada real, cadastro real e acesso à demo, que encaminha o usuário ao cadastro durável.
 
 ### Domínio
 

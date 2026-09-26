@@ -6,11 +6,11 @@ O Quitando ajuda grupos que já confiam uns nos outros a encerrar despesas compa
 
 ## Status
 
-O projeto está em construção. A Fase 13 recebeu a entrega 13.22 na worktree `codex/product-polish`: favicon e logo sem wordmark, footer reorganizado, credenciais de teste na landing principal quando `QUITANDO_DEMO_URL` está configurada, cadastro encaminhado e bloqueado no host demo, e captura real do Resumo em variantes claras/escuras responsivas. `bin/ci` passou no diff atual e a imagem de produção foi construída e inspecionada quanto às dependências. A Fase 13 ainda aguarda a aceitação humana do gate e a sincronização dos campos do GitHub Project; a Fase 14 permanece posterior.
+O projeto está em construção. A Fase 13 recebeu a entrega 13.23: em desenvolvimento, um processo Rails atende a conta real em `localhost` e a demo em `demo.localhost`, com PostgreSQL e sessão isolados; a landing oferece os dois caminhos. Os perfis Fly para os ambientes real e demo usam a mesma imagem e projetos Neon separados, mas ainda não foram publicados. `bin/ci` passou e a imagem de produção foi verificada. A Fase 13 ainda aguarda a aceitação humana do gate e a sincronização dos campos do GitHub Project; a Fase 14 permanece posterior.
 
 A passagem anterior da reabertura entregou landing pública, tema claro/escuro/sistema, conta pessoal, shell móvel nativo, navegação por Resumo/Plano/Histórico/Configurações, lista, Resumo, despesas e pagamentos orientados à ação, além da revisão de despesas e correções no servidor antes da confirmação. Landing e Resumo autenticado foram inspecionados nos breakpoints normativos, e o Lighthouse da imagem de produção ficou dentro dos limites de LCP e CLS, com acessibilidade 1,0. A Fase 14 tratará a medição de INP de campo por RUM ou CrUX após o deploy, com alvo p75 abaixo de 200 ms no fluxo principal móvel.
 
-A demonstração pública é **demo-only** e descartável: usa o cenário `canonical-v2` com quatro contas, seis grupos e reset integral a cada seis horas, em banco e deploy separados com `QUITANDO_DEMO_MODE=true`. Dados reais duráveis exigem banco e deploy distintos com `QUITANDO_DEMO_MODE=false`.
+A demonstração pública é **demo-only** e descartável: usa o cenário canonical-v2 com quatro contas, seis grupos e reset integral a cada seis horas, em banco e deploy separados. A landing principal oferece entrar e criar uma conta real, além de acesso aos logins de teste; a landing demo explica o compartilhamento e leva de volta ao cadastro durável.
 
 A base integrada já oferece o bootstrap Rails, RSpec com exemplos reais, `bin/ci`, checagens de lint e segurança, Docker com PostgreSQL 18, Active Storage/Vips, Devise, Pundit, FactoryBot, parser monetário em centavos e locale `pt-BR`.
 
@@ -66,7 +66,7 @@ Ficam fora do MVP, entre outros: participantes sem conta, links públicos, multi
 - PostgreSQL 18
 - Hotwire (Turbo e Stimulus)
 - Solid Queue, Solid Cable e Solid Cache
-- Kamal para deploy
+- Kamal continua disponível; os perfis Fly para app real e demo estão preparados, sem deploy executado
 
 ## Desenvolvimento com Docker
 
@@ -77,7 +77,7 @@ cp .env.example .env
 docker compose up --build
 ```
 
-O container prepara o banco antes de iniciar o servidor. Verifique o boot em `http://localhost:3000/up`; a raiz oferece apenas a jornada mínima de cadastro da Fase 0, não os fluxos do MVP. O código-fonte é montado no container, portanto alterações locais são recarregadas sem reconstruir a imagem. Mudanças no `Gemfile` ou no lockfile são conferidas pelo entrypoint.
+O container prepara e migra os bancos real e demo antes de iniciar o servidor. Acesse a landing real em http://localhost:3000 e a demonstração em http://demo.localhost:3000; a landing real oferece entrar, criar conta e experimentar a demo com os logins públicos. O ambiente demo compartilha e recria somente seus próprios dados a cada seis horas e leva ao cadastro real. O código-fonte é montado no container, portanto alterações locais são recarregadas sem reconstruir a imagem. Mudanças no Gemfile ou lockfile são conferidas pelo entrypoint.
 
 Com o ambiente em execução:
 
@@ -126,9 +126,9 @@ O banco de desenvolvimento padrão é `quitando_development`. A configuração e
 
 O [Dockerfile](./Dockerfile) é destinado à imagem de produção e ao Kamal. Injete `RAILS_MASTER_KEY`, `QUITANDO_DATABASE_PASSWORD` e as demais credenciais pelo mecanismo de segredos do ambiente de deploy; não copie `config/master.key` para imagens ou arquivos de exemplo.
 
-O deploy com Kamal usa o GitHub Container Registry e exige `QUITANDO_DEPLOY_HOST`, `QUITANDO_DATABASE_HOST`, `KAMAL_REGISTRY_PASSWORD` e `QUITANDO_DATABASE_PASSWORD` no ambiente que executa o comando. `KAMAL_REGISTRY_USERNAME` é opcional e usa `Luf3r` por padrão.
+O deploy existente com Kamal continua disponível. A configuração Fly preparada usa fly.main.toml e fly.demo.toml com a mesma imagem em dois apps, cada um em um projeto Neon separado. Defina os nomes dos apps pela opção --app e passe a mesma referência --image aos dois comandos fly deploy. Cada app precisa de URLs de runtime agrupadas e URLs diretas para migrations, RAILS_MASTER_KEY e SECRET_KEY_BASE próprio. O app demo também exige QUITANDO_DEMO_DATABASE_NAME e QUITANDO_DEMO_PASSWORD apontados somente ao projeto Neon demo; QUITANDO_DEMO_URL e QUITANDO_MAIN_URL definem os hosts públicos. A configuração está preparada, mas não foi publicada.
 
-Quando a entrega 13.16 estiver implementada, a produção demo usará banco e deploy exclusivos, `QUITANDO_DEMO_MODE=true` e dados descartáveis resetados integralmente a cada seis horas. Não aponte esse deploy para dados duráveis: produção real usa banco e deploy separados com `QUITANDO_DEMO_MODE=false`.
+O app público de demonstração usa banco e deploy exclusivos, `QUITANDO_DEMO_MODE=true` e dados descartáveis resetados integralmente a cada seis horas. Nunca aponte esse app para dados duráveis: o app real usa banco e deploy separados com `QUITANDO_DEMO_MODE=false`.
 
 ## Verificação
 

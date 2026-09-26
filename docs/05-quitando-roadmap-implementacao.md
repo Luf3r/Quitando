@@ -798,7 +798,7 @@ Dois navegadores podem observar mudanças em tempo real, mas o sistema continua 
 
 ## 16. Fase 13 — Visualização, explicação e acessibilidade
 
-**Estado da fase:** em revisão. As entregas 13.1 a 13.22 têm evidência automatizada fresca; a aceitação humana final continua necessária antes de concluir a Fase 13 e iniciar a Fase 14.
+**Estado da fase:** em revisão. As entregas 13.1 a 13.23 têm evidência automatizada fresca; a aceitação humana final continua necessária antes de concluir a Fase 13 e iniciar a Fase 14.
 
 ### 16.1 Objetivo
 
@@ -823,6 +823,8 @@ Entregar uma experiência pública e autenticada completa, coerente, responsiva 
 - histórico auditável paginado em 25 fatos;
 - histórico auditável de convites recebidos e enviados, sem novas transições ou permissões financeiras;
 - cenário público demo reproduzível, em banco e deploy próprios, descartável e resetado integralmente a cada seis horas;
+- landing com acesso explícito a conta real, cadastro real e credenciais demo; no host demo, cadastro bloqueado e link para cadastro durável;
+- em desenvolvimento, seleção segura entre dois shards PostgreSQL no mesmo processo Rails, com isolamento de sessão e Action Cable;
 - ativos reais, páginas de erro e screenshots nos dois temas.
 - identidade visual completa na landing: favicon e ícone Apple derivados da logo, símbolo sem wordmark no header/footer e footer público reorganizado;
 - credenciais públicas disponíveis também no site principal com destino explícito para o host demo; no demo, texto de compartilhamento/reset e cadastro encaminhado ao site durável, com POST bloqueado no servidor;
@@ -948,11 +950,23 @@ As specs cobrem arquivo e links do favicon, destinos da navegação/footer, cont
 
 ---
 
+### 16.13 Entrega 13.23 — Acesso real e demo em desenvolvimento
+
+- a landing principal oferece entrar e criar conta real e entrar na demo com os quatro logins públicos; a landing demo explica o compartilhamento e aponta ao cadastro real;
+- no Compose, `localhost` seleciona o banco real e `demo.localhost` seleciona o banco demo, com host desconhecido recusado antes de consultas;
+- migrations usam o mesmo schema nos bancos locais; o seed e o reset demo operam somente no banco cujo nome coincide com `QUITANDO_DEMO_DATABASE_NAME`;
+- handshake e assinatura Action Cable escolhem o shard do host; broadcasts usam nomes de stream isolados por shard, inclusive quando grupos têm o mesmo UUID;
+- a preparação Fly mantém dois apps com a mesma imagem e projetos Neon separados. O release usa URLs diretas para migrações; a configuração runtime usa URLs agrupadas. A publicação permanece na Fase 14.
+
+Specs cobrem configuração dos shards, acesso dos hosts, cadastro e sessão isolados, seeds/reset limitados ao banco demo, autorização e nomes de stream, e validação das conexões diretas no release. O gate da Fase 13 continua pendente da aceitação humana já descrita; esta entrega não conclui a fase nem executa o deploy da Fase 14.
+
+---
+
 ## 17. Fase 14 — Hardening, observabilidade e deploy
 
 ### 17.1 Objetivo
 
-Preparar operacionalmente o MVP para hardening, observabilidade e deploy após a conclusão do gate da Fase 13. Conforme a decisão de produto registrada para a próxima fase, publicar a mesma versão Kamal nos papéis `web` (dados reais) e `demo` (dados públicos de teste) sob hosts configurados, mantendo bancos auxiliares, credenciais e cookies de sessão isolados; o reset e o cadastro demo não podem atingir o ambiente real. A topologia depende do gate e de um ADR que substitua a decisão de deploy do ADR-0016.
+Preparar operacionalmente o MVP para hardening, observabilidade e deploy após a conclusão do gate da Fase 13. Publicar duas aplicações Fly.io usando a mesma imagem: o app real e o app demo, cada um conectado ao próprio projeto Neon e servido pelo host configurado. Manter credenciais e sessões isoladas; o reset e o cadastro demo não podem atingir o ambiente real. A separação entre bancos e aplicações preserva o contrato do ADR-0016. A publicação permanece pendente do gate da Fase 13 e das verificações operacionais desta fase.
 
 ### 17.2 Implementar
 
@@ -961,7 +975,7 @@ Preparar operacionalmente o MVP para hardening, observabilidade e deploy após a
 - RUM ou consulta CrUX para INP de campo, com acompanhamento do p75 por rota e dispositivo;
 - proteção de rate limit onde aplicável;
 - backups e configuração de produção;
-- deploy com Kamal;
+- preparação de duas aplicações Fly usando a mesma imagem, cada uma conectada a um projeto Neon separado; deploy ainda não executado;
 - smoke tests;
 - revisão de índices e queries;
 - documentação operacional do README;

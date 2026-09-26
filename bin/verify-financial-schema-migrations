@@ -438,67 +438,67 @@ begin
   execute_database_statement(maintenance_database_url, temporary_database_name, "CREATE DATABASE")
   database_created = true
 
-  run!("bin/rails", "db:prepare", environment: child_environment)
+  run!("bin/rails", "db:migrate:primary", environment: child_environment)
   run!("bin/rails", "runner", USER_NAME_MIGRATION_ASSERTION, environment: child_environment)
   run!(
-    "bin/rails", "db:migrate:down",
+    "bin/rails", "db:migrate:down:primary",
     environment: child_environment.merge("VERSION" => PHASE_TEN_MIGRATION_VERSION)
   )
   run!(
-    "bin/rails", "db:migrate:down",
+    "bin/rails", "db:migrate:down:primary",
     environment: child_environment.merge("VERSION" => PHASE_NINE_MIGRATION_VERSION)
   )
   run!("bin/rails", "runner", PAYMENT_COMMAND_RECEIPT_APPEND_ONLY_ASSERTION, environment: child_environment)
   run!(
-    "bin/rails", "db:migrate:down",
+    "bin/rails", "db:migrate:down:primary",
     environment: child_environment.merge("VERSION" => MEMBERSHIP_POSITION_MIGRATION_VERSION)
   )
   run!("bin/rails", "runner", MEMBERSHIP_BACKFILL_FIXTURE, environment: child_environment)
   run!(
-    "bin/rails", "db:migrate:up",
+    "bin/rails", "db:migrate:up:primary",
     environment: child_environment.merge("VERSION" => MEMBERSHIP_POSITION_MIGRATION_VERSION)
   )
   run!("bin/rails", "runner", MEMBERSHIP_BACKFILL_ASSERTION, environment: child_environment)
 
   FINANCIAL_MIGRATION_VERSIONS.reverse_each do |version|
-    run!("bin/rails", "db:migrate:down", environment: child_environment.merge("VERSION" => version))
+    run!("bin/rails", "db:migrate:down:primary", environment: child_environment.merge("VERSION" => version))
   end
 
   FINANCIAL_MIGRATION_VERSIONS.each do |version|
-    run!("bin/rails", "db:migrate:up", environment: child_environment.merge("VERSION" => version))
+    run!("bin/rails", "db:migrate:up:primary", environment: child_environment.merge("VERSION" => version))
   end
 
   run!("bin/rails", "runner", PAYMENT_COMMAND_RECEIPT_MIGRATION_ASSERTION, environment: child_environment)
   run!("bin/rails", "runner", PAYMENT_COMMAND_RECEIPT_APPEND_ONLY_ASSERTION, environment: child_environment)
   run!(
-    "bin/rails", "db:migrate:up",
+    "bin/rails", "db:migrate:up:primary",
     environment: child_environment.merge("VERSION" => PHASE_NINE_MIGRATION_VERSION)
   )
   run!("bin/rails", "runner", PHASE_NINE_RECEIPT_ASSERTION, environment: child_environment)
   run!("bin/rails", "runner", PHASE_NINE_DESCRIPTION_REVISION_FIXTURE, environment: child_environment)
   run_expect_failure!(
-    "bin/rails", "db:migrate:down",
+    "bin/rails", "db:migrate:down:primary",
     environment: child_environment.merge("VERSION" => PHASE_NINE_MIGRATION_VERSION)
   )
   run!("bin/rails", "runner", PHASE_NINE_DESCRIPTION_REVISION_CLEANUP, environment: child_environment)
   run!(
-    "bin/rails", "db:migrate:down",
+    "bin/rails", "db:migrate:down:primary",
     environment: child_environment.merge("VERSION" => PHASE_NINE_MIGRATION_VERSION)
   )
-  run!("bin/rails", "db:migrate:up", environment: child_environment.merge("VERSION" => PHASE_NINE_MIGRATION_VERSION))
+  run!("bin/rails", "db:migrate:up:primary", environment: child_environment.merge("VERSION" => PHASE_NINE_MIGRATION_VERSION))
   run!("bin/rails", "runner", PHASE_NINE_RECEIPT_ASSERTION, environment: child_environment)
   run!(
-    "bin/rails", "db:migrate:up",
+    "bin/rails", "db:migrate:up:primary",
     environment: child_environment.merge("VERSION" => PHASE_TEN_MIGRATION_VERSION)
   )
   run!("bin/rails", "runner", PHASE_TEN_GROUP_SCHEMA_MIGRATION_ASSERTION, environment: child_environment)
   run!(
-    "bin/rails", "db:migrate:down",
+    "bin/rails", "db:migrate:down:primary",
     environment: child_environment.merge("VERSION" => DEMO_SCENARIO_MIGRATION_VERSION)
   )
   run!("bin/rails", "runner", DEMO_SCENARIO_MIGRATION_FIXTURE, environment: child_environment)
   run!(
-    "bin/rails", "db:migrate:up",
+    "bin/rails", "db:migrate:up:primary",
     environment: child_environment.merge("VERSION" => DEMO_SCENARIO_MIGRATION_VERSION)
   )
   run!("bin/rails", "runner", DEMO_SCENARIO_MIGRATION_ASSERTION, environment: child_environment)

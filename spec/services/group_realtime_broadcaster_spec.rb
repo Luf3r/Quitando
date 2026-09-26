@@ -10,11 +10,20 @@ RSpec.describe GroupRealtimeBroadcaster do
     described_class.call(payload)
 
     expect(ActionCable.server).to have_received(:broadcast).with(
-      payload[:group_id],
+      "default:#{payload[:group_id]}",
       include("O estado do grupo foi atualizado.", 'action="refresh"', 'request-id="request-123"')
     )
   end
 
+  it "separa o stream demo mesmo quando o grupo tem o mesmo identificador" do
+    allow(ActionCable.server).to receive(:broadcast)
+
+    ApplicationRecord.connected_to(role: :writing, shard: :demo) do
+      described_class.call(payload)
+    end
+
+    expect(ActionCable.server).to have_received(:broadcast).with("demo:#{payload.fetch(:group_id)}", anything)
+  end
   it "reports its own delivery failure and returns normally" do
     allow(ActionCable.server).to receive(:broadcast).and_raise(StandardError, "cable unavailable")
     reports = []
@@ -32,7 +41,7 @@ RSpec.describe GroupRealtimeBroadcaster do
     user = create(:user)
     remote_connections = double("remote connections", disconnect: nil)
     allow(ActionCable.server).to receive(:remote_connections).and_return(remote_connections)
-    allow(remote_connections).to receive(:where).with(current_user: user).and_return(remote_connections)
+    allow(remote_connections).to receive(:where).with(current_user: user, environment_shard: :default).and_return(remote_connections)
 
     Group.transaction do
       described_class.schedule_reconnection(user.id)

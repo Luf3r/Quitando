@@ -233,6 +233,18 @@ RSpec.describe "Financial schema migration verifier safety" do
     end
   end
 
+  it "runs migration round-trips against the primary database in the multi-database app" do
+    with_fake_migration_dependencies do |_stdout, _stderr, status, _statements, orchestration|
+      expect(status).to be_success
+      expect(orchestration).to include(a_string_including("bin/rails db:migrate:primary"))
+      expect(orchestration).not_to include(a_string_including("bin/rails db:prepare"))
+      migration_commands = orchestration.grep(/^SPAWN /).grep(/db:migrate:(?:down|up)/)
+
+      expect(migration_commands).not_to be_empty
+      expect(migration_commands).to all(include("db:migrate:")).and all(match(/db:migrate:(?:down|up):primary/))
+    end
+  end
+
   it "cleans up after a primary failure and preserves that failure", :aggregate_failures do
     with_fake_migration_dependencies("SYSTEM_FAKE_FAILURE" => "true") do |_stdout, stderr, status, statements|
       expect(status).not_to be_success

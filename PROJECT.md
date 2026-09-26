@@ -250,10 +250,10 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 
 ## 11. Milestone atual
 
-- **Última entrega demonstrada automaticamente:** Fase 13.22 — marca, captura responsiva do Resumo e acesso à demo a partir do site principal.
-- **Fase atual:** Fase 13, em revisão para as entregas 13.17 a 13.22.
-- **Status atual:** `bin/ci` passou no diff atual, incluindo lint, auditorias, build Tailwind, specs request/system, seeds e verificador demo. A captura real foi gerada e exportada em WebP; a imagem de produção foi construída e passou em `bundle check` e na verificação de ausência das gems de desenvolvimento/teste. O wrapper `bin/verify-production-image` exige o Docker CLI no host e não pode ser executado dentro do container da aplicação. A Fase 13 continua pendente da aceitação humana e da sincronização dos campos do GitHub Project, que não puderam ser consultados neste ambiente; a issue #150 também não pôde receber as evidências finais porque a integração retornou 403 e o token local do `gh` está inválido. A Fase 14 permanece posterior.
-- **Gate pendente da Fase 13:** a pessoa avaliadora deve usar o roteiro Ana — revisar recebido, acompanhar enviado, marcar R$ 850, adicionar despesa, consultar quitado e arquivado — comparar stream/reload e reset v2, e conferir landing/captura/footer nos tamanhos previstos. O cenário demo permanece compartilhado e descartável com reset a cada seis horas. A topologia de deploy real+demo solicitada aguarda a Fase 14 e ADR substituto ao ADR-0016.
+- **Última entrega demonstrada automaticamente:** Fase 13.23 — acesso real/demo em desenvolvimento e perfis Fly/Neon preparados.
+- **Fase atual:** Fase 13, em revisão para as entregas 13.17 a 13.23.
+- **Status atual:** `bin/ci` e `bin/verify-production-image` passaram no diff atual. HTTP respondeu 200 em `localhost:3001` e `demo.localhost:3001`; a aplicação usa `quitando_development` sem contas demo no shard real e `quitando_demo_development` com as quatro contas públicas no shard demo. Os perfis Fly/Neon estão preparados, sem publicação. O gate da Fase 13 ainda aguarda aceitação humana; a consulta ao GitHub Project depende do escopo `read:project`, ausente no token atual.
+- **Gate pendente da Fase 13:** permanece a aceitação humana do roteiro Ana descrito acima e a sincronização das issues/campos do Project. Os ambientes real e demo continuam isolados; a preparação Fly/Neon não equivale ao deploy nem conclui a Fase 14.
 - **Gate integrado da Fase 0:** `bin/ci` executa localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação. O hardening adicional da PR #38 também foi aprovado nos checks remotos atuais.
 
 **Integrado e verificado até agora:**
@@ -275,7 +275,7 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 
 - `Group`, `Membership`, `Expense`, `ExpenseShare` e `Payment` persistidos com PK UUID v7, FKs UUID, dinheiro em `bigint`, índices e checks estruturais;
 - specs estruturais de models, enums e factories, além da matriz de catálogo, inserções válidas e violações diretas contra PostgreSQL real;
-- `db/structure.sql` preserva funções e triggers PostgreSQL; `bin/verify-financial-schema-migrations` inicia um banco limpo com `db:prepare`, prova o trigger append-only, exercita backfill e down/up das migrations financeiras e reexecuta o contrato PostgreSQL em banco temporário isolado, com limites para conexões, statements e grupos de subprocessos provados também contra processo e filho reais;
+- `db/structure.sql` preserva funções e triggers PostgreSQL; `bin/verify-financial-schema-migrations` cria um banco temporário limpo, migra somente o shard `primary`, prova o trigger append-only, exercita backfill e down/up das migrations financeiras e reexecuta o contrato PostgreSQL isolado, com limites para conexões, statements e grupos de subprocessos provados também contra processo e filho reais;
 - `bin/verify-production-image` construindo e inspecionando a imagem real, separado de `bin/ci` em um job próprio do workflow.
 
 **Implementado e verificado na Fase 3:**

@@ -19,6 +19,9 @@
       <div class="landing-hero__actions" data-reveal-target="item">
         <%= render ButtonComponent.new(label: user_signed_in? ? "Abrir app" : "Criar conta", href: user_signed_in? ? groups_path : new_user_registration_path) %>
         <%= render ButtonComponent.new(label: "Como funciona", href: "#como-funciona", variant: :secondary) %>
+        <% if demo_access_available? && !demo_mode? && !user_signed_in? %>
+          <%= render ButtonComponent.new(label: "Experimentar demo", href: demo_login_url, variant: :secondary) %>
+        <% end %>
       </div>
     </div>
     <figure class="landing-hero__photo" data-reveal-target="item">
@@ -88,6 +91,7 @@
         <% if demo_mode? %>
           <p>Este ambiente é compartilhado: outras pessoas podem ver as alterações feitas aqui, e os dados são apagados e recriados a cada seis horas. Para guardar suas despesas, crie uma conta no site principal.</p>
           <%= render ButtonComponent.new(label: "Entrar com conta de teste", href: demo_login_url, variant: :secondary) %>
+          <p><%= link_to "Criar conta durável no Quitando", demo_main_registration_url %></p>
         <% else %>
           <p>A demonstração é compartilhada: o que você fizer por lá fica visível para outras pessoas e é apagado a cada seis horas. Os dados criados no site principal permanecem salvos.</p>
           <%= render ButtonComponent.new(label: "Entrar na demonstração", href: demo_login_url, variant: :secondary) %>

@@ -6,7 +6,7 @@ bundle check || bundle install
 
 if { [ "$1" = "bin/rails" ] || [ "$1" = "./bin/rails" ]; } && [ "$2" = "server" ]; then
   bin/rails db:prepare
-  if [ "${QUITANDO_DEMO_MODE:-}" = "true" ]; then
+  if [ "${QUITANDO_DEMO_MODE:-}" = "true" ] || [ "${QUITANDO_LOCAL_DUAL_DATABASE:-}" = "true" ]; then
     bin/rails db:seed
   fi
 fi
