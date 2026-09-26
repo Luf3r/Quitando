@@ -6,6 +6,10 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="application-name" content="<%= t("app.name") %>">
     <meta name="mobile-web-app-capable" content="yes">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <script data-theme-bootstrap>
       (() => {
         const key = "quitando.theme"
@@ -30,10 +34,13 @@
   </head>
 
   <body>
+    <% landing_page = controller_name == "home" && action_name == "index" %>
     <a class="skip-link" href="#main-content">Pular para o conteúdo</a>
     <header class="site-header">
       <div class="site-header__inner">
-        <%= link_to t("app.name"), root_path, class: "wordmark" %>
+        <%= link_to root_path, class: "wordmark", aria: { label: "Quitando, página inicial" } do %>
+          <%= image_tag "/quitando-logo.png", alt: "", width: 44, height: 44 %>
+        <% end %>
         <%= render NavigationComponent.new(user: (current_user if user_signed_in?), pending_invitation_count: pending_invitation_count) %>
       </div>
     </header>
@@ -41,19 +48,25 @@
       <% if demo_mode? %>
         <% if user_signed_in? %>
           <details class="demo-banner" aria-labelledby="demo-banner-title">
-            <summary id="demo-banner-title">Ambiente compartilhado de demonstração</summary>
-            <p>Este ambiente é demo-only e descartável. Todo o cenário é reiniciado integralmente a cada seis horas.</p>
+            <summary id="demo-banner-title">Espaço de teste compartilhado</summary>
+            <p>Somente este ambiente é compartilhado: os dados são apagados e recriados a cada seis horas. Para guardar suas despesas, crie uma conta no site principal.</p>
             <p><strong>Contas públicas:</strong> <%= demo_public_emails.join(", ") %></p>
             <p><strong>Senha:</strong> <%= demo_public_password %></p>
             <p><strong>Próximo reset:</strong> <time datetime="<%= demo_next_reset_at.iso8601 %>"><%= l(demo_next_reset_at, format: :short) %></time>.</p>
+            <p><%= link_to "Criar conta durável no Quitando", demo_main_registration_url %></p>
           </details>
         <% else %>
           <aside class="demo-banner" aria-labelledby="demo-banner-title">
-            <h2 id="demo-banner-title">Ambiente compartilhado de demonstração</h2>
-            <p>Este ambiente é demo-only e descartável. Todo o cenário é reiniciado integralmente a cada seis horas.</p>
-            <p><strong>Contas públicas:</strong> <%= demo_public_emails.join(", ") %></p>
-            <p><strong>Senha:</strong> <%= demo_public_password %></p>
-            <p><strong>Próximo reset:</strong> <time datetime="<%= demo_next_reset_at.iso8601 %>"><%= l(demo_next_reset_at, format: :short) %></time>.</p>
+            <h2 id="demo-banner-title">Espaço de teste compartilhado</h2>
+            <p>Somente este ambiente é compartilhado: os dados são apagados e recriados a cada seis horas. Para guardar suas despesas, crie uma conta no site principal.</p>
+            <% if landing_page %>
+              <p><%= link_to "Veja os acessos de teste", "#acessos-teste" %></p>
+            <% else %>
+              <p><strong>Contas públicas:</strong> <%= demo_public_emails.join(", ") %></p>
+              <p><strong>Senha:</strong> <%= demo_public_password %></p>
+              <p><strong>Próximo reset:</strong> <time datetime="<%= demo_next_reset_at.iso8601 %>"><%= l(demo_next_reset_at, format: :short) %></time>.</p>
+              <p><%= link_to "Criar conta durável no Quitando", demo_main_registration_url %></p>
+            <% end %>
           </aside>
         <% end %>
       <% end %>
@@ -65,5 +78,6 @@
       <% end %>
       <%= yield %>
     </main>
+    <%= render "shared/footer", landing: landing_page %>
   </body>
 </html>

@@ -31,6 +31,16 @@ Consulte também o [índice da documentação](./00-index.md).
 
 ## 1. Princípios de UX
 
+### Refinamento de apresentação da Fase 13
+
+A landing fala com amigos e famílias: "Divida os gastos. Acerte as contas.". Preserva a ordem abertura, como funciona, estados, produto, benefícios, confiança e convite final. Explica que a transferência acontece fora do app e que quem recebe confirma. Termos de implementação permanecem na documentação técnica, não no discurso comercial. Saldo oficial, projeção, sugestão e confirmação continuam distintos nas telas operacionais.
+
+O header persistente e o footer usam somente o símbolo da logo, com “Quitando” no nome acessível do link; o favicon e o ícone Apple usam o mesmo recorte legível. Visitantes encontram Como funciona, Conheça o app, Entrar e Criar conta; autenticados mantêm Grupos, Convites, Conta, Tema e Sair. O seletor Tema tem o mesmo tamanho e alinhamento dos links no desktop e no menu móvel. O menu móvel é nativo e funciona sem JavaScript. O footer público combina marca e frase “Divida os gastos. Aproveite a companhia.”, links agrupados e copyright; nas telas internas ele é compacto.
+
+Movimento é melhoria de apresentação: hero em sequência de 450 a 650 ms, seções reveladas uma vez e microinterações de 120 a 180 ms, sem bloquear rolagem ou animar valores financeiros. Sem JavaScript, com movimento reduzido ou sem IntersectionObserver, o HTML permanece visível e operacional, sem efeito animado. A preferência por movimento reduzido também é respeitada quando muda durante a sessão. Nenhuma animação representa sucesso de um comando antes de sua confirmação pelo servidor.
+
+A landing do site principal pode apresentar os quatro e-mails públicos, a senha configurada e um link para a demonstração quando `QUITANDO_DEMO_URL` está configurada; a conta real continua durável. Só no host demo a interface explica que aquele ambiente é compartilhado e tem os dados apagados e recriados a cada seis horas. Ali, cadastro encaminha ao site principal e o POST de cadastro é bloqueado no servidor. A captura do produto é o Resumo real com cenário fictício reproduzível, exportado em variantes WebP para desktop e celular; a captura acompanha Claro, Escuro ou a preferência do sistema, inclusive após navegação Turbo. A fotografia editorial fornecida pelo usuário está integrada em variantes responsivas e na imagem Open Graph.
+
 - **Confiança acima de tudo.** Todo valor indica origem, estado e efeito.
 - **Linguagem precisa.** “Você deve ao grupo” é saldo; “pague para Ana” é sugestão; “aguardando Ana confirmar” é pendência.
 - **Explicar o destinatário, não presumir dívida bilateral.** O plano pode indicar alguém diferente do pagador de uma despesa lembrada; a interface mostra que a sugestão compensa o saldo do grupo inteiro.

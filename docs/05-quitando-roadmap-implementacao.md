@@ -798,7 +798,7 @@ Dois navegadores podem observar mudanças em tempo real, mas o sistema continua 
 
 ## 16. Fase 13 — Visualização, explicação e acessibilidade
 
-**Estado da fase:** em revisão. As entregas 13.1 a 13.21 têm evidência automatizada fresca; a aceitação humana final da 13.21 ainda é necessária para concluir a reorganização da experiência dos grupos em torno da situação pessoal, próxima ação e mudanças recentes. A Fase 14 não absorve essa entrega.
+**Estado da fase:** em revisão. As entregas 13.1 a 13.22 têm evidência automatizada fresca; a aceitação humana final continua necessária antes de concluir a Fase 13 e iniciar a Fase 14.
 
 ### 16.1 Objetivo
 
@@ -824,6 +824,9 @@ Entregar uma experiência pública e autenticada completa, coerente, responsiva 
 - histórico auditável de convites recebidos e enviados, sem novas transições ou permissões financeiras;
 - cenário público demo reproduzível, em banco e deploy próprios, descartável e resetado integralmente a cada seis horas;
 - ativos reais, páginas de erro e screenshots nos dois temas.
+- identidade visual completa na landing: favicon e ícone Apple derivados da logo, símbolo sem wordmark no header/footer e footer público reorganizado;
+- credenciais públicas disponíveis também no site principal com destino explícito para o host demo; no demo, texto de compartilhamento/reset e cadastro encaminhado ao site durável, com POST bloqueado no servidor;
+- capturas reais do Resumo em Claro/Escuro e tamanhos desktop/celular, com seleção correspondente ao tema manual ou à preferência do sistema após navegação Turbo.
 
 ### 16.3 Specs
 
@@ -837,6 +840,9 @@ Entregar uma experiência pública e autenticada completa, coerente, responsiva 
 - detalhe de despesa distingue `registrado por` de `pago por`;
 - comparação histórica não é apresentada como trabalho restante após reports;
 - navegação por teclado e foco dos modais funcionam.
+- favicon, links e footer são acessíveis; credenciais da demo aparecem no site principal quando configuradas, e o aviso de reset aparece somente no demo;
+- cadastro no host demo é encaminhado ao host principal em GET e bloqueado no servidor em POST;
+- a captura real do Resumo troca entre Claro, Escuro e Sistema e não fica desatualizada após navegação Turbo.
 - composição concorrente mantém o lock de grupo, impede commit financeiro intercalado e devolve um snapshot único sem repetição ilimitada.
 - landing distingue visitante e usuário autenticado, mantém a ordem prevista e não inventa pricing, prova social ou métricas;
 - tema respeita preferência do sistema, override persistido e descarte de valor inválido antes da primeira pintura;
@@ -930,13 +936,23 @@ O gate não está concluído apenas pela automação: permanece necessária a ac
 
 A aceitação humana usa Ana como roteiro: revisar o recebido na Viagem, acompanhar o envio na Configuração, marcar R$ 850 em Contas sem usar o grafo, comparar oficial/projetado e as três camadas, consultar o quitado e o arquivado; Bruno confirma a transferência, a atualização por stream e o reload são comparados, e o reset deve restaurar o snapshot v2.
 
+### 16.12 Entrega 13.22 — Marca, landing e demonstração pública
+
+- favicon PNG 16/32/48 px e ícone Apple de 180 px usam o recorte opaco da logo; header e footer mostram o símbolo sem repetir o nome, preservado no nome acessível;
+- o seletor Tema alinha tipografia e área de interação à navegação em desktop e celular; o footer separa marca/frase, links e copyright em desktop e os empilha sem excesso de espaço no celular;
+- a landing real mostra os quatro logins públicos e o link configurado para a demo, sem apresentar seus dados duráveis como temporários; somente o host demo declara compartilhamento, exclusão e recriação a cada seis horas;
+- no host demo, o GET de cadastro encaminha à inscrição principal e o POST retorna `403` sem criar conta;
+- a captura é produzida por uma system spec que cria o cenário Casa da Vila usando serviços de domínio, e exportada em WebP desktop (1440 e 720 px) e mobile (464 px, sem scrollbar do navegador) nos dois temas. A seleção considera override manual e preferência do sistema.
+
+As specs cobrem arquivo e links do favicon, destinos da navegação/footer, conteúdo dos dois hosts, bloqueio de cadastro e seleção da imagem nos três temas. No diff atual, `bin/ci` passou; a system spec recapturou o cenário e o exportador produziu WebP atualizados. A imagem de produção foi construída, `bundle check` passou e as gems de desenvolvimento/teste estão ausentes. O wrapper `bin/verify-production-image` não roda dentro do container porque o Docker CLI não está instalado ali; a construção e inspeção equivalentes foram executadas pelo CLI no host. A entrega não altera domínio financeiro, API, persistência de dados pessoais ou deploy. O gate integral continua pendente da aceitação humana descrita acima e da sincronização dos campos do GitHub Project.
+
 ---
 
 ## 17. Fase 14 — Hardening, observabilidade e deploy
 
 ### 17.1 Objetivo
 
-Preparar operacionalmente o MVP para hardening, observabilidade e deploy após a conclusão do gate da Fase 13.
+Preparar operacionalmente o MVP para hardening, observabilidade e deploy após a conclusão do gate da Fase 13. Conforme a decisão de produto registrada para a próxima fase, publicar a mesma versão Kamal nos papéis `web` (dados reais) e `demo` (dados públicos de teste) sob hosts configurados, mantendo bancos auxiliares, credenciais e cookies de sessão isolados; o reset e o cadastro demo não podem atingir o ambiente real. A topologia depende do gate e de um ADR que substitua a decisão de deploy do ADR-0016.
 
 ### 17.2 Implementar
 

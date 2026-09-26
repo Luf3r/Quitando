@@ -1,5 +1,11 @@
 # See https://git-scm.com/docs/gitattributes for more about git attribute files.
 
+# Keep files read by Linux bundle and shell commands consistent in Windows worktrees.
+/Gemfile text eol=lf
+/Gemfile.lock text eol=lf
+/bin/** text eol=lf
+/config/production-excluded-gems.txt text eol=lf
+
 # Mark the database schema as having been generated.
 db/schema.rb linguist-generated
 

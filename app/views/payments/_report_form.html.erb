@@ -8,11 +8,11 @@
   <%= form.hidden_field :expected_financial_state_version, value: form_values.fetch("expected_financial_state_version") %>
   <%= form.hidden_field :idempotency_key, value: form_values.fetch("idempotency_key") %>
   <dl class="payment-report-context">
-    <div><dt>Origem</dt><dd><%= origin %></dd></div>
-    <div><dt>Destino</dt><dd><%= destination %></dd></div>
+    <div><dt>Quem envia</dt><dd><%= origin %></dd></div>
+    <div><dt>Quem recebe</dt><dd><%= destination %></dd></div>
     <div><dt>Valor sugerido</dt><dd>R$ <%= form_values.fetch("amount_text") %></dd></div>
   </dl>
   <%= render FieldComponent.new(label: "Valor a informar (R$)", name: "payment[amount_text]", value: form_values.fetch("amount_text"), hint: "Pagamento parcial é permitido: informe entre R$ 0,01 e R$ #{form_values.fetch("amount_text")}.", options: { required: true, autofocus: true, inputmode: "decimal" }) %>
-  <p class="ui-field__hint">Marcar como enviado registra uma declaração; somente a confirmação altera o saldo oficial.</p>
+  <p class="ui-field__hint">Faça a transferência fora do app antes de marcar como enviado. O saldo oficial muda quando quem recebeu confirmar.</p>
   <%= form.submit "Marcar como enviado", class: "ui-button ui-button--primary" %>
 <% end %>

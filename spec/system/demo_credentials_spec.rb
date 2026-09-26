@@ -28,7 +28,7 @@ RSpec.describe "Credenciais do cenário demo", type: :system do
     visit new_user_session_path
 
     expect(page).to have_css("aside[aria-labelledby='demo-banner-title']")
-    expect(page).to have_text("Ambiente compartilhado de demonstração")
+    expect(page).to have_text("Espaço de teste compartilhado")
     expect(page).to have_text("ana@demo.quitando.test")
     expect(page).to have_text("senha-publica")
     expect(page).to have_text("Próximo reset")

@@ -2,7 +2,7 @@ module ApplicationHelper
   DEMO_RESET_INTERVAL = 6.hours
 
   def payment_status_label(status)
-    { "reported" => "declarado", "confirmed" => "confirmado", "cancelled" => "cancelado" }.fetch(status.to_s)
+    { "reported" => "aguardando confirmação", "confirmed" => "confirmado", "cancelled" => "cancelado" }.fetch(status.to_s)
   end
 
   def invitation_status_label(status)
@@ -21,6 +21,23 @@ module ApplicationHelper
 
   def demo_mode?
     ENV["QUITANDO_DEMO_MODE"] == "true"
+  end
+
+  def demo_access_available?
+    demo_mode? || ENV["QUITANDO_DEMO_URL"].present?
+  end
+
+  def demo_login_url
+    return new_user_session_path if demo_mode?
+
+    URI.join(ENV["QUITANDO_DEMO_URL"], new_user_session_path).to_s
+  end
+
+  def demo_main_registration_url
+    main_url = ENV["QUITANDO_MAIN_URL"]
+    return root_path if main_url.blank?
+
+    URI.join(main_url, new_user_registration_path).to_s
   end
 
   def demo_public_password

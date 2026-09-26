@@ -4,6 +4,11 @@ require "view_component/test_helpers"
 RSpec.describe StatusBadgeComponent, type: :component do
   include ViewComponent::TestHelpers
 
+  it "explica o estado de um envio sem tratá-lo como confirmado" do
+    render_inline(described_class.new(status: "reported"))
+    expect(page).to have_css("[data-status='reported'][data-tone='attention']", text: "Aguardando confirmação")
+  end
+
   it "preserva o status canônico e permite um rótulo contextual" do
     render_inline(described_class.new(status: "reported", label: "Aguardando Ana"))
 

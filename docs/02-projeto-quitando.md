@@ -42,7 +42,7 @@ A partir desses registros, o sistema:
 
 A aplicação é inspirada em produtos de divisão de contas, mas o diferencial de portfólio está na profundidade técnica: ledger auditável, projeções explícitas, algoritmo explicável, testes de invariantes, concorrência, idempotência e uma UI reativa construída com Hotwire.
 
-A landing pública equilibra aquisição e portfólio sem alegações inventadas. Ela explica o ciclo do produto, diferencia saldo oficial, pendência e plano, mostra uma captura real do dashboard e declara tanto a engenharia verificável quanto a fronteira de confiança do MVP.
+A landing pública apresenta o produto para amigos e famílias, sem alegações inventadas. Ela explica o ciclo em linguagem cotidiana, diferencia sugestão, envio e recebimento confirmado, mostra uma captura real do Resumo e explica o registro colaborativo entre pessoas que já se conhecem. Detalhes de engenharia permanecem na documentação técnica. Quando o link público para demo está configurado, a landing também oferece os quatro logins de teste; deixa explícito que esses dados pertencem ao ambiente compartilhado e resetado, enquanto as contas no site principal são duráveis.
 
 ### 1.1 O problema humano
 

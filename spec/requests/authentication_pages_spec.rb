@@ -100,7 +100,7 @@ RSpec.describe "Páginas de autenticação" do
 
     get new_user_session_path
 
-    expect(response.body).to include("Ambiente compartilhado de demonstração")
+    expect(response.body).to include("Espaço de teste compartilhado")
     expect(response.body).to include("ana@demo.quitando.test")
     expect(response.body).to include("senha-publica")
     expect(response.body).to include("Próximo reset")
