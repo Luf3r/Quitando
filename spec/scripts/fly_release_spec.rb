@@ -10,11 +10,13 @@ RSpec.describe "Fly release migrations" do
     Dir.mktmpdir do |directory|
       capture_path = File.join(directory, "calls.txt")
       prepare_fake_rails(directory)
+      prepare_fake_preflight(directory)
       output, status = Open3.capture2e(release_environment(capture_path), "bash", release_script.to_s, chdir: directory)
 
       expect(status).to be_success, output
       calls = File.readlines(capture_path, chomp: true)
       expect(calls).to eq([
+        "preflight",
         "postgres://direct-main|postgres://direct-cache|postgres://direct-queue|postgres://direct-cable|db:prepare",
         "postgres://direct-main|postgres://direct-cache|postgres://direct-queue|postgres://direct-cable|db:seed"
       ])
@@ -25,12 +27,27 @@ RSpec.describe "Fly release migrations" do
     Dir.mktmpdir do |directory|
       capture_path = File.join(directory, "calls.txt")
       prepare_fake_rails(directory)
+      prepare_fake_preflight(directory)
       environment = release_environment(capture_path).merge("QUITANDO_DIRECT_QUEUE_DATABASE_URL" => "")
       output, status = Open3.capture2e(environment, "bash", release_script.to_s, chdir: directory)
 
       expect(status).not_to be_success
       expect(output).to include("QUITANDO_DIRECT_QUEUE_DATABASE_URL is required")
       expect(File).not_to exist(capture_path)
+    end
+  end
+
+  it "não executa migrations nem seed quando a verificação das conexões falha" do
+    Dir.mktmpdir do |directory|
+      capture_path = File.join(directory, "calls.txt")
+      prepare_fake_rails(directory)
+      prepare_fake_preflight(directory)
+      environment = release_environment(capture_path).merge("PREFLIGHT_EXIT" => "42")
+
+      output, status = Open3.capture2e(environment, "bash", release_script.to_s, chdir: directory)
+
+      expect(status.exitstatus).to eq(42), output
+      expect(File.readlines(capture_path, chomp: true)).to eq([ "preflight" ])
     end
   end
 
@@ -59,5 +76,15 @@ RSpec.describe "Fly release migrations" do
       "#!/bin/sh\nprintf '%s|%s|%s|%s|%s\\n' \"$DATABASE_URL\" \"$CACHE_DATABASE_URL\" \"$QUEUE_DATABASE_URL\" \"$CABLE_DATABASE_URL\" \"$*\" >> \"$CAPTURE_PATH\"\n"
     )
     FileUtils.chmod(0o755, File.join(bin_directory, "rails"))
+  end
+
+  def prepare_fake_preflight(directory)
+    bin_directory = File.join(directory, "bin")
+    FileUtils.mkdir_p(bin_directory)
+    File.write(
+      File.join(bin_directory, "verify-neon-connections"),
+      "#!/bin/sh\nprintf 'preflight\\n' >> \"$CAPTURE_PATH\"\nexit \"${PREFLIGHT_EXIT:-0}\"\n"
+    )
+    FileUtils.chmod(0o755, File.join(bin_directory, "verify-neon-connections"))
   end
 end
