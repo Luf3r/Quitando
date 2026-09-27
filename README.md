@@ -128,6 +128,8 @@ O [Dockerfile](./Dockerfile) é destinado à imagem de produção e ao Kamal. In
 
 O deploy existente com Kamal continua disponível. A configuração Fly preparada usa fly.main.toml e fly.demo.toml com a mesma imagem em dois apps, cada um em um projeto Neon separado. Defina os nomes dos apps pela opção --app e passe a mesma referência --image aos dois comandos fly deploy. Cada app precisa de URLs de runtime agrupadas e URLs diretas para migrations, RAILS_MASTER_KEY e SECRET_KEY_BASE próprio. O app demo também exige QUITANDO_DEMO_DATABASE_NAME e QUITANDO_DEMO_PASSWORD apontados somente ao projeto Neon demo; QUITANDO_DEMO_URL e QUITANDO_MAIN_URL definem os hosts públicos. A configuração está preparada, mas não foi publicada.
 
+O deploy com Kamal usa o GitHub Container Registry e exige `QUITANDO_DEPLOY_HOST`, `QUITANDO_DATABASE_HOST`, `KAMAL_REGISTRY_PASSWORD` e `QUITANDO_DATABASE_PASSWORD` no ambiente que executa o comando. `KAMAL_REGISTRY_USERNAME` é opcional e usa `Luf3r` por padrão.
+
 O app público de demonstração usa banco e deploy exclusivos, `QUITANDO_DEMO_MODE=true` e dados descartáveis resetados integralmente a cada seis horas. Nunca aponte esse app para dados duráveis: o app real usa banco e deploy separados com `QUITANDO_DEMO_MODE=false`.
 
 ## Verificação
