@@ -65,13 +65,14 @@ RSpec.describe "Financial schema migration verifier safety" do
             @fake_pid = 4_000
             @wait_attempts = Hash.new(0)
             @commands = {}
+            @released_groups = {}
 
             class << self
               def spawn(environment, *arguments)
                 options = arguments.last.is_a?(Hash) ? arguments.pop : {}
                 command = arguments.join(" ")
                 File.open(ENV.fetch("PROCESS_FAKE_LOG"), "a") do |log|
-                  log.puts("SPAWN pgroup=#{options[:pgroup].inspect} #{command}")
+                  log.puts("SPAWN pgroup=#{options[:pgroup].inspect} verification=#{environment["FINANCIAL_MIGRATION_VERIFICATION"].inspect} #{command}")
                 end
                 @fake_pid += 1
                 @commands[@fake_pid] = [ environment, command ]
@@ -81,6 +82,7 @@ RSpec.describe "Financial schema migration verifier safety" do
               def wait2(pid)
                 @wait_attempts[pid] += 1
                 sleep 1 if ENV["SYSTEM_FAKE_TIMEOUT"] == "true" && @wait_attempts[pid] == 1
+                sleep 1 if ENV["SYSTEM_FAKE_UNCONFIRMED_TERMINATION"] == "true"
 
                 environment, command = @commands.fetch(pid)
                 expected_phase_nine_down_failure = environment["FINANCIAL_MIGRATION_EXPECT_FAILURE"] == "true"
@@ -90,6 +92,12 @@ RSpec.describe "Financial schema migration verifier safety" do
 
               def kill(signal, pid)
                 File.open(ENV.fetch("PROCESS_FAKE_LOG"), "a") { |log| log.puts("KILL #{signal} #{pid}") }
+                raise Errno::ESRCH if signal == 0 && @released_groups[pid]
+
+                if %w[TERM KILL].include?(signal) && pid.negative? && ENV["SYSTEM_FAKE_UNCONFIRMED_TERMINATION"] != "true"
+                  @released_groups[pid] = true
+                end
+
                 1
               end
             end
@@ -195,6 +203,48 @@ RSpec.describe "Financial schema migration verifier safety" do
     end
   end
 
+  it "runs the populated-users demo migration assertion before the structural RSpec suite" do
+    with_fake_migration_dependencies do |_stdout, _stderr, status, _statements, orchestration|
+      expect(status).to be_success
+      expect(orchestration).to include(a_string_including("demo scenario migration attempted to rewrite existing users"))
+    end
+  end
+
+  it "runs the demo migration physical-rewrite assertion before the structural RSpec suite" do
+    with_fake_migration_dependencies do |_stdout, _stderr, status, _statements, orchestration|
+      expect(status).to be_success
+      expect(orchestration).to include(a_string_including("demo scenario migration rewrote users relation"))
+    end
+  end
+
+  it "runs the user name canonical backfill, residual refusal and round-trip assertions" do
+    with_fake_migration_dependencies do |_stdout, _stderr, status, _statements, orchestration|
+      expect(status).to be_success
+      expect(orchestration).to include(a_string_including("user name migration did not backfill canonical accounts"))
+      expect(orchestration).to include(a_string_including("user name migration unexpectedly accepted residual user without a name"))
+      expect(orchestration).to include(a_string_including("lock_timeout was not restored after user name migration"))
+    end
+  end
+
+  it "marks child migration commands so their temporary trigger cannot be dumped into the shared schema" do
+    with_fake_migration_dependencies do |_stdout, _stderr, status, _statements, orchestration|
+      expect(status).to be_success
+      expect(orchestration.grep(/^SPAWN /)).to all(include('verification="true"'))
+    end
+  end
+
+  it "runs migration round-trips against the primary database in the multi-database app" do
+    with_fake_migration_dependencies do |_stdout, _stderr, status, _statements, orchestration|
+      expect(status).to be_success
+      expect(orchestration).to include(a_string_including("bin/rails db:migrate:primary"))
+      expect(orchestration).not_to include(a_string_including("bin/rails db:prepare"))
+      migration_commands = orchestration.grep(/^SPAWN /).grep(/db:migrate:(?:down|up)/)
+
+      expect(migration_commands).not_to be_empty
+      expect(migration_commands).to all(include("db:migrate:")).and all(match(/db:migrate:(?:down|up):primary/))
+    end
+  end
+
   it "cleans up after a primary failure and preserves that failure", :aggregate_failures do
     with_fake_migration_dependencies("SYSTEM_FAKE_FAILURE" => "true") do |_stdout, stderr, status, statements|
       expect(status).not_to be_success
@@ -213,7 +263,21 @@ RSpec.describe "Financial schema migration verifier safety" do
       expect(statements.map { |statement| statement.split.first }).to eq(%w[CREATE DROP])
       expect(stderr).to include("command timed out")
       expect(orchestration.grep(/^SPAWN /)).to all(start_with("SPAWN pgroup=true "))
-      expect(orchestration.grep(/^KILL /)).to eq([ "KILL TERM -4001" ])
+      expect(orchestration.grep(/^KILL /)).to include("KILL TERM -4001", "KILL 0 -4001")
+    end
+  end
+
+  it "retains the temporary database when process termination remains unconfirmed", :aggregate_failures do
+    with_fake_migration_dependencies(
+      "SYSTEM_FAKE_UNCONFIRMED_TERMINATION" => "true",
+      "FINANCIAL_MIGRATION_COMMAND_TIMEOUT_SECONDS" => "0.01",
+      "FINANCIAL_MIGRATION_TERMINATION_GRACE_SECONDS" => "0.01"
+    ) do |stdout, stderr, status, statements, orchestration|
+      expect(status).not_to be_success
+      expect(stdout).to include("Retained temporary database")
+      expect(stderr).to include("process termination was not confirmed")
+      expect(statements.map { |statement| statement.split.first }).to eq([ "CREATE" ])
+      expect(orchestration).to include("KILL TERM -4001", "KILL KILL -4001")
     end
   end
 

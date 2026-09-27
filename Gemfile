@@ -16,7 +16,7 @@ gem "turbo-rails"
 gem "stimulus-rails"
 
 # Transform images for Active Storage variants with the configured Vips processor.
-gem "image_processing", "~> 2.0"
+gem "image_processing", "~> 2.1"
 gem "ruby-vips", "~> 2.0"
 
 # Authenticate users in the MVP.
@@ -26,7 +26,7 @@ gem "devise"
 gem "pundit"
 
 # Server-rendered UI foundation for the HTTP-first Phase 11.
-gem "view_component", "4.12.0"
+gem "view_component", "4.15.0"
 gem "tailwindcss-rails", "4.6.0"
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]

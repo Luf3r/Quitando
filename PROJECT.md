@@ -250,10 +250,10 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 
 ## 11. Milestone atual
 
-- **Última fase concluída:** Fase 11 — Requests, policies e HTML funcional.
-- **Fase atual:** Fase 12 — Turbo Streams e Action Cable, ainda não iniciada.
-- **Status atual:** o gate integrado da Fase 11 foi demonstrado; o épico #16 e suas subissues estão prontos para `Done` no GitHub Project.
-- **Trabalho executável atual:** preparar a Fase 12 sem substituir a reconciliação por HTTP já verificada.
+- **Última entrega demonstrada automaticamente:** Fase 13.23 — acesso real/demo em desenvolvimento e perfis Fly/Neon preparados.
+- **Fase atual:** Fase 13, em revisão para as entregas 13.17 a 13.23.
+- **Status atual:** `bin/ci` e `bin/verify-production-image` passaram no diff atual. HTTP respondeu 200 em `localhost:3001` e `demo.localhost:3001`; a aplicação usa `quitando_development` sem contas demo no shard real e `quitando_demo_development` com as quatro contas públicas no shard demo. Os perfis Fly/Neon estão preparados, sem publicação. O gate da Fase 13 ainda aguarda aceitação humana; a consulta ao GitHub Project depende do escopo `read:project`, ausente no token atual.
+- **Gate pendente da Fase 13:** permanece a aceitação humana do roteiro Ana descrito acima e a sincronização das issues/campos do Project. Os ambientes real e demo continuam isolados; a preparação Fly/Neon não equivale ao deploy nem conclui a Fase 14.
 - **Gate integrado da Fase 0:** `bin/ci` executa localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação. O hardening adicional da PR #38 também foi aprovado nos checks remotos atuais.
 
 **Integrado e verificado até agora:**
@@ -275,7 +275,7 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 
 - `Group`, `Membership`, `Expense`, `ExpenseShare` e `Payment` persistidos com PK UUID v7, FKs UUID, dinheiro em `bigint`, índices e checks estruturais;
 - specs estruturais de models, enums e factories, além da matriz de catálogo, inserções válidas e violações diretas contra PostgreSQL real;
-- `db/structure.sql` preserva funções e triggers PostgreSQL; `bin/verify-financial-schema-migrations` inicia um banco limpo com `db:prepare`, prova o trigger append-only, exercita backfill e down/up das migrations financeiras e reexecuta o contrato PostgreSQL em banco temporário isolado, com limites para conexões, statements e grupos de subprocessos provados também contra processo e filho reais;
+- `db/structure.sql` preserva funções e triggers PostgreSQL; `bin/verify-financial-schema-migrations` cria um banco temporário limpo, migra somente o shard `primary`, prova o trigger append-only, exercita backfill e down/up das migrations financeiras e reexecuta o contrato PostgreSQL isolado, com limites para conexões, statements e grupos de subprocessos provados também contra processo e filho reais;
 - `bin/verify-production-image` construindo e inspecionando a imagem real, separado de `bin/ci` em um job próprio do workflow.
 
 **Implementado e verificado na Fase 3:**
@@ -338,6 +338,31 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 - formulários preservam entradas inválidas, parsing monetário usa centavos inteiros e as ações financeiras mantêm idempotência, versão e estado atual visíveis em conflitos;
 - a jornada Rack::Test cobre Ana, Bruno e Carla desde o convite até `settled`, incluindo pagador e creator distintos, plano líquido e confirmação pelo destino;
 - `bin/rails tailwindcss:build`, `bin/verify-financial-schema-migrations`, `bin/rubocop`, `bin/ci`, `bin/verify-production-image` e `git diff --check` foram executados com sucesso sobre o diff final.
+
+**Concluído e verificado na Fase 12:**
+
+- conexões Action Cable autenticadas e subscriptions de grupo autorizadas usam stream assinado e rejeitam identidade, UUID ou membership inválidos;
+- eventos de estado do grupo são publicados após commit e produzem aviso seguro mais refresh Turbo/morph, sem transmitir valores, descrições ou formulário;
+- despesas, correções e pagamentos possuem deep-links HTML e diálogos Turbo Frame; respostas Turbo preservam falhas e conflitos visíveis;
+- a jornada Selenium com navegadores independentes prova despesa de terceiro, report, confirmação, creator/pagador distintos e equivalência entre stream e reload, usando Solid Cable e PostgreSQL reais também no ambiente de teste;
+- desconexão Cable apresenta aviso, não simula atualização e converge por reload HTTP.
+
+**Concluído e preservado da primeira passagem da Fase 13 (13.1 a 13.6):**
+
+- `ObligationGraphBuilder` deriva relações históricas agregadas e compensação bilateral de despesas ativas, preserva participantes inativos do histórico, ordena arestas e mantém agregados acima de `bigint` como `Integer`, sem escrita financeira;
+- `DebtSimplifier#call_with_trace` produz o plano e passos determinísticos no mesmo ciclo, preservando o contrato de `call`, sinais dos saldos, imutabilidade, propriedades e isolamento de Rails/ActiveRecord;
+- o dashboard entrega um payload tipado único para relações históricas, compensação e plano, com centavos serializados como strings decimais exatas, valores formatados no servidor, métricas de período/denominador e modo histórico depois de qualquer pagamento;
+- as três tabelas semânticas estão presentes no HTML inicial e mantêm a quitação por HTTP; D3/SVG desenha o mesmo payload, usa layout determinístico e apresenta recuperação visível sem simular sucesso quando o desenho falha;
+- specs de navegador cobrem seleção por teclado, `aria-live`, foco inicial e retorno por botão/Escape, contraste WCAG AA, padrões além de cor, movimento reduzido, viewport móvel, estados vazios e redraw por Turbo morph;
+- Tailwind é construído explicitamente no `bin/ci`, e auditoria do importmap cobre o módulo mínimo `d3-selection` fixado localmente e carregado somente quando a visualização conecta.
+- a leitura concorrente do dashboard é delimitada pela `financial_state_version`: uma alteração financeira confirmada entre o plano e as obrigações descarta a composição parcial e retorna uma composição integral da versão nova, demonstrada em PostgreSQL real.
+
+**Verificado e preservado da passagem reaberta da Fase 13 (13.7 a 13.14):**
+
+- landing, autenticação, conta pessoal, shell e quatro destinos por grupo foram redesenhados e cobertos por jornadas HTTP, Turbo e Action Cable;
+- previews e revisões de despesas, histórico auditável, configurações, bloqueios explicáveis, ativos, páginas de erro e temas foram integrados sem alterar os invariantes financeiros;
+- pre-flight visual e de acessibilidade, capturas responsivas, Lighthouse mobile, suíte, Tailwind, `bin/ci`, imagem de produção e integridade do diff foram reconciliados;
+- a medição de INP de campo foi movida para a Fase 14, onde haverá RUM ou CrUX depois do deploy.
 
 Atualize esta seção e o [GitHub Project](https://github.com/users/Luf3r/projects/2) sempre que a tarefa ativa, uma entrega verificável, pendência, fase ou gate mudar. O estado detalhado e os critérios de saída ficam no [roadmap de implementação](./docs/05-quitando-roadmap-implementacao.md).
 

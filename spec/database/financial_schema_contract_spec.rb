@@ -6,11 +6,22 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
   TABLE_COLUMNS = {
     "users" => {
       "id" => [ "uuid", false ],
+      "name" => [ "character varying(80)", false ],
       "email" => [ "character varying", false ],
       "encrypted_password" => [ "character varying", false ],
       "reset_password_token" => [ "character varying", true ],
       "reset_password_sent_at" => [ "timestamp(6) without time zone", true ],
       "remember_created_at" => [ "timestamp(6) without time zone", true ],
+      "demo_account" => [ "boolean", false ],
+      "created_at" => [ "timestamp(6) without time zone", false ],
+      "updated_at" => [ "timestamp(6) without time zone", false ]
+    },
+    "demo_scenarios" => {
+      "id" => [ "uuid", false ],
+      "key" => [ "character varying", false ],
+      "version" => [ "integer", false ],
+      "installed_at" => [ "timestamp(6) without time zone", false ],
+      "last_reset_at" => [ "timestamp(6) without time zone", false ],
       "created_at" => [ "timestamp(6) without time zone", false ],
       "updated_at" => [ "timestamp(6) without time zone", false ]
     },
@@ -113,6 +124,7 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
 
   FOREIGN_KEYS = {
     "users" => [],
+    "demo_scenarios" => [],
     "groups" => [],
     "memberships" => [
       [ "group_id", "groups", "id" ],
@@ -151,6 +163,7 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
 
   UNIQUE_INDEXES = {
     "users" => [ %w[email], %w[reset_password_token] ],
+    "demo_scenarios" => [ %w[key] ],
     "groups" => [],
     "memberships" => [ %w[group_id user_id], %w[group_id position] ],
     "group_invitations" => [ %w[group_id invited_user_id] ],
@@ -186,7 +199,7 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
   end
 
   it "prova PK real em id, tipos, nullability e default UUID v7 no catálogo", :aggregate_failures do
-    expect(TABLE_COLUMNS.keys).to match_array(%w[users groups memberships group_invitations expenses expense_shares expense_description_revisions payments financial_command_receipts])
+    expect(TABLE_COLUMNS.keys).to match_array(%w[users demo_scenarios groups memberships group_invitations expenses expense_shares expense_description_revisions payments financial_command_receipts])
 
     TABLE_COLUMNS.each do |table_name, expected_columns|
       expect(primary_key_columns(table_name)).to eq([ "id" ]), table_name
@@ -195,8 +208,23 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
     end
   end
 
+  it "persiste a fronteira demo com flag segura e cenário unicamente identificado" do
+    expect(column_default("users", "demo_account")).to eq("false")
+    expect(unique_index_columns("demo_scenarios")).to contain_exactly(%w[key])
+  end
+
+  it "protege o nome do usuário contra vazio mesmo sem validação Active Record" do
+    expect(connection.check_constraints(:users).map(&:name)).to include("users_name_nonblank")
+
+    [ "", "   " ].each do |name|
+      expect_postgres_error(PG::CheckViolation) do
+        insert_direct(User, name:, email: "direto-#{database_uuid}@example.com", encrypted_password: "senha")
+      end
+    end
+  end
+
   it "prova cada FK com coluna de origem e destino exatas", :aggregate_failures do
-    expect(FOREIGN_KEYS.keys).to match_array(%w[users groups memberships group_invitations expenses expense_shares expense_description_revisions payments financial_command_receipts])
+    expect(FOREIGN_KEYS.keys).to match_array(%w[users demo_scenarios groups memberships group_invitations expenses expense_shares expense_description_revisions payments financial_command_receipts])
 
     FOREIGN_KEYS.each do |table_name, expected_foreign_keys|
       expect(foreign_keys(table_name)).to eq(expected_foreign_keys), table_name
@@ -801,8 +829,9 @@ RSpec.describe "Contrato estrutural financeiro PostgreSQL" do
     payment = payment_attributes(group:, from_user: user, to_user: other_user)
 
     [
-      [ User, :email, { email: "direto-#{database_uuid}@example.com", encrypted_password: "senha" } ],
-      [ User, :encrypted_password, { email: "direto-#{database_uuid}@example.com", encrypted_password: "senha" } ],
+      [ User, :name, { name: "Pessoa direta", email: "direto-#{database_uuid}@example.com", encrypted_password: "senha" } ],
+      [ User, :email, { name: "Pessoa direta", email: "direto-#{database_uuid}@example.com", encrypted_password: "senha" } ],
+      [ User, :encrypted_password, { name: "Pessoa direta", email: "direto-#{database_uuid}@example.com", encrypted_password: "senha" } ],
       *%i[name currency_code financial_state_version].map do |column_name|
         [ Group, column_name, { name: "Casa", currency_code: "BRL", financial_state_version: 0 } ]
       end,

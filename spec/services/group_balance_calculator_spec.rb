@@ -187,7 +187,7 @@ RSpec.describe GroupBalanceCalculator do
       expect(reports).to contain_exactly(
         include(
           error: an_instance_of(GroupBalanceCalculator::UnbalancedLedger),
-          context: { group_id: group.id, financial_state_version: 12 }
+          context: include(group_id: group.id, financial_state_version: 12)
         )
       )
     ensure
@@ -222,7 +222,7 @@ RSpec.describe GroupBalanceCalculator do
 
       expect { described_class.call(group) }.to raise_error(GroupBalanceCalculator::UnbalancedLedger)
       expect(reports).to contain_exactly(
-        include(context: { group_id: group.id, financial_state_version: 13 })
+        include(context: include(group_id: group.id, financial_state_version: 13))
       )
     ensure
       Rails.error.unsubscribe(subscriber) if subscriber

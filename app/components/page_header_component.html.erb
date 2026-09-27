@@ -1,0 +1,9 @@
+<header class="ui-page-header">
+  <div>
+    <h1 class="ui-page-header__title"><%= @title %></h1>
+    <% if @description.present? %><p class="ui-page-header__description"><%= @description %></p><% end %>
+  </div>
+  <% if @action_label.present? && @action_path.present? %>
+    <%= render ButtonComponent.new(label: @action_label, href: @action_path) %>
+  <% end %>
+</header>

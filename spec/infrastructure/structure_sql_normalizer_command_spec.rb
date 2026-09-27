@@ -37,5 +37,42 @@ RSpec.describe "Structure SQL normalization command" do
         "env RAILS_ENV=test DATABASE_URL=$TEST_DATABASE_URL bin/rails db:prepare && bin/normalize-structure-sql"
       ]
     )
+    expect(steps.index { |name, _command| name == "Setup: Test database" })
+      .to be < steps.index { |name, _command| name == "Database: financial schema migration round-trip" }
+  end
+
+  it "runs system specs only in their dedicated CI step" do
+    steps = []
+    runner = Object.new
+    runner.define_singleton_method(:step) { |name, command| steps << [ name, command ] }
+    recording_ci = Class.new
+    recording_ci.define_singleton_method(:run) { |&block| runner.instance_exec(&block) }
+    stub_const("CI", recording_ci)
+
+    load CI_CONFIG_PATH
+
+    expect(steps).to include(
+      [
+        "Tests: RSpec",
+        "env CI=true RAILS_ENV=test QUITANDO_LOCAL_DUAL_DATABASE=true QUITANDO_DEMO_URL= QUITANDO_MAIN_URL= bundle exec rspec --exclude-pattern 'spec/system/**/*_spec.rb'"
+      ],
+      [
+        "Tests: System",
+        "env CI=true RAILS_ENV=test QUITANDO_LOCAL_DUAL_DATABASE=true QUITANDO_DEMO_URL= QUITANDO_MAIN_URL= bundle exec rspec spec/system"
+      ]
+    )
+  end
+
+  it "uses the bounded Importmap audit verifier in CI" do
+    steps = []
+    runner = Object.new
+    runner.define_singleton_method(:step) { |name, command| steps << [ name, command ] }
+    recording_ci = Class.new
+    recording_ci.define_singleton_method(:run) { |&block| runner.instance_exec(&block) }
+    stub_const("CI", recording_ci)
+
+    load CI_CONFIG_PATH
+
+    expect(steps).to include([ "Security: Importmap vulnerability audit", "bin/verify-importmap-audit" ])
   end
 end

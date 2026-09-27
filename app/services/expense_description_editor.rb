@@ -30,6 +30,7 @@ class ExpenseDescriptionEditor
 
       ExpenseDescriptionRevision.create!(expense:, actor_user_id:, previous_description: expense.description, new_description: description)
       expense.update!(description:)
+      GroupStateChanged.publish(group_id: group.id, actor_user_id:, change_type: :expense_description_changed)
       expense
     end
   end

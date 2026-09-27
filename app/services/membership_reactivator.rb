@@ -21,6 +21,7 @@ class MembershipReactivator < GroupCommand
       raise InvalidTransition, "membership já está ativa" if membership.active?
 
       membership.update!(status: :active)
+      publish_group_state_changed(group:, actor_user_id:, change_type: :membership_reactivated, subject_user_id: user_id)
       membership
     end
   end

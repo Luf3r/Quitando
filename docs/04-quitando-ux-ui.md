@@ -31,6 +31,16 @@ Consulte também o [índice da documentação](./00-index.md).
 
 ## 1. Princípios de UX
 
+### Refinamento de apresentação da Fase 13
+
+A landing fala com amigos e famílias: "Divida os gastos. Acerte as contas.". Preserva a ordem abertura, como funciona, estados, produto, benefícios, confiança e convite final. Explica que a transferência acontece fora do app e que quem recebe confirma. Termos de implementação permanecem na documentação técnica, não no discurso comercial. Saldo oficial, projeção, sugestão e confirmação continuam distintos nas telas operacionais.
+
+O header persistente e o footer usam somente o símbolo da logo, com “Quitando” no nome acessível do link; o favicon e o ícone Apple usam o mesmo recorte legível. Visitantes encontram Como funciona, Conheça o app, Entrar e Criar conta; autenticados mantêm Grupos, Convites, Conta, Tema e Sair. O seletor Tema tem o mesmo tamanho e alinhamento dos links no desktop e no menu móvel. O menu móvel é nativo e funciona sem JavaScript. O footer público combina marca e frase “Divida os gastos. Aproveite a companhia.”, links agrupados e copyright; nas telas internas ele é compacto.
+
+Movimento é melhoria de apresentação: hero em sequência de 450 a 650 ms, seções reveladas uma vez e microinterações de 120 a 180 ms, sem bloquear rolagem ou animar valores financeiros. Sem JavaScript, com movimento reduzido ou sem IntersectionObserver, o HTML permanece visível e operacional, sem efeito animado. A preferência por movimento reduzido também é respeitada quando muda durante a sessão. Nenhuma animação representa sucesso de um comando antes de sua confirmação pelo servidor.
+
+A landing do site principal pode apresentar os quatro e-mails públicos, a senha configurada e um link para a demonstração quando `QUITANDO_DEMO_URL` está configurada; a conta real continua durável. Só no host demo a interface explica que aquele ambiente é compartilhado e tem os dados apagados e recriados a cada seis horas. Ali, cadastro encaminha ao site principal e o POST de cadastro é bloqueado no servidor. A captura do produto é o Resumo real com cenário fictício reproduzível, exportado em variantes WebP para desktop e celular; a captura acompanha Claro, Escuro ou a preferência do sistema, inclusive após navegação Turbo. A fotografia editorial fornecida pelo usuário está integrada em variantes responsivas e na imagem Open Graph.
+
 - **Confiança acima de tudo.** Todo valor indica origem, estado e efeito.
 - **Linguagem precisa.** “Você deve ao grupo” é saldo; “pague para Ana” é sugestão; “aguardando Ana confirmar” é pendência.
 - **Explicar o destinatário, não presumir dívida bilateral.** O plano pode indicar alguém diferente do pagador de uma despesa lembrada; a interface mostra que a sugestão compensa o saldo do grupo inteiro.
@@ -40,6 +50,8 @@ Consulte também o [índice da documentação](./00-index.md).
 - **Encerramento acima do simples registro.** A UX conduz o grupo até saldo oficial zero e nenhuma pendência.
 - **Lista antes do grafo.** A lista textual executa a tarefa; o grafo ajuda a entender e demonstrar.
 - **Mobile-first e acessível.** Registro e quitação funcionam com poucos toques, conexão instável e sem depender de cor ou animação.
+- **Hierarquia previsível de ações.** Coral primário fica reservado ao próximo passo dominante e a submits; links secundários compactos cobrem consulta, revisão e adição, enquanto perigo aparece somente em confirmações terminais.
+- **Estado textual e semântico.** Chips sempre combinam rótulo, contraste, borda e marcador visual; a cor complementa, mas não substitui o estado legível.
 
 ---
 
@@ -78,6 +90,18 @@ Login/Cadastro
 
 Links públicos, participantes sem conta, disputas e pagamentos integrados ficam fora do MVP. Convites internos para contas já cadastradas fazem parte do fluxo essencial.
 
+A landing principal apresenta os caminhos para entrar em uma conta real, criar uma conta real e experimentar a demo com as credenciais públicas. No ambiente demo, o aviso explica que somente aquele espaço é compartilhado e reiniciado a cada seis horas, e oferece um link para criar uma conta durável no host real. Em desenvolvimento, os hosts localhost e demo.localhost usam bancos separados no mesmo processo. Depois da autenticação, a navegação principal oferece Grupos, Convites, Conta, Tema e Sair. Em telas menores que 768 px, esses mesmos destinos ficam em um `details` nativo compacto, portanto continuam disponíveis sem JavaScript. Dentro de cada grupo, os quatro destinos são Resumo, Plano, Histórico e Configurações; abaixo de 480 px, eles formam uma grade de duas colunas para nenhum rótulo ficar truncado.
+
+Cadastro apresenta Nome antes de E-mail e exige ambos. Conta apresenta e permite editar nome, e-mail e senha mediante confirmação da senha atual. O nome aceita acentos, normaliza espaços externos e sequências internas e possui no máximo 80 caracteres. Contas demo exibem nome, e-mail e a política de credenciais públicas, mas não oferecem formulário editável nem permitem alteração no backend.
+
+O Resumo prioriza a posição e as ações da pessoa: estado, saldo oficial e projeção ocupam métricas alinhadas; pendências e participantes usam linhas compactas. Cada título de seção mantém espaço visível antes da primeira linha, e a ação principal mantém espaço antes do botão. O Plano começa por Pendências e Ainda falta em duas regiões no desktop e uma pilha no mobile, com origem, valor, destino e ação separados. Métricas `8 → 6 → 3`, seletor segmentado, grafo integral, legenda e tabelas equivalentes ficam em “Entenda o cálculo”, inicialmente recolhido. Histórico e Configurações deixam de competir por espaço no dashboard.
+
+Quando `QUITANDO_DEMO_MODE=true`, a landing/login apresenta de forma expandida os quatro e-mails públicos, a senha configurada e o próximo reset. Dentro do app, o mesmo conteúdo fica em um `details` acessível para reduzir a competição com a tarefa atual, sem ocultar senha ou reset. O banner declara que o ambiente é demo-only, descartável e reiniciado integralmente a cada seis horas. A UI não apresenta a conta demo como ambiente pessoal durável nem oculta uma falha de instalação ou reset; as credenciais demo não oferecem fluxo para alterar e-mail, senha ou recuperação.
+
+Nome é a identidade principal em contextos financeiros. E-mail aparece somente em autenticação, Conta, credenciais demo, convite e como informação secundária na administração ou auditoria de membros.
+
+Em conteúdo extenso, nomes, descrições, e-mails e URLs quebram com segurança; valores e ações permanecem sem quebra. Registros operacionais se empilham no mobile. Tabelas comparativas possuem largura mínima, região rolável com foco por teclado e indicação textual de rolagem; a tabela permanece a equivalência operacional do grafo inclusive sem JavaScript.
+
 ---
 
 ## 4. Vocabulário da interface
@@ -90,8 +114,8 @@ Links públicos, participantes sem conta, disputas e pagamentos integrados ficam
 | Saldo projetado | “Se as pendências forem confirmadas, ainda faltarão R$ X” |
 | Transferência sugerida | “Pague R$ X para Ana” |
 | Destinatário não intuitivo | “Você deve ao grupo. Pagar Ana compensa outras despesas e reduz transferências.” |
-| Despesa criada por terceiro | “Pago por Diego · registrado por Carla” |
-| Grupo settled | “Todos estão em dia — contas encerradas” |
+| Despesa criada por terceiro | “Pago por Diego, registrado por Carla” |
+| Grupo settled | “Todos estão em dia. Contas encerradas.” |
 
 Evitar “dívida com Ana” quando o sistema possui apenas saldo líquido e uma sugestão atual.
 
@@ -103,28 +127,25 @@ Antes dos cards, a página apresenta convites pendentes recebidos, com ações d
 
 Cada card apresenta:
 
-- nome e participantes;
-- situação: sem movimentação, em aberto, aguardando confirmações ou quitado;
-- saldo oficial do usuário;
-- indicador de pendências quando existirem.
+- nome, situação e participantes, com lista localizada como “Ana, Bruno e mais 2”;
+- uma frase pessoal de situação: revisar recebimento, acompanhar envio, receber, enviar, aguardar, adicionar a primeira despesa ou grupo quitado;
+- nenhum contador genérico como “Pendências 0”.
 
-O card não executa o `DebtSimplifier`. Ele usa saldo oficial e situação derivada.
+O card não executa o `DebtSimplifier`. Ele usa saldo oficial, reports pendentes e situação derivada. A ordenação é determinística: recebimentos a revisar, envios aguardando, saldo pessoal em aberto, grupos aguardando terceiros, vazios, quitados e arquivados; a atualização decrescente e o identificador desempatam itens da mesma faixa. No cenário demo v2, a lista de Ana é o roteiro observável dessa ordem: Viagem, Configuração, Contas, Próxima viagem, Casa de praia e Churrasco, com as ações revisar recebido, acompanhar envio, marcar transferência, adicionar despesa, quitado e arquivado.
 
-Criar grupo pode abrir Turbo Frame modal. A navegação convencional permanece disponível caso Turbo falhe.
+Convites recebidos aparecem antes dos grupos. Na ausência de convites ou grupos, a interface oferece a próxima ação possível em vez de uma área vazia genérica.
+
+Criar grupo é um `details` compacto: abre para quem ainda não tem grupos e permanece recolhido para usuários recorrentes. O formulário convencional continua disponível sem JavaScript.
 
 ---
 
 ## 6. Dashboard do grupo
 
-A tela principal apresenta:
+O Resumo começa pela situação pessoal: estado, linguagem natural, saldo oficial e próxima ação. A prioridade é revisar recebimentos, acompanhar envios reportados, marcar uma sugestão como enviada, adicionar a primeira despesa, aguardar outras pessoas e grupo quitado. Grupo arquivado permanece somente para leitura.
 
-- situação geral;
-- saldo oficial do usuário;
-- bloco de pagamentos aguardando confirmação;
-- saldo projetado após pendências;
-- resumo dos participantes;
-- feed de despesas e pagamentos;
-- atalhos para despesa e plano.
+O saldo projetado aparece apenas quando difere do oficial por reports pendentes. Pendências se separam em “Você precisa revisar” e “Aguardando outra pessoa”; pendências alheias não recebem ação indevida. O panorama de participantes mostra um saldo oficial por pessoa e a projeção somente quando houver diferença.
+
+O Resumo mostra no máximo três fatos recentes e liga ao Histórico completo. Membros, convites, renomeação e arquivamento ficam em Configurações; a página principal apenas oferece o atalho. Em mobile, a barra de ação mostra no máximo duas ações de escrita, respeita a safe area e não é exibida para grupo arquivado.
 
 A lista de membros mostra saldo com o grupo, não uma dívida bilateral presumida.
 
@@ -164,22 +185,28 @@ Toast remoto deve explicar a origem, como “Ana confirmou um pagamento; o plano
 
 Modal no desktop e bottom sheet no mobile.
 
+Criação e correção usam um único padrão de formulário com seletor entre divisão igual e exata. Antes de persistir, o servidor calcula um preview obrigatório em centavos inteiros. A pessoa revisa valor, pagador, participantes, shares e residual em um resumo somente leitura e então confirma.
+
+Preview inválido retorna `422` no mesmo frame, mostra resumo focável e erro abaixo do campo e não grava. Divisão exata exige soma idêntica ao total. Conflito concorrente permanece visível e preserva os dados seguros.
+
 ### Campos do MVP
 
 1. valor total;
 2. descrição;
-3. data;
-4. quem pagou;
-5. participantes incluídos;
-6. divisão igual ou por valor exato.
+3. quem pagou;
+4. data;
+5. divisão igual ou por valor exato e seus participantes incluídos.
 
 Porcentagem e partes ficam para depois.
 
 ### Comportamento
 
 - Stimulus controla campos dinâmicos, não regras financeiras;
+- em uma nova despesa, o pagador inicial é a pessoa atual; após erro, o formulário preserva o pagador e os valores submetidos, e uma correção preserva o pagador da despesa original;
+- sem JavaScript, os dois fieldsets de divisão permanecem disponíveis e o servidor considera somente o tipo selecionado;
 - servidor valida memberships, valores e soma das shares;
 - preview mostra arredondamento antes da confirmação;
+- qualquer mudança posterior nos campos invalida imediatamente a confirmação, informa “Os dados mudaram. Revise novamente antes de confirmar” e só reabilita após um novo preview calculado pelo servidor; resposta de preview antiga não é válida;
 - erros aparecem no mesmo frame sem apagar dados;
 - nova despesa é append-only e não é rejeitada apenas porque outra despesa foi criada em paralelo; o servidor serializa e revalida memberships e shares;
 - correção financeira envia `expected_financial_state_version`;
@@ -203,8 +230,8 @@ A ordem da tela é:
 
 1. pagamentos aguardando confirmação;
 2. lista textual de transferências ainda sugeridas;
-3. saldo projetado restante;
-4. comparação visual e explicação.
+3. ações da pessoa no item que ela precisa enviar;
+4. “Entenda o cálculo”, recolhido inicialmente, com saldo projetado restante, métricas, tabelas, grafo, explicação e trace.
 
 ### 8.1 Plano acionável
 
@@ -229,25 +256,32 @@ Carla paga R$ 30 para Ana
 Antes de pagamentos, a tela pode mostrar:
 
 ```text
-12 obrigações de despesas
-8 após compensação bilateral
+12 relações históricas agregadas
+8 relações após compensação bilateral
 4 transferências no plano inicial
 ```
 
-Depois que a quitação começa, a tela prioriza progresso. Qualquer porcentagem histórica é rotulada como baseada somente nas despesas e não como quantidade atual restante. Sem ciclos formais, a comparação de três camadas não é reiniciada como se um novo mês fosse uma nova medição depois que já houve pagamento confirmado no grupo.
+Os denominadores são, respectivamente, pares direcionados agregados, pares líquidos após compensação e transferências sugeridas. A comparação inicial só aparece enquanto o grupo não possui pagamento `reported`, `confirmed` ou `cancelled` no histórico.
+
+Depois que a quitação começa, a tela prioriza progresso. Os números das camadas históricas são rotulados como baseados somente nas despesas e não como quantidade atual restante. Sem ciclos formais, a comparação de três camadas não é reiniciada como se um novo mês fosse uma nova medição depois que já houve qualquer pagamento no grupo.
 
 ### 8.3 Grafo e alternativa acessível
 
 - nós são participantes;
 - arestas indicam a camada selecionada;
 - dados vêm do servidor;
-- SVG/D3 apenas desenha e interage;
+- centavos atravessam o JSON como strings decimais exatas, e o navegador usa somente o valor já formatado pelo servidor;
+- SVG/D3 apenas desenha e interage, com o módulo mínimo de seleção carregado quando a visualização conecta;
 - tabela “de → para → valor” contém informação equivalente;
 - o grafo nunca é requisito para realizar pagamento.
 
+Valores exibidos no grafo permanecem ligados visualmente à própria aresta. Quando curvas se aproximam, o rótulo usa fundo do tema e uma posição determinística ao longo ou ao lado da curva; um conector curto indica a aresta quando houver deslocamento. Avisos históricos usam tokens semânticos de aviso, legíveis nos temas claro, escuro e sistema.
+
+As três tabelas são renderizadas no HTML inicial. Com JavaScript, controles nativos selecionam a camada e ocultam apenas as tabelas não selecionadas; sem JavaScript, todas continuam disponíveis. No desktop, a tabela selecionada permanece ao lado do grafo; no móvel, continua antes dele. Um erro estrutural ou de carregamento da dependência de desenho torna o grafo visivelmente indisponível, mantém as tabelas à vista e é registrado para operação; essa recuperação não conta como grafo funcional.
+
 ### 8.4 Explicabilidade
 
-“Como chegamos a este plano?” mostra iterações do algoritmo e critérios de desempate. É secundário para o usuário comum e central para a demonstração técnica.
+“Como chegamos a este plano?” mostra, em um `details` recolhido por padrão, as iterações derivadas do mesmo ciclo do algoritmo e explica separadamente o critério de desempate por UUID. O trace não é persistido. É secundário para o usuário comum e central para a demonstração técnica.
 
 Quando o destinatário sugerido não corresponde ao pagador de uma despesa que o usuário reconhece, a tela oferece primeiro uma explicação curta:
 
@@ -320,11 +354,13 @@ Antes da confirmação, a tela reforça que o pagamento se tornará um fato term
 
 Enquanto pendente, pode “Cancelar declaração” caso tenha informado valor ou destinatário incorreto.
 
-### Regras visuais
+### Detalhe e regras visuais
 
-- `reported`: badge amarelo “aguardando confirmação”;
-- `confirmed`: badge verde acompanhado de “recebimento confirmado”;
-- `cancelled`: badge neutro acompanhado do ator e motivo resumido.
+O detalhe de pagamento mantém grupo, estado, valor e direção no primeiro bloco; ator e horário ficam em metadados rotulados. `reported` oferece confirmação à pessoa destinatária como ação primária. Cancelar fica em um `details` fechado por padrão: só depois de abrir “Cancelar pagamento” aparecem explicação, motivo obrigatório e a confirmação de perigo. O formulário continua convencional sem JavaScript.
+
+- `reported`: chip de atenção “Declarado”;
+- `confirmed`: chip positivo “Confirmado”;
+- `cancelled`: chip negativo “Cancelado”, acompanhado do ator e motivo resumido.
 
 Owner não confirma em nome de outro participante no MVP.
 
@@ -342,10 +378,12 @@ Se existirem pagamentos reportados ou confirmados, eles permanecem no histórico
 
 Reúne despesas e pagamentos em ordem cronológica.
 
-Cada item mostra:
+O histórico possui rota própria, pagina 25 fatos e usa ordem total por timestamp e identificador. Página malformada retorna `422` em vez de ser coagida silenciosamente.
+
+Cada registro usa cabeçalho compacto com tipo, descrição e valor tabular; a segunda linha estrutura atores, chip de estado, horário e ação. Em mobile, os mesmos campos ficam empilhados e rotulados. Cada linha mostra:
 
 - tipo;
-- ator;
+- descrição e atores;
 - valor;
 - estado;
 - data e hora;
@@ -361,19 +399,26 @@ Correções de despesa aparecem como cadeia:
 Despesa original anulada -> motivo -> despesa substituta
 ```
 
+Convites usam histórico próprio, sem se misturar a fatos financeiros: `/invitations?page=N` separa **Pendentes** de **Encerrados** para o usuário convidado, e Configurações mostra ao owner ativo o histórico enviado. Cada entrada apresenta grupo, contraparte e estado localizado; pendentes mostram `created_at`, enquanto encerrados mostram o timestamp terminal correspondente. Ambas as listas paginam 25 itens: Pendentes usam `created_at` decrescente e identificador como desempate; Encerrados usam timestamp terminal decrescente e identificador como desempate. Página malformada retorna `422` antes de qualquer consulta. Somente convites pendentes mostram ações.
+
 ---
 
 ## 13. Configurações, convites e memberships
 
+A página de Configurações segue a ordem nome e convite, membros, administração avançada e arquivamento. Nome, e-mail, papel e estado de cada pessoa são campos próprios; papel, estado e convite usam chips semânticos. Convites encerrados e ordenação ficam inicialmente em `details`. Todos os membros ativos podem acessá-la, mas cada ação continua submetida à policy correspondente. Ação indisponível permanece visível e desabilitada, com `aria-describedby` apontando ao motivo derivado das regras existentes.
+
+Arquivar, sair e transferir responsabilidade exigem confirmação acessível. A interface chama o papel de `owner` de “Responsável pelo grupo”; o nome do domínio permanece inalterado.
+
 - grupos usam BRL, única moeda suportada no MVP; não há seletor, conversão ou taxa de câmbio na interface;
-- owner edita nome e convida uma conta já cadastrada informando o e-mail exato, sem autocomplete público;
+- responsável pelo grupo edita nome e convida uma conta já cadastrada informando o e-mail exato, sem autocomplete público;
 - a resposta de busca não expõe uma lista de usuários e o owner pode revogar convites pendentes;
+- o responsável ativo consulta o histórico dos convites enviados, inclusive encerrados, sem receber ação adicional sobre eles;
 - convidado aceita ou recusa o próprio convite;
-- owner só arquiva grupo `empty` ou `settled`, sem pendências ou convites abertos;
+- responsável só arquiva grupo `empty` ou `settled`, sem pendências ou convites abertos;
 - grupo arquivado é somente leitura e pode ser restaurado pelo owner sem alterar o histórico;
 - membro não pode ser inativado com saldo oficial/projetado diferente de zero ou pendência;
-- membership inativo pode ser reativado pelo owner sem perder histórico;
-- último owner deve transferir propriedade antes de sair;
+- membership inativo pode ser reativado pelo responsável sem perder histórico;
+- último responsável deve transferir a responsabilidade antes de sair;
 - a UI explica por que uma ação está bloqueada, em vez de apenas ocultá-la.
 
 ---
@@ -449,6 +494,7 @@ Não existe ação unilateral que remova o usuário de uma share. Divergência e
 
 - cor sempre acompanhada de texto e ícone;
 - foco gerenciado ao abrir e fechar modal;
+- há link para pular direto ao conteúdo e a navegação global e a do grupo identificam a página atual;
 - títulos e descrições associados;
 - grafo com tabela equivalente;
 - animações respeitam `prefers-reduced-motion`;
@@ -468,6 +514,12 @@ Não existe ação unilateral que remova o usuário de uma share. Divergência e
 - animação opcional entre camadas;
 - contador animado acompanhado do valor final estático;
 - nenhuma celebração de “quitado” antes de o saldo oficial ser zero e as pendências acabarem.
+
+### 18.1 Tema e linguagem visual
+
+A interface oferece tema Sistema, Claro ou Escuro. A escolha é persistida em `quitando.theme`, aplicada antes da primeira pintura e volta a Sistema quando o valor armazenado é inválido. O mesmo tema vale para a página inteira.
+
+Outfit variável é self-hosted. Coral é o único acento interativo; cores financeiras são semânticas e sempre possuem texto equivalente. Containers usam raio de 20 px, controles 12 px e badges pill. Strings visíveis não usam em dash ou en dash.
 
 ---
 

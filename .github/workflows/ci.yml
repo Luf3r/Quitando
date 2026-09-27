@@ -10,7 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/quitando_development
+      DEMO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/quitando_demo_development
       TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/quitando_test
+      DEMO_TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/quitando_demo_test
 
     services:
       postgres:

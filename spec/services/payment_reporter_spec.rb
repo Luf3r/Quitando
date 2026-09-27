@@ -64,7 +64,9 @@ RSpec.describe PaymentReporter do
       key = SecureRandom.uuid
       attributes = { group_id: group.id, actor_user_id: sender.id, from_user_id: sender.id, to_user_id: receiver.id, amount_text: "1,00", expected_financial_state_version: group.reload.financial_state_version, idempotency_key: key }
       events = []
+      group_state_events = []
       subscriber = ActiveSupport::Notifications.subscribe("quitando.payment.reported") { |event| events << event.payload }
+      group_state_subscriber = ActiveSupport::Notifications.subscribe(GroupStateChanged::EVENT_NAME) { |event| group_state_events << event.payload }
 
       original = described_class.call(**attributes)
       retried = described_class.call(**attributes)
@@ -73,8 +75,16 @@ RSpec.describe PaymentReporter do
       expect(PaymentCommandReceipt.where(idempotency_key: key).count).to eq(1)
       expect(group.reload.financial_state_version).to eq(2)
       expect(events).to contain_exactly(include(payment_id: original.id, group_id: group.id, actor_user_id: sender.id, financial_state_version: 2))
+      expect(group_state_events).to contain_exactly(
+        group_id: group.id,
+        actor_user_id: sender.id,
+        subject_user_id: receiver.id,
+        change_type: :payment_reported,
+        financial_state_version: 2
+      )
     ensure
       ActiveSupport::Notifications.unsubscribe(subscriber) if subscriber
+      ActiveSupport::Notifications.unsubscribe(group_state_subscriber) if group_state_subscriber
     end
 
     it "returns the authorized current plan for a stale version without writing" do

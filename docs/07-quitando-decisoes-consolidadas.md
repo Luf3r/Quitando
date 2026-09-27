@@ -21,12 +21,30 @@ Este arquivo resume decisões que precisam permanecer consistentes entre produto
 - O produto resolve o **encerramento de despesas compartilhadas**, não apenas o cadastro de gastos.
 - O modo padrão reduz transferências, mas não promete o mínimo matemático absoluto.
 - O plano textual é a ferramenta operacional principal; o grafo é explicativo e demonstrativo.
+- Obrigações históricas são derivadas das shares de não pagadores, agregadas por par e sentido e então compensadas bilateralmente; elas não são fatos persistidos nem substituem o ledger.
+- A comparação inicial conta relações agregadas, relações compensadas e transferências sugeridas somente antes de existir qualquer pagamento no histórico. Depois disso, números históricos são rotulados como explicação das despesas, nunca como trabalho restante.
+- O trace do simplificador é derivado no mesmo ciclo do plano, não persistido e recolhido por padrão na interface.
 - O MVP trabalha com usuários autenticados, BRL como única moeda (`groups.currency_code = 'BRL'`), convites internos para contas existentes (`pending/accepted/declined/revoked/expired`) com validade fixa de sete dias e pagamentos manuais declarados.
 - O produto pressupõe grupos de confiança pré-existente; ele não é desenhado para desconhecidos ou relações adversariais no MVP.
 - A obrigação histórica pode apontar para uma pessoa e o plano líquido para outra; a interface deve explicar essa diferença sem chamar a sugestão de dívida bilateral.
 - Arquivamento só ocorre quando o grupo está vazio ou quitado, sem pendências ou convites abertos; o owner pode restaurá-lo sem alterar o ledger.
 - O roadmap funcional define o que entra no release; a ordem técnica prioriza algoritmo, ledger e comandos financeiros antes de HTTP reativo e visualização.
 - Após o MVP, a interface deve evoluir para suportar múltiplos idiomas; locale altera apresentação e linguagem, não as regras do ledger nem a moeda BRL definida para o grupo no MVP.
+- A raiz é uma landing pública real; usuários autenticados seguem dela para o app, sem criar uma segunda fonte de produto ou alegações fictícias.
+- A landing pode oferecer credenciais públicas que autenticam somente na demonstração compartilhada; cadastro e dados pessoais duráveis permanecem no site principal. O aviso de reset descreve exclusivamente o host demo.
+- A captura do Resumo na landing é real, reproduzível e acompanha a preferência Claro/Escuro/Sistema do navegador; não se reconstrói a interface como imagem artificial.
+- Cada grupo possui Resumo, Plano, Histórico e Configurações. A separação altera composição e navegação, não regras financeiras.
+- Previews de divisão são derivados no servidor, usam centavos inteiros e nunca persistem fatos antes da confirmação final.
+- Uma confirmação de despesa ou correção só vale para a revisão do formulário que a originou. Edição posterior a invalida imediatamente; o navegador não recalcula valores e resposta antiga do servidor não reabilita a ação.
+- O tema aceita Sistema, Claro e Escuro e é uma preferência de apresentação local. Ele não altera domínio ou persistência financeira.
+- `User` permanece o participante financeiro do MVP. Nome obrigatório, normalizado e limitado a 80 caracteres é a identidade principal nas superfícies financeiras; e-mail permanece em autenticação, Conta, credenciais demo, convite e informação secundária de administração ou auditoria.
+- Cadastro exige nome antes de e-mail, e a conta pessoal permite atualização autenticada de nome, e-mail e senha mediante senha atual; exclusão de conta permanece fora do MVP.
+- A visualização permanece complementar: o grafo usa rótulo curto e o nome completo fica na legenda, no título e nas três tabelas HTML. Resumo, Plano e Histórico usam registros compactos e responsivos, sem mudar o ledger ou o caminho HTTP.
+- A hierarquia visual reserva a ação primária para submit ou próxima ação dominante; consultas e revisões são secundárias compactas, e a variante de perigo confirma somente transições terminais. Chips expõem estado canônico, rótulo e tom semântico, nunca apenas cor.
+- Pagamento recolhe o cancelamento até decisão deliberada; detalhes financeiros separam fatos em campos rotulados e Configurações apresenta nome, e-mail, papel e estado sem composição por pontuação.
+- O histórico recebido inclui convites pendentes e terminais; o histórico enviado é restrito ao owner ativo. A apresentação paginada torna fatos de convite auditáveis, sem criar transição nova nem permissão para agir sobre estado terminal.
+- As listas de convites pendentes e encerrados possuem paginação independente, preservando a posição da outra lista; o parâmetro histórico `page` continua aceito quando os parâmetros específicos estão ausentes.
+- A produção pública demo é demo-only e descartável: usa banco e deploy separados, `QUITANDO_DEMO_MODE=true` e reset integral a cada seis horas. Dados reais duráveis exigem banco e deploy distintos com `QUITANDO_DEMO_MODE=false`. Em desenvolvimento, um processo atende hosts reais e demo em shards PostgreSQL separados; produção mantém dois apps Fly com projetos Neon separados. A landing oferece entrada real, cadastro real e acesso à demo, que encaminha o usuário ao cadastro durável.
 
 ### Domínio
 
@@ -56,7 +74,7 @@ Este arquivo resume decisões que precisam permanecer consistentes entre produto
 - Comandos financeiros são revalidados dentro de transação e serializados por grupo.
 - `report`, `confirm`, `cancel` e `expense_correct` usam o recibo unificado `financial_command_receipts`, com chave global e fingerprint canônico; retry idêntico retorna o resultado anterior sem novo efeito financeiro.
 - Reports e correções financeiras enviam a versão financeira esperada; criação append-only de despesa é serializada, mas não falha apenas porque outra criação ocorreu em paralelo.
-- Eventos de domínio de pagamento e correção ocorrem depois do commit e nunca substituem a leitura por HTTP; `quitando.expense.corrected` carrega original, substituta, grupo, ator e versão. Broadcasts Turbo/Action Cable permanecem na Fase 12.
+- Eventos de domínio de pagamento e correção ocorrem depois do commit e nunca substituem a leitura por HTTP; `quitando.expense.corrected` carrega original, substituta, grupo, ator e versão. A Fase 12 usa `quitando.group.state_changed` pós-commit para aviso seguro e refresh Turbo/Action Cable em stream de grupo assinado; queda ou rejeição do Cable é visível e o reload HTTP reconcilia o estado.
 - Edições históricas não apagam fatos silenciosamente; correções preservam ator, motivo e relação com o registro substituído.
 
 ### Arquitetura
@@ -65,6 +83,7 @@ Este arquivo resume decisões que precisam permanecer consistentes entre produto
 - PostgreSQL 18 gera todas as PKs com default explícito `uuidv7()`; o default UUID v4 implícito do adapter Rails não satisfaz o contrato.
 - Ruby representa identificadores persistentes como strings UUID v7 canônicas e minúsculas.
 - Empates do `DebtSimplifier` usam ordem lexicográfica crescente dos UUIDs.
+- O cenário demo usa os comandos reais do domínio, transação e advisory lock compartilhado; ele não modifica fórmulas, estados financeiros, `financial_state_version` ou autorização financeira. O marcador canônico atual é `canonical-v2`/2; marcador incompatível falha antes de escrita e somente o reset integral autorizado troca cenário.
 
 ---
 

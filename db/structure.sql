@@ -121,6 +121,21 @@ CREATE TABLE public.ar_internal_metadata (
 
 
 --
+-- Name: demo_scenarios; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.demo_scenarios (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    key character varying NOT NULL,
+    version integer NOT NULL,
+    installed_at timestamp(6) without time zone NOT NULL,
+    last_reset_at timestamp(6) without time zone NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
 -- Name: expense_description_revisions; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -245,8 +260,8 @@ CREATE TABLE public.memberships (
     updated_at timestamp(6) without time zone NOT NULL,
     "position" integer NOT NULL,
     CONSTRAINT memberships_position_nonnegative CHECK (("position" >= 0)),
-    CONSTRAINT memberships_role_valid CHECK (((role)::text = ANY (ARRAY[('owner'::character varying)::text, ('member'::character varying)::text]))),
-    CONSTRAINT memberships_status_valid CHECK (((status)::text = ANY (ARRAY[('active'::character varying)::text, ('inactive'::character varying)::text])))
+    CONSTRAINT memberships_role_valid CHECK (((role)::text = ANY ((ARRAY['owner'::character varying, 'member'::character varying])::text[]))),
+    CONSTRAINT memberships_status_valid CHECK (((status)::text = ANY ((ARRAY['active'::character varying, 'inactive'::character varying])::text[])))
 );
 
 
@@ -277,7 +292,7 @@ CREATE TABLE public.payments (
     CONSTRAINT payments_audit_metadata_matches_status CHECK (((((status)::text = 'reported'::text) AND (confirmed_by_user_id IS NULL) AND (confirmed_at IS NULL) AND (cancelled_by_user_id IS NULL) AND (cancelled_at IS NULL) AND (cancellation_reason IS NULL)) OR (((status)::text = 'confirmed'::text) AND (confirmed_by_user_id IS NOT NULL) AND (confirmed_at IS NOT NULL) AND (cancelled_by_user_id IS NULL) AND (cancelled_at IS NULL) AND (cancellation_reason IS NULL)) OR (((status)::text = 'cancelled'::text) AND (confirmed_by_user_id IS NULL) AND (confirmed_at IS NULL) AND (cancelled_by_user_id IS NOT NULL) AND (cancelled_at IS NOT NULL) AND (cancellation_reason IS NOT NULL)))),
     CONSTRAINT payments_distinct_participants CHECK ((from_user_id <> to_user_id)),
     CONSTRAINT payments_source_version_nonnegative CHECK ((source_financial_state_version >= 0)),
-    CONSTRAINT payments_status_valid CHECK (((status)::text = ANY (ARRAY[('reported'::character varying)::text, ('confirmed'::character varying)::text, ('cancelled'::character varying)::text])))
+    CONSTRAINT payments_status_valid CHECK (((status)::text = ANY ((ARRAY['reported'::character varying, 'confirmed'::character varying, 'cancelled'::character varying])::text[])))
 );
 
 
@@ -302,7 +317,10 @@ CREATE TABLE public.users (
     reset_password_sent_at timestamp(6) without time zone,
     remember_created_at timestamp(6) without time zone,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    demo_account boolean DEFAULT false NOT NULL,
+    name character varying(80) NOT NULL,
+    CONSTRAINT users_name_nonblank CHECK ((btrim((name)::text) <> ''::text))
 );
 
 
@@ -312,6 +330,14 @@ CREATE TABLE public.users (
 
 ALTER TABLE ONLY public.ar_internal_metadata
     ADD CONSTRAINT ar_internal_metadata_pkey PRIMARY KEY (key);
+
+
+--
+-- Name: demo_scenarios demo_scenarios_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.demo_scenarios
+    ADD CONSTRAINT demo_scenarios_pkey PRIMARY KEY (id);
 
 
 --
@@ -407,6 +433,13 @@ ALTER TABLE ONLY public.users
 --
 
 CREATE INDEX idx_on_expense_id_created_at_4bec3b7817 ON public.expense_description_revisions USING btree (expense_id, created_at);
+
+
+--
+-- Name: index_demo_scenarios_on_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_demo_scenarios_on_key ON public.demo_scenarios USING btree (key);
 
 
 --
@@ -837,6 +870,8 @@ ALTER TABLE ONLY public.group_invitations
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260905190000'),
+('20260828120000'),
 ('20260808210000'),
 ('20260803170000'),
 ('20260802150000'),
@@ -845,4 +880,3 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20260721161000'),
 ('20260721160000'),
 ('20260716180000');
-

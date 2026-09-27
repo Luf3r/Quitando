@@ -13,7 +13,7 @@ class GroupInvitationDecliner < GroupCommand
     group_id = GroupInvitation.where(id: invitation_id).pick(:group_id) || raise(NotFound, "convite não encontrado")
 
     result = Group.transaction do
-      Group.lock.find_by(id: group_id) || raise(NotFound, "grupo não encontrado")
+      group = Group.lock.find_by(id: group_id) || raise(NotFound, "grupo não encontrado")
       invitation = GroupInvitation.lock.find_by(id: invitation_id) || raise(NotFound, "convite não encontrado")
       next :expired if expire_if_needed!(invitation)
 
@@ -21,6 +21,7 @@ class GroupInvitationDecliner < GroupCommand
       raise Forbidden, "somente o convidado pode recusar" unless invitation.invited_user_id == actor_user_id
 
       invitation.update!(status: :declined, declined_at: Time.current)
+      publish_group_state_changed(group:, actor_user_id:, change_type: :invitation_declined, subject_user_id: actor_user_id)
       invitation
     end
 

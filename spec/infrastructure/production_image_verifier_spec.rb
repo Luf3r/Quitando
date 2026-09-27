@@ -20,6 +20,22 @@ RSpec.describe "Production image verifier safety" do
     expect(manifest_names).to eq(expected_names)
   end
 
+  it "keeps every Bundler and shell input in the production image on Unix line endings" do
+    paths = %w[
+      Gemfile
+      Gemfile.lock
+      config/production-excluded-gems.txt
+      bin/rails
+      bin/docker-entrypoint
+      bin/thrust
+      bin/verify-production-image
+    ]
+
+    paths.each do |path|
+      expect(File.binread(path)).not_to include("\r"), "#{path} must use LF line endings"
+    end
+  end
+
   def run_verifier(fake_docker_directory, log_path, environment = {})
     Open3.capture3(
       {

@@ -66,13 +66,18 @@ RSpec.describe DebtSimplifier, "property tests" do
         balances = zero_sum_balances(generated_balances).freeze
         original_balances = balances.dup
         transfers = described_class.new(balances).call
+        traced_result = described_class.new(balances).call_with_trace
 
         verify_invariants!(balances, transfers, original_balances:)
         raise "a entrada foi modificada" unless balances == original_balances
         raise "a saída não é determinística" unless described_class.new(balances).call == transfers
+        raise "o trace alterou o plano" unless traced_result.transfers == transfers
+        raise "o trace não acompanha as iterações" unless traced_result.trace.length == transfers.length
+        raise "o trace não é determinístico" unless described_class.new(balances).call_with_trace == traced_result
 
         permuted_balances = balances.to_a.reverse.to_h.freeze
         raise "uma permutação alterou a saída" unless described_class.new(permuted_balances).call == transfers
+        raise "uma permutação alterou o trace" unless described_class.new(permuted_balances).call_with_trace == traced_result
       end
     end
   end

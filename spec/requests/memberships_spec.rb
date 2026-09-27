@@ -27,6 +27,20 @@ RSpec.describe "Memberships" do
     expect(membership.reload).to be_inactive
   end
 
+  it "responde com refresh Turbo Stream depois de inativar membership" do
+    owner = create(:user, email: "ana@example.com")
+    member = create(:user, email: "bia@example.com")
+    group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
+    membership = create(:membership, group:, user: member, position: 1)
+
+    post user_session_path, params: { user: { email: member.email, password: member.password } }
+    post "/groups/#{group.id}/memberships/#{membership.id}/deactivate", headers: { "Accept" => Mime[:turbo_stream].to_s }
+
+    expect(response.media_type).to eq(Mime[:turbo_stream])
+    expect(response.body).to include('action="refresh"')
+    expect(membership.reload).to be_inactive
+  end
+
   it "permite que owner reative a mesma membership por POST" do
     owner = create(:user, email: "ana@example.com")
     member = create(:user, email: "bia@example.com")
@@ -37,6 +51,20 @@ RSpec.describe "Memberships" do
     post "/groups/#{group.id}/memberships/#{membership.id}/reactivate"
 
     expect(response).to have_http_status(:see_other)
+    expect(membership.reload).to be_active
+  end
+
+  it "responde com refresh Turbo Stream depois de reativar membership" do
+    owner = create(:user, email: "ana@example.com")
+    member = create(:user, email: "bia@example.com")
+    group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
+    membership = create(:membership, group:, user: member, status: :inactive, position: 1)
+
+    post user_session_path, params: { user: { email: owner.email, password: owner.password } }
+    post "/groups/#{group.id}/memberships/#{membership.id}/reactivate", headers: { "Accept" => Mime[:turbo_stream].to_s }
+
+    expect(response.media_type).to eq(Mime[:turbo_stream])
+    expect(response.body).to include('action="refresh"')
     expect(membership.reload).to be_active
   end
 
@@ -54,6 +82,20 @@ RSpec.describe "Memberships" do
     expect(group.memberships.find_by(user: owner)).to be_member
   end
 
+  it "responde com refresh Turbo Stream depois de transferir ownership" do
+    owner = create(:user, email: "ana@example.com")
+    member = create(:user, email: "bia@example.com")
+    group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
+    membership = create(:membership, group:, user: member, position: 1)
+
+    post user_session_path, params: { user: { email: owner.email, password: owner.password } }
+    post "/groups/#{group.id}/memberships/#{membership.id}/transfer_ownership", headers: { "Accept" => Mime[:turbo_stream].to_s }
+
+    expect(response.media_type).to eq(Mime[:turbo_stream])
+    expect(response.body).to include('action="refresh"')
+    expect(membership.reload).to be_owner
+  end
+
   it "permite que owner ordene todas as memberships" do
     owner = create(:user, email: "ana@example.com")
     first = create(:user, email: "bia@example.com")
@@ -67,6 +109,23 @@ RSpec.describe "Memberships" do
     patch "/groups/#{group.id}/memberships/order", params: { membership: { ids: [ second_membership.id, owner_membership.id, first_membership.id ] } }
 
     expect(response).to have_http_status(:see_other)
+    expect(group.memberships.order(:position).pluck(:id)).to eq([ second_membership.id, owner_membership.id, first_membership.id ])
+  end
+
+  it "responde com refresh Turbo Stream depois de ordenar memberships" do
+    owner = create(:user, email: "ana@example.com")
+    first = create(:user, email: "bia@example.com")
+    second = create(:user, email: "clara@example.com")
+    group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
+    first_membership = create(:membership, group:, user: first, position: 1)
+    second_membership = create(:membership, group:, user: second, position: 2)
+    owner_membership = group.memberships.find_by(user: owner)
+
+    post user_session_path, params: { user: { email: owner.email, password: owner.password } }
+    patch "/groups/#{group.id}/memberships/order", params: { membership: { ids: [ second_membership.id, owner_membership.id, first_membership.id ] } }, headers: { "Accept" => Mime[:turbo_stream].to_s }
+
+    expect(response.media_type).to eq(Mime[:turbo_stream])
+    expect(response.body).to include('action="refresh"')
     expect(group.memberships.order(:position).pluck(:id)).to eq([ second_membership.id, owner_membership.id, first_membership.id ])
   end
 

@@ -1,6 +1,89 @@
 require "rails_helper"
 
 RSpec.describe "Expenses" do
+  it "seleciona a pessoa atual como pagador inicial de uma nova despesa" do
+    owner = create(:user, email: "ana@example.com")
+    member = create(:user, email: "bia@example.com")
+    group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
+    create(:membership, group:, user: member, position: 1)
+
+    post user_session_path, params: { user: { email: member.email, password: member.password } }
+    get "/groups/#{group.id}/expenses/new"
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include(%(<option selected="selected" value="#{member.id}">#{member.name}</option>))
+  end
+
+  it "renderiza a nova despesa dentro do frame de diálogo para membro ativo" do
+    owner = create(:user, email: "ana@example.com")
+    group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
+
+    post user_session_path, params: { user: { email: owner.email, password: owner.password } }
+    get "/groups/#{group.id}/expenses/new", headers: { "Turbo-Frame" => "group_dialog" }
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include('<turbo-frame id="group_dialog">')
+    expect(response.body).to include("action=\"/groups/#{group.id}/expenses/preview\"")
+    expect(response.body).to include("Revisar divisão")
+    expect(response.body).to include('<turbo-frame id="expense_preview">')
+  end
+
+  it "mantém o deep link de nova despesa como página HTML completa" do
+    owner = create(:user, email: "ana@example.com")
+    group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
+
+    post user_session_path, params: { user: { email: owner.email, password: owner.password } }
+    get "/groups/#{group.id}/expenses/new"
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("<title>Quitando</title>")
+    expect(response.body).to include("Nova despesa")
+    expect(response.body).to include("action=\"/groups/#{group.id}/expenses/preview\"")
+  end
+
+  it "renderiza a correção autorizada dentro do frame de diálogo" do
+    owner = create(:user, email: "ana@example.com")
+    group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
+    expense = create(:expense, group:, created_by_user: owner, paid_by_user: owner, description: "Mercado")
+
+    post user_session_path, params: { user: { email: owner.email, password: owner.password } }
+    get "/groups/#{group.id}/expenses/#{expense.id}/correction", headers: { "Turbo-Frame" => "group_dialog" }
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include('<turbo-frame id="group_dialog">')
+    expect(response.body).to include("action=\"/groups/#{group.id}/expenses/#{expense.id}/correction/preview\"")
+    expect(response.body).to include("Revisar correção")
+  end
+
+  it "preserva a entrada inválida no frame de nova despesa" do
+    owner = create(:user, email: "ana@example.com")
+    group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
+
+    post user_session_path, params: { user: { email: owner.email, password: owner.password } }
+    post "/groups/#{group.id}/expenses", params: { expense: { description: "Mercado especial", occurred_on: "2026-08-14", amount_text: "invalido", paid_by_user_id: owner.id, split_type: "equal", participant_user_ids: [ owner.id ] } }, headers: { "Turbo-Frame" => "group_dialog" }
+
+    expect(response).to have_http_status(:unprocessable_entity)
+    expect(response.body).to include('<turbo-frame id="group_dialog">')
+    expect(response.body).to include("Mercado especial")
+    expect(response.body).to include("invalido")
+  end
+
+  it "apresenta a revisão da despesa com pagador, participantes, shares e residual" do
+    owner = create(:user, email: "ana@example.com")
+    member = create(:user, email: "bia@example.com")
+    group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
+    create(:membership, group:, user: member, position: 1)
+
+    post user_session_path, params: { user: { email: owner.email, password: owner.password } }
+    post "/groups/#{group.id}/expenses/preview", params: { expense: { description: "Mercado", occurred_on: "2026-08-14", amount_text: "10,01", paid_by_user_id: owner.id, split_type: "equal", participant_user_ids: [ owner.id, member.id ] } }, headers: { "Turbo-Frame" => "expense_preview" }
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("Pagador")
+    expect(response.body).to include("Participantes")
+    expect(response.body).to include("Residual")
+    expect(response.body).to include("Confirmar despesa")
+  end
+
   it "rejeita group_id malformado na correção antes de consultar tabelas financeiras" do
     owner = create(:user, email: "ana@example.com")
     member = create(:user, email: "bia@example.com")
@@ -45,6 +128,20 @@ RSpec.describe "Expenses" do
     expect(response).to have_http_status(:see_other)
   end
 
+  it "fecha o diálogo e atualiza a página após criar despesa por Turbo Stream" do
+    owner = create(:user, email: "ana@example.com")
+    member = create(:user, email: "bia@example.com")
+    group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
+    create(:membership, group:, user: member, position: 1)
+
+    post user_session_path, params: { user: { email: owner.email, password: owner.password } }
+    post "/groups/#{group.id}/expenses", params: { expense: { description: "Mercado", occurred_on: "2026-08-14", amount_text: "20,00", paid_by_user_id: owner.id, split_type: "equal", participant_user_ids: [ owner.id, member.id ] } }, headers: { "Accept" => Mime[:turbo_stream].to_s, "Turbo-Frame" => "group_dialog" }
+
+    expect(response.media_type).to eq(Mime[:turbo_stream])
+    expect(response.body).to include('action="update" target="group_dialog"')
+    expect(response.body).to include('action="refresh"')
+  end
+
   it "corrige financeiramente anulando a original e criando substituta" do
     owner = create(:user, email: "ana@example.com")
     member = create(:user, email: "bia@example.com")
@@ -60,6 +157,22 @@ RSpec.describe "Expenses" do
     expect(Expense.where(replaces_expense_id: expense.id)).to exist
   end
 
+  it "fecha o diálogo e atualiza a página após corrigir por Turbo Stream" do
+    owner = create(:user, email: "ana@example.com")
+    member = create(:user, email: "bia@example.com")
+    group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
+    create(:membership, group:, user: member, position: 1)
+    expense = ExpenseCreator.call(group_id: group.id, created_by_user_id: owner.id, paid_by_user_id: owner.id, description: "Mercado", occurred_on: Date.new(2026, 8, 14), amount_text: "20,00", split: { type: :equal, participant_user_ids: [ owner.id, member.id ] })
+
+    post user_session_path, params: { user: { email: owner.email, password: owner.password } }
+    post "/groups/#{group.id}/expenses/#{expense.id}/correct", params: { correction: { reason: "Valor correto", description: "Mercado", amount_text: "25,00", paid_by_user_id: owner.id, split_type: "equal", participant_user_ids: [ owner.id, member.id ], expected_financial_state_version: group.reload.financial_state_version, idempotency_key: SecureRandom.uuid } }, headers: { "Accept" => Mime[:turbo_stream].to_s, "Turbo-Frame" => "group_dialog" }
+
+    expect(response.media_type).to eq(Mime[:turbo_stream])
+    expect(response.body).to include('action="update" target="group_dialog"')
+    expect(response.body).to include('action="refresh"')
+    expect(expense.reload.voided_at).to be_present
+  end
+
   it "devolve 409 com os valores da correção e o plano atual quando a versão está obsoleta" do
     owner = create(:user, email: "ana@example.com")
     member = create(:user, email: "bia@example.com")
@@ -68,12 +181,27 @@ RSpec.describe "Expenses" do
     expense = ExpenseCreator.call(group_id: group.id, created_by_user_id: owner.id, paid_by_user_id: owner.id, description: "Mercado", occurred_on: Date.new(2026, 8, 14), amount_text: "20,00", split: { type: :equal, participant_user_ids: [ owner.id, member.id ] })
 
     post user_session_path, params: { user: { email: owner.email, password: owner.password } }
-    post "/groups/#{group.id}/expenses/#{expense.id}/correct", params: { correction: { reason: "Valor correto", description: "Mercado corrigido", amount_text: "25,00", paid_by_user_id: owner.id, split_type: "equal", participant_user_ids: [ owner.id, member.id ], expected_financial_state_version: group.reload.financial_state_version - 1, idempotency_key: SecureRandom.uuid } }
+    post "/groups/#{group.id}/expenses/#{expense.id}/correct", params: { correction: { reason: "Valor correto", description: "Mercado corrigido", amount_text: "25,00", paid_by_user_id: owner.id, split_type: "equal", participant_user_ids: [ owner.id, member.id ], expected_financial_state_version: group.reload.financial_state_version - 1, idempotency_key: SecureRandom.uuid } }, headers: { "Turbo-Frame" => "correction_preview" }
 
     expect(response).to have_http_status(:conflict)
-    expect(response.body).to include("Mercado corrigido")
-    expect(response.body).to include("Plano líquido")
+    expect(response.body).to include('<turbo-frame id="correction_preview">')
+    expect(response.body).to include("estado financeiro desatualizado")
     expect(expense.reload.voided_at).to be_nil
+  end
+
+  it "mantém o erro da confirmação de despesa no frame de revisão" do
+    owner = create(:user, email: "ana@example.com")
+    member = create(:user, email: "bia@example.com")
+    group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
+    create(:membership, group:, user: member, position: 1)
+    GroupArchiver.call(group_id: group.id, actor_user_id: owner.id)
+
+    post user_session_path, params: { user: { email: owner.email, password: owner.password } }
+    post group_expenses_path(group), params: { expense: { description: "Mercado", occurred_on: Date.new(2026, 8, 14), amount_text: "20,00", paid_by_user_id: owner.id, split_type: "equal", participant_user_ids: [ owner.id, member.id ] } }, headers: { "Turbo-Frame" => "expense_preview" }
+
+    expect(response).to have_http_status(:unprocessable_content)
+    expect(response.body).to include('<turbo-frame id="expense_preview">')
+    expect(response.body).to include("grupo arquivado")
   end
 
   it "edita a descrição com revisão auditável" do
@@ -178,13 +306,38 @@ RSpec.describe "Expenses" do
     group = GroupCreator.call(owner_user_id: creator.id, name: "Apartamento")
     create(:membership, group:, user: payer, position: 1)
     expense = create(:expense, group:, created_by_user: creator, paid_by_user: payer)
+    create(:expense_share, expense:, user: creator, amount_owed_cents: expense.amount_cents)
 
     post user_session_path, params: { user: { email: creator.email, password: creator.password } }
     get "/groups/#{group.id}/expenses/#{expense.id}"
 
     expect(response).to have_http_status(:ok)
-    expect(response.body).to include("pago por bia@example.com")
-    expect(response.body).to include("registrado por ana@example.com")
+    document = response.parsed_body
+    detail = document.at_css("main .financial-detail-page.expense-detail")
+    labels = detail.css("dl.financial-detail__metadata dt").map(&:text)
+
+    expect(detail.at_css("[data-status='active'][data-tone='positive']").text).to include("Ativa")
+    expect(detail.at_css(".financial-detail__amount").text).to include("R$")
+    expect(labels).to include("Data", "Pago por", "Registrado por")
+    expect(detail.at_css("[data-expense-field='paid-by'] dd").text).to eq(payer.name)
+    expect(detail.at_css("[data-expense-field='created-by'] dd").text).to eq(creator.name)
+    expect(detail.at_css(".expense-share-list").text).to include(creator.name, "R$")
+    expect(detail.at_css("form[action$='/description'] input.ui-button--primary")['value']).to eq("Salvar descrição")
+    expect(detail.at_css("a[href$='/correction'].ui-button--secondary.ui-button--compact").text).to include("Corrigir despesa")
+    expect(detail.css(".bg-slate-900")).to be_empty
+    expect(document.xpath("//text()[normalize-space(.)='.' or normalize-space(.)=';']")).to be_empty
+  end
+
+  it "assina o stream autorizado e preserva o shell de diálogo no detalhe" do
+    owner = create(:user, email: "ana@example.com")
+    group = GroupCreator.call(owner_user_id: owner.id, name: "Apartamento")
+    expense = create(:expense, group:, created_by_user: owner, paid_by_user: owner, description: "Mercado")
+
+    post user_session_path, params: { user: { email: owner.email, password: owner.password } }
+    get "/groups/#{group.id}/expenses/#{expense.id}"
+
+    expect(response.body).to include('channel="GroupsChannel"')
+    expect(response.body).to include('id="group_dialog" data-turbo-permanent')
   end
 
   it "navega por todas as relações diretas de uma cadeia de correções e mostra ambos os fatos da versão intermediária" do
@@ -204,14 +357,16 @@ RSpec.describe "Expenses" do
     expect(response.body).to include("href=\"/groups/#{group.id}/expenses/#{replacement.id}\"")
     expect(response.body).to include("href=\"/groups/#{group.id}/expenses/#{original.id}\"")
     expect(response.body).to include("href=\"/groups/#{group.id}/expenses/#{latest_replacement.id}\"")
-    expect(response.body).to include("Despesa anulada.")
-    expect(response.body).to include("Substitui uma despesa anterior.")
+    document = response.parsed_body
+    expect(document.css("[data-entry-kind='expense'] [data-status='voided']").length).to eq(2)
+    expect(document.css("[data-activity-field='correction']").map(&:text)).to include(a_string_including("Valor corrigido"), a_string_including("Valor final corrigido"))
 
     get group_expense_path(group, replacement)
 
     expect(response).to have_http_status(:ok)
-    expect(response.body).to include("Esta despesa substitui <a class=\"underline\" href=\"/groups/#{group.id}/expenses/#{original.id}\">Mercado original</a>.")
-    expect(response.body).to include("Esta despesa foi anulada e substituída por <a class=\"underline\" href=\"/groups/#{group.id}/expenses/#{latest_replacement.id}\">Mercado final</a>.")
+    document = response.parsed_body
+    expect(document.at_css("[data-expense-relation='replaces'] a[href='/groups/#{group.id}/expenses/#{original.id}']").text).to eq("Mercado original")
+    expect(document.at_css("[data-expense-relation='replaced-by'] a[href='/groups/#{group.id}/expenses/#{latest_replacement.id}']").text).to eq("Mercado final")
   end
 
   it "oferece correção igual com participantes e uma correção de divisão exata" do
@@ -222,10 +377,10 @@ RSpec.describe "Expenses" do
     expense = ExpenseCreator.call(group_id: group.id, created_by_user_id: owner.id, paid_by_user_id: owner.id, description: "Mercado", occurred_on: Date.new(2026, 8, 14), amount_text: "20,00", split: { type: :equal, participant_user_ids: [ owner.id, member.id ] })
 
     post user_session_path, params: { user: { email: owner.email, password: owner.password } }
-    get "/groups/#{group.id}/expenses/#{expense.id}"
+    get "/groups/#{group.id}/expenses/#{expense.id}/correction"
 
-    expect(response.body).to include("Dividir igualmente entre")
-    expect(response.body).to include("Correção com divisão exata")
+    expect(response.body).to include("Participantes da divisão igual")
+    expect(response.body).to include("Valores exatos")
     expect(response.body).to include('name="correction[shares][0][amount_text]"')
   end
 

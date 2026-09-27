@@ -9,7 +9,7 @@ class MembershipsController < ApplicationController
     authorize membership, :deactivate?
     MembershipDeactivator.call(group_id: group.id, actor_user_id: current_user.id, user_id: membership.user_id)
 
-    redirect_to groups_path, status: :see_other
+    respond_with_refresh(location: groups_path)
   end
 
   def reactivate
@@ -19,7 +19,7 @@ class MembershipsController < ApplicationController
     authorize membership, :reactivate?
     MembershipReactivator.call(group_id: group.id, actor_user_id: current_user.id, user_id: membership.user_id)
 
-    redirect_to group_path(group), status: :see_other
+    respond_with_refresh(location: group_path(group))
   end
 
   def transfer_ownership
@@ -29,7 +29,7 @@ class MembershipsController < ApplicationController
     authorize membership, :transfer_ownership?
     GroupOwnershipTransfer.call(group_id: group.id, actor_user_id: current_user.id, new_owner_user_id: membership.user_id)
 
-    redirect_to group_path(group), status: :see_other
+    respond_with_refresh(location: group_path(group))
   end
 
   def order
@@ -37,7 +37,7 @@ class MembershipsController < ApplicationController
     authorize group, :update?
     MembershipOrderer.call(group_id: group.id, actor_user_id: current_user.id, membership_ids: membership_params.fetch(:ids))
 
-    redirect_to group_path(group), status: :see_other
+    respond_with_refresh(location: group_path(group))
   end
 
   private

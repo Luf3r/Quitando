@@ -5,11 +5,13 @@ require "rails/all"
 # Require the gems listed in Gemfile, including any gems
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
+require_relative "../lib/local_environment_router"
 
 module Quitando
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 8.1
+    config.middleware.insert_before ActionDispatch::Cookies, LocalEnvironmentRouter
     config.active_record.schema_format = :sql
 
     # Please, add to the `ignore` list any other `lib` subdirectories that do
@@ -19,6 +21,7 @@ module Quitando
 
     config.i18n.available_locales = [ :"pt-BR" ]
     config.i18n.default_locale = :"pt-BR"
+    config.x.group_realtime_broadcaster_subscriber = nil
 
     config.generators do |generators|
       generators.orm :active_record, primary_key_type: :uuid

@@ -17,6 +17,7 @@ class GroupRestorer < GroupCommand
       raise Forbidden, "membership owner ativa obrigatória" unless Membership.where(group:, user_id: actor_user_id, role: :owner, status: :active).exists?
 
       group.update!(archived_at: nil)
+      publish_group_state_changed(group:, actor_user_id:, change_type: :group_restored)
       group
     end
   end

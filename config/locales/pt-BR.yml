@@ -1,7 +1,80 @@
 pt-BR:
+  date:
+    formats:
+      default: "%d/%m/%Y"
+  time:
+    formats:
+      short: "%d/%m/%Y às %H:%M"
   app:
     name: Quitando
+  financial_visualization:
+    conflict:
+      current_plan_title: "Plano líquido atual"
+    title: "Plano líquido"
+    distinction: "O histórico mostra quem pagou as despesas e como foram divididas. O plano líquido considera o grupo inteiro e os envios pendentes para sugerir o que falta transferir. Uma sugestão não é um pagamento realizado."
+    layers:
+      plan:
+        title: "Transferências sugeridas pelo plano líquido"
+        empty: "Não há transferências sugeridas."
+      bilateral:
+        title: "Relações após compensação bilateral"
+        empty: "Não há relações após a compensação bilateral."
+      historical:
+        title: "Relações históricas agregadas"
+        empty: "Não há relações históricas em despesas ativas."
+    table:
+      from: "De"
+      to: "Para"
+      amount: "Valor"
+      action: "Ação"
+      report: "Marcar como enviado"
+      no_action: "Nenhuma ação disponível"
+    metrics:
+      initial_label: "Comparação inicial das camadas"
+      historical: "relações históricas agregadas"
+      bilateral: "relações após compensação bilateral"
+      plan: "transferências sugeridas"
+      historical_notice: "Estes números explicam todo o histórico de despesas do grupo. Como já existe pagamento no histórico, eles não representam o trabalho que ainda falta."
+    periods:
+      all_recorded_expenses: "período: todas as despesas ativas registradas"
+      current_projected_balances: "período: estado financeiro projetado atual"
+    denominators:
+      aggregated_directional_relations: "denominador: pares direcionados agregados"
+      bilateral_net_relations: "denominador: pares líquidos não zerados"
+      suggested_transfers: "denominador: transferências do plano"
+    counterintuitive: "%{debtor} deve ao grupo. Pagar %{recipient} compensa outras despesas e reduz transferências; você pode receber uma sugestão para pagar alguém diferente de quem pagou uma despesa sua."
+    controls:
+      legend: "Camada apresentada"
+      announcement: "Camada selecionada: %{layer}."
+    graph:
+      title: "Mapa visual das relações"
+      description: "O desenho representa a camada selecionada. A tabela correspondente contém a alternativa textual completa e as ações."
+      unavailable: "O mapa visual está indisponível. As tabelas acima continuam disponíveis com todas as relações e ações."
+      empty: "Não há relações para desenhar neste estado. Consulte as tabelas para os estados vazios de cada camada."
+    trace:
+      title: "Como chegamos a este plano?"
+      tie_break: "A cada passo, combinamos quem mais precisa pagar com quem mais tem a receber. Em caso de empate, usamos uma ordem fixa dos identificadores dos participantes. Estes passos são recalculados com as contas do grupo, sem registrar pagamentos."
+      step: "Passo %{iteration}: %{debtor} paga a %{creditor}"
+      debtor_before: "Saldo devedor antes"
+      creditor_before: "Saldo credor antes"
+      debtor_residue: "Saldo devedor restante"
+      creditor_residue: "Saldo credor restante"
+      empty: "Nenhuma transferência foi necessária neste estado projetado."
   errors:
     forbidden: "Você não tem permissão para realizar esta ação."
     unprocessable_entity: "Não foi possível concluir esta ação. Revise os dados e tente novamente."
-    conflict: "O estado financeiro foi alterado. Atualize a página e revise o plano atual antes de tentar novamente."
+    conflict: "As contas do grupo mudaram. Atualize a página e confira o plano antes de tentar novamente."
+  devise:
+    failure:
+      invalid: "E-mail ou senha inválidos."
+      not_found_in_database: "E-mail ou senha inválidos."
+      unauthenticated: "Entre para continuar."
+    sessions:
+      signed_in: "Entrada realizada."
+      signed_out: "Sessão encerrada."
+    registrations:
+      signed_up: "Conta criada."
+      updated: "Conta atualizada."
+    passwords:
+      send_instructions: "As instruções de recuperação foram enviadas, se o e-mail estiver cadastrado."
+      updated: "Senha atualizada."

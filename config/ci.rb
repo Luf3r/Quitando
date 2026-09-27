@@ -2,19 +2,21 @@
 
 CI.run do
   step "Setup", "bin/setup --skip-server"
-
+  step "Setup: Test database", "env RAILS_ENV=test DATABASE_URL=$TEST_DATABASE_URL bin/rails db:prepare && bin/normalize-structure-sql"
   step "Database: financial schema migration round-trip", "bin/verify-financial-schema-migrations"
 
   step "Style: Ruby", "bin/rubocop"
 
   step "Security: Gem audit", "bin/bundler-audit"
-  step "Security: Importmap vulnerability audit", "bin/importmap audit"
+  step "Security: Importmap vulnerability audit", "bin/verify-importmap-audit"
   step "Security: Brakeman code analysis", "bin/brakeman --quiet --no-pager --exit-on-warn --exit-on-error"
-  step "Setup: Test database", "env RAILS_ENV=test DATABASE_URL=$TEST_DATABASE_URL bin/rails db:prepare && bin/normalize-structure-sql"
   step "Boot: Zeitwerk eager load", "env RAILS_ENV=test DATABASE_URL=$TEST_DATABASE_URL bin/rails zeitwerk:check"
-  step "Tests: RSpec", "env CI=true RAILS_ENV=test DATABASE_URL=$TEST_DATABASE_URL bundle exec rspec"
-  step "Tests: System", "env CI=true RAILS_ENV=test DATABASE_URL=$TEST_DATABASE_URL bundle exec rspec spec/system"
-  step "Tests: Seeds", "env RAILS_ENV=test DATABASE_URL=$TEST_DATABASE_URL bin/rails db:seed:replant"
+  step "Assets: Tailwind CSS", "bin/rails tailwindcss:build"
+  step "Setup: Clean test database", "env RAILS_ENV=test DATABASE_URL=$TEST_DATABASE_URL bin/rails db:seed:replant"
+  step "Tests: RSpec", "env CI=true RAILS_ENV=test QUITANDO_LOCAL_DUAL_DATABASE=true QUITANDO_DEMO_URL= QUITANDO_MAIN_URL= bundle exec rspec --exclude-pattern 'spec/system/**/*_spec.rb'"
+  step "Tests: System", "env CI=true RAILS_ENV=test QUITANDO_LOCAL_DUAL_DATABASE=true QUITANDO_DEMO_URL= QUITANDO_MAIN_URL= bundle exec rspec spec/system"
+  step "Tests: Seeds", "env RAILS_ENV=test DATABASE_URL=$TEST_DATABASE_URL TEST_DATABASE_URL=$TEST_DATABASE_URL QUITANDO_DEMO_MODE=true QUITANDO_DEMO_DATABASE_NAME=quitando_test QUITANDO_DEMO_PASSWORD=senha-publica CONFIRM_DEMO_RESET=quitando-demo-only bin/rails db:seed:replant"
+  step "Tests: Demo scenario verifier", "env TEST_DATABASE_URL=$TEST_DATABASE_URL bin/verify-demo-scenario"
 
   # Optional: set a green GitHub commit status to unblock PR merge.
   # Requires the `gh` CLI and `gh extension install basecamp/gh-signoff`.
