@@ -798,7 +798,7 @@ Dois navegadores podem observar mudanças em tempo real, mas o sistema continua 
 
 ## 16. Fase 13 — Visualização, explicação e acessibilidade
 
-**Estado da fase:** em revisão. As entregas 13.1 a 13.23 têm evidência automatizada fresca; a aceitação humana final continua necessária antes de concluir a Fase 13 e iniciar a Fase 14.
+**Estado da fase:** em revisão. As entregas 13.1 a 13.23 têm evidência automatizada fresca; a aceitação humana final continua necessária para concluir a Fase 13 e liberar publicação. Por decisão explícita do usuário, a preparação operacional reversível da Fase 14 pode começar durante essa revisão; isso não libera deploy público nem encerra qualquer gate.
 
 ### 16.1 Objetivo
 
@@ -958,7 +958,7 @@ As specs cobrem arquivo e links do favicon, destinos da navegação/footer, cont
 - handshake e assinatura Action Cable escolhem o shard do host; broadcasts usam nomes de stream isolados por shard, inclusive quando grupos têm o mesmo UUID;
 - a preparação Fly mantém dois apps com a mesma imagem e projetos Neon separados. O release usa URLs diretas para migrações; a configuração runtime usa URLs agrupadas. A publicação permanece na Fase 14.
 
-Specs cobrem configuração dos shards, acesso dos hosts, cadastro e sessão isolados, seeds/reset limitados ao banco demo, autorização e nomes de stream, e validação das conexões diretas no release. O gate da Fase 13 continua pendente da aceitação humana já descrita; esta entrega não conclui a fase nem executa o deploy da Fase 14.
+Specs cobrem configuração dos shards, acesso dos hosts, cadastro e sessão isolados, seeds/reset limitados ao banco demo, autorização e nomes de stream, e validação das conexões diretas/pooled no release. O gate da Fase 13 continua pendente da aceitação humana já descrita; esta entrega não conclui a fase nem executa o deploy da Fase 14.
 
 ---
 
@@ -966,7 +966,7 @@ Specs cobrem configuração dos shards, acesso dos hosts, cadastro e sessão iso
 
 ### 17.1 Objetivo
 
-Preparar operacionalmente o MVP para hardening, observabilidade e deploy após a conclusão do gate da Fase 13. Publicar duas aplicações Fly.io usando a mesma imagem: o app real e o app demo, cada um conectado ao próprio projeto Neon e servido pelo host configurado. Manter credenciais e sessões isoladas; o reset e o cadastro demo não podem atingir o ambiente real. A separação entre bancos e aplicações preserva o contrato do ADR-0016. A publicação permanece pendente do gate da Fase 13 e das verificações operacionais desta fase.
+Preparar operacionalmente o MVP para hardening, observabilidade e deploy. A preparação reversível pode ocorrer durante a revisão final da Fase 13 após decisão explícita do usuário; a publicação permanece bloqueada até a aceitação do gate da Fase 13 e as verificações desta fase. Publicar duas aplicações Fly.io usando a mesma imagem: o app real e o app demo, cada um conectado ao próprio projeto Neon e servido pelo host configurado. Manter credenciais e sessões isoladas; o reset e o cadastro demo não podem atingir o ambiente real. A separação entre bancos e aplicações preserva o contrato do ADR-0016.
 
 ### 17.2 Implementar
 
