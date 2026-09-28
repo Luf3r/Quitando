@@ -31,22 +31,22 @@ production:
   primary: &primary_production
     <<: *default
     url: <%= ENV["DATABASE_URL"] %>
-    database: quitando_production
+    database: <%= ENV.fetch("QUITANDO_DEMO_MODE", "false") == "true" ? ENV.fetch("QUITANDO_DEMO_DATABASE_NAME") : ENV.fetch("QUITANDO_MAIN_DATABASE_NAME", "quitando_production") %>
     username: quitando
     password: <%= ENV["QUITANDO_DATABASE_PASSWORD"] %>
     host: <%= ENV["DB_HOST"] %>
   cache:
     <<: *primary_production
     url: <%= ENV["CACHE_DATABASE_URL"] %>
-    database: quitando_production_cache
+    database: <%= ENV.fetch("QUITANDO_CACHE_DATABASE_NAME", "quitando_production_cache") %>
     migrations_paths: db/cache_migrate
   queue:
     <<: *primary_production
     url: <%= ENV["QUEUE_DATABASE_URL"] %>
-    database: quitando_production_queue
+    database: <%= ENV.fetch("QUITANDO_QUEUE_DATABASE_NAME", "quitando_production_queue") %>
     migrations_paths: db/queue_migrate
   cable:
     <<: *primary_production
     url: <%= ENV["CABLE_DATABASE_URL"] %>
-    database: quitando_production_cable
+    database: <%= ENV.fetch("QUITANDO_CABLE_DATABASE_NAME", "quitando_production_cable") %>
     migrations_paths: db/cable_migrate

@@ -251,9 +251,9 @@ Arquivamento é uma condição operacional separada. Só é permitido para grupo
 ## 11. Milestone atual
 
 - **Última entrega demonstrada automaticamente:** Fase 13.23 — acesso real/demo em desenvolvimento e perfis Fly/Neon preparados.
-- **Fase atual:** Fase 13, em revisão para as entregas 13.17 a 13.23.
-- **Status atual:** `bin/ci` e `bin/verify-production-image` passaram no diff atual. HTTP respondeu 200 em `localhost:3001` e `demo.localhost:3001`; a aplicação usa `quitando_development` sem contas demo no shard real e `quitando_demo_development` com as quatro contas públicas no shard demo. Os perfis Fly/Neon estão preparados, sem publicação. O gate da Fase 13 ainda aguarda aceitação humana; a consulta ao GitHub Project depende do escopo `read:project`, ausente no token atual.
-- **Gate pendente da Fase 13:** permanece a aceitação humana do roteiro Ana descrito acima e a sincronização das issues/campos do Project. Os ambientes real e demo continuam isolados; a preparação Fly/Neon não equivale ao deploy nem conclui a Fase 14.
+- **Fase atual:** Fase 14, em andamento na preparação das conexões Neon real e demo, por decisão explícita do usuário; o gate de aceitação humana da Fase 13 permanece pendente.
+- **Status atual:** esta entrega adiciona preflight antes das migrations, documentação do mapeamento das oito URLs por app e configuração explícita dos bancos principais. Os projetos Neon real e demo são PostgreSQL 18 e têm os quatro bancos necessários; os oito bancos foram consultados em modo somente leitura. No diff atual, `bin/ci` passou (699 specs RSpec e 43 system), assim como `bin/verify-production-image`; houve uma falha transitória no teste de preferência de tema na primeira execução, que passou isolado, na suíte system repetida e no CI final. Nenhuma migration ou publicação foi executada nos projetos remotos; o smoke test Fly permanece pendente.
+- **Gate pendente da Fase 13:** permanece a aceitação humana do roteiro Ana descrito acima e a sincronização das issues/campos do Project. A preparação reversível de infraestrutura da Fase 14 não conclui esse gate; publicação e smoke tests públicos continuam bloqueados até a aceitação.
 - **Gate integrado da Fase 0:** `bin/ci` executa localmente e no CI remoto, com banco limpo, contrato idêntico e exemplos RSpec reais para os contratos da fundação. O hardening adicional da PR #38 também foi aprovado nos checks remotos atuais.
 
 **Integrado e verificado até agora:**
