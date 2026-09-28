@@ -1,0 +1,11 @@
+#!/usr/bin/env ruby
+
+require_relative "../lib/neon_deployment/preflight"
+
+begin
+  NeonDeployment::Preflight.new.call!
+  puts "Verified direct and pooled URLs for four Neon PostgreSQL 18 databases."
+rescue NeonDeployment::ConfigurationError, NeonDeployment::ConnectionError => error
+  warn "Neon connection preflight failed: #{error.message}"
+  exit 1
+end

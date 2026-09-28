@@ -10,6 +10,10 @@
   SOLID_QUEUE_IN_PUMA = "true"
   QUITANDO_DEMO_MODE = "true"
   QUITANDO_PREPARE_ON_BOOT = "false"
+  QUITANDO_DEMO_DATABASE_NAME = "Demo"
+  QUITANDO_CACHE_DATABASE_NAME = "demo_cache"
+  QUITANDO_QUEUE_DATABASE_NAME = "demo_queue"
+  QUITANDO_CABLE_DATABASE_NAME = "demo_cable"
 
 [http_service]
   internal_port = 80
