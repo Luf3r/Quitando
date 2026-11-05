@@ -27,7 +27,7 @@ gem "pundit"
 
 # Server-rendered UI foundation for the HTTP-first Phase 11.
 gem "view_component", "4.15.0"
-gem "tailwindcss-rails", "4.6.0"
+gem "tailwindcss-rails", "4.7.0"
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"
